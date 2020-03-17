@@ -231,8 +231,8 @@ public class CompositeArc {
 		double firstArcFinalVel = DrivePhysics.getSpeedFromRadius(this.getR1()) * sign,
 				firstArcAccTime = DrivePhysics.timeToReachVel(velocity, boost, firstArcFinalVel);
 
-		double traversed = (reverse 
-				? DrivePhysics.maxDistanceReverse(firstArcAccTime, velocity) 
+		double traversed = (reverse
+				? DrivePhysics.maxDistanceReverse(firstArcAccTime, velocity)
 						: DrivePhysics.maxDistance(firstArcAccTime, velocity, boost));
 		velocity = firstArcFinalVel;
 		boost -= (Constants.BOOST_USAGE * firstArcAccTime);
@@ -247,9 +247,9 @@ public class CompositeArc {
 		double secondArcMaxVel = DrivePhysics.getSpeedFromRadius(this.getR2()) * sign;
 
 		double distanceToTravel = (this.getLength() - (includeL0 ? 0 : this.getL(0)) - (includeL4 ? 0 : this.getL(4)));
-		double straightawayTime = (includeL4 ? (reverse 
-				? DrivePhysics.minTravelTimeReverse(velocity, distanceToTravel - traversed, secondArcMaxVel) 
-						: DrivePhysics.minTravelTime(velocity, boost, distanceToTravel - traversed, secondArcMaxVel)) 
+		double straightawayTime = (includeL4 ? (reverse
+				? DrivePhysics.minTravelTimeReverse(velocity, distanceToTravel - traversed, secondArcMaxVel)
+						: DrivePhysics.minTravelTime(velocity, boost, distanceToTravel - traversed, secondArcMaxVel))
 				: 0);
 
 		return time + straightawayTime;

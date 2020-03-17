@@ -64,7 +64,7 @@ class Observer():
                             yaw = car.physics.rotation.yaw
                             roll = car.physics.rotation.roll
 
-                            CP = cos(pitch) 
+                            CP = cos(pitch)
                             SP = sin(pitch)
                             CY = cos(yaw)
                             SY = sin(yaw)
@@ -77,7 +77,7 @@ class Observer():
 
                             car_states.update({i: CarState(physics=Physics(velocity=Vector3(x,y,z)))})
 
-                    
+
                     if packet.game_info.is_kickoff_pause and round(packet.game_ball.physics.location.z) != KICKOFF_BALL_HEIGHT:
                         # Places the ball in the air on kickoff.
                         ball_state = BallState(Physics(location=Vector3(z=KICKOFF_BALL_HEIGHT), velocity=Vector3(0,0,0)))

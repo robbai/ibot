@@ -96,7 +96,7 @@ public class Marvin {
 		if(deltaAcc > 0){
 			return MathsUtils.clamp(deltaAcc / (throttleAcc(1, vel) + 1e-9), -1, 1) * Math.signum(deltaSpeed);
 		}else if(-3600 < deltaAcc && deltaAcc <= 0){
-			return 0;    
+			return 0;
 		}else{
 			return -1;
 		}
@@ -159,7 +159,7 @@ public class Marvin {
 				threshold = 250;
 			}
 		}else{
-			threshold = 50;				
+			threshold = 50;
 		}
 		return relVel > threshold;
 	}

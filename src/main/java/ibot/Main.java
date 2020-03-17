@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class Main {
 
-    private static final Integer DEFAULT_PORT = 56926;    
+    private static final Integer DEFAULT_PORT = 56926;
 	private static final String LOGO_FILE = "icon.png", MUTATOR_FILE = "zero_gravity_mutator.py";
 	private static final boolean RUN_MUTATOR = false;
 
@@ -33,7 +33,7 @@ public class Main {
 				e.printStackTrace();
 			}
     	}
-    	
+
         BotManager botManager = new BotManager();
         botManager.setRefreshRate(120);
         Integer port = PortReader.readPortFromArgs(args).orElseGet(() -> {
@@ -86,5 +86,5 @@ public class Main {
 
         new Timer(1000, myListener).start();
     }
-    
+
 }

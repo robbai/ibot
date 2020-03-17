@@ -37,7 +37,7 @@ public class Car {
 		this.hasDoubleJumped = playerInfo.doubleJumped();
 		this.isDemolished = playerInfo.isDemolished();
 		this.name = playerInfo.name();
-		
+
 		this.onFlatGround = (this.hasWheelContact && this.orientation.up.z > 0.75);
 		this.onSuperFlatGround = (this.onFlatGround && this.orientation.up.z > 0.95);
 	}

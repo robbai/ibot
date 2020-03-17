@@ -15,7 +15,7 @@ public class BallTouchedAbort extends AbortCondition {
 		this.initialTouchSeconds = getSeconds(latestTouch);
 		this.indexExceptions = (indexExceptions == null ? new int[]{} : indexExceptions);
 	}
-	
+
 	public BallTouchedAbort(DataBot bot, Touch latestTouch){
 		this(bot, latestTouch, null);
 	}
@@ -23,7 +23,7 @@ public class BallTouchedAbort extends AbortCondition {
 	@Override
 	public boolean shouldAbort(DataPacket packet){
 		Touch latestTouch = packet.ball.latestTouch;
-		
+
 		// Check the exceptions.
 		if(latestTouch != null){
 			for(int index : this.indexExceptions){
@@ -33,10 +33,10 @@ public class BallTouchedAbort extends AbortCondition {
 				}
 			}
 		}
-		
+
 		return getSeconds(latestTouch) > this.initialTouchSeconds + Constants.DT;
 	}
-	
+
 	private float getSeconds(Touch touch){
 		return (touch == null ? 0 : touch.elapsedSeconds);
 	}

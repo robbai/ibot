@@ -10,7 +10,7 @@ public class BoostPad {
 
     private final Vector2 location;
     private final boolean isFullBoost;
-    
+
     private boolean isActive = false;
     private float timer;
 
@@ -38,7 +38,7 @@ public class BoostPad {
 	public float getTimer(){
 		return timer;
 	}
-	
+
 	public float getTimeLeft(){
 		if(!this.isActive()) return 0;
 		return 10 - timer;
@@ -47,5 +47,5 @@ public class BoostPad {
 	public void setTimer(float timer){
 		this.timer = timer;
 	}
-    
+
 }

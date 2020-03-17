@@ -29,18 +29,18 @@ public class DriveStrike extends Action {
 	public DriveStrike(DataBot bot, Intercept intercept){
 		super(bot);
 		this.intercept = intercept;
-		
+
 		//		this.holdTime = MathsUtils.clamp(intercept.time - bot.secondsElapsed - DODGE_TIME, 0, Constants.JUMP_MAX_HOLD);
-		
+
 		double z = MathsUtils.local(bot.car, intercept.intersectPosition).z;
 		double minZ = JumpPhysics.maxZ(bot, 0, false);
 		double maxZ = JumpPhysics.maxZ(bot, Constants.JUMP_MAX_HOLD, false);
 		this.holdTime = MathsUtils.clamp(
 				MathsUtils.lerp(
-						Constants.DT * 2, Constants.JUMP_MAX_HOLD, 
-						Math.pow((z - minZ) / (maxZ - minZ), 2)), 
+						Constants.DT * 2, Constants.JUMP_MAX_HOLD,
+						Math.pow((z - minZ) / (maxZ - minZ), 2)),
 				0, Constants.JUMP_MAX_HOLD);
-		
+
 		this.jumpStart = OptionalDouble.empty();
 		this.startUpZ = bot.car.orientation.up.z;
 	}
@@ -49,7 +49,7 @@ public class DriveStrike extends Action {
 	public ControlsOutput getOutput(DataPacket packet){
 		double time = packet.time;
 		double timeLeft = (this.intercept.time - time);
-		
+
 		Car car = packet.car;
 
 		Vector3 localInterceptBall = MathsUtils.local(car, this.intercept.position);
@@ -107,7 +107,7 @@ public class DriveStrike extends Action {
 			if(!dodge){
 //				Vector3 desiredForward = MathsUtils.global(car, localVelocity.normalised().withZ(localIntercept.plus(MathsUtils.local(car.orientation, Vector3.Z.scale(100))).normalised().z));
 //				Vector3 desiredRoof = car.position.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z, 0.65);
-				
+
 				Vector3 desiredForward = this.intercept.intersectPosition.plus(new Vector3(0, 0, 100)).minus(car.position);
 
 				bot.renderer.drawLine3d(Color.RED, car.position, car.position.plus(desiredForward.scaleToMagnitude(200)));

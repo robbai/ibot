@@ -4,7 +4,7 @@ import ibot.bot.utils.DataBot;
 import ibot.input.DataPacket;
 
 public abstract class AbortCondition {
-	
+
 	protected DataBot bot;
 	private double startTime;
 
@@ -14,7 +14,7 @@ public abstract class AbortCondition {
 	}
 
 	public abstract boolean shouldAbort(DataPacket packet);
-	
+
 	public double getStartTime(){
 		return startTime;
 	}

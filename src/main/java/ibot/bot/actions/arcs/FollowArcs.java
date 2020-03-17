@@ -24,9 +24,9 @@ public class FollowArcs extends Action {
 	private Vector2[] points;
 
 	private Action action;
-	
+
 	private boolean boost = true;
-	
+
 	private double PRESSURE_UU = AIM_UU;
 	private double lastTime;
 
@@ -59,17 +59,17 @@ public class FollowArcs extends Action {
 		this.setFinished(carUu >= this.compositeArc.getLength() - 10 || !this.onPath(car, carUu));
 
 		double progress = (carUu / this.compositeArc.getLength());
-		
+
 		//		double targetVelocity = Math.max(DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1())),
 		//				DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR2())));
-		
-//		double targetVelocity = (progress < 0.5 ? 
+
+//		double targetVelocity = (progress < 0.5 ?
 //				MathsUtils.lerp(DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1())), Constants.MAX_CAR_VELOCITY, progress * 2)
 //				: MathsUtils.lerp(Constants.MAX_CAR_VELOCITY, DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1())), (progress - 0.5) * 2)
 //				);
-		
+
 //		double targetVelocity = Constants.SUPERSONIC_VELOCITY;
-		
+
 		double targetVelocity;
 		if(carUu < this.compositeArc.getL(0)){
 			targetVelocity = DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1()));
@@ -79,7 +79,7 @@ public class FollowArcs extends Action {
 			targetVelocity = DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR2()));
 //			targetVelocity = Constants.SUPERSONIC_VELOCITY;
 		}
-		
+
 		// Quick-chat.
 		if(packet.ball.latestTouch != null && packet.ball.latestTouch.elapsedSeconds == packet.ball.time){
 			if(packet.ball.latestTouch.playerIndex == bot.getIndex()){
@@ -88,7 +88,7 @@ public class FollowArcs extends Action {
 				bot.sendQuickChat(QuickChatSelection.Information_AllYours, QuickChatSelection.Information_GoForIt);
 			}
 		}
-		
+
 		// Target.
 		double dt = packet.time - this.lastTime;
 		this.lastTime += dt;
@@ -104,8 +104,8 @@ public class FollowArcs extends Action {
 			this.action = (Action)output;
 			return this.action.getOutput(packet);
 		}
-		
-		ControlsOutput controls = (ControlsOutput)output; 
+
+		ControlsOutput controls = (ControlsOutput)output;
 		return controls.withBoost(controls.holdBoost() && this.boost);
 	}
 
@@ -137,7 +137,7 @@ public class FollowArcs extends Action {
 		double closestDistance = Double.MAX_VALUE;
 
 		for(int i = 0; i < (this.points.length - 1); i++){
-			Pair<Vector2, Vector2> lineSegment = new Pair<Vector2, Vector2>(this.points[i], this.points[i + 1]);			
+			Pair<Vector2, Vector2> lineSegment = new Pair<Vector2, Vector2>(this.points[i], this.points[i + 1]);
 			Pair<Double, Double> result = MathsUtils.closestPointToLineSegment(car, lineSegment);
 
 			closestDistance = Math.min(closestDistance, result.getOne());
@@ -158,7 +158,7 @@ public class FollowArcs extends Action {
 			}
 			totalUu += segmentUu;
 		}
-		
+
 		// We are at the end.
 		Vector2 ultimate = this.points[N - 1];
 		Vector2 penultimate = this.points[N - 2];
@@ -173,7 +173,7 @@ public class FollowArcs extends Action {
 //		Vector2 aim = this.aim(carUu + 100);
 //		Vector2 local = MathsUtils.local(car, aim.withZ(Constants.CAR_HEIGHT)).flatten();
 //		return MathsUtils.shorterAngle(Vector2.Y.angle(local)) < Math.toRadians(70);
-		
+
 		return true;
 	}
 

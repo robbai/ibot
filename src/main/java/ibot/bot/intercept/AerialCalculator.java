@@ -12,7 +12,7 @@ import ibot.vectors.Vector3;
 public class AerialCalculator {
 
 	// https://samuelpmish.github.io/notes/RocketLeague/aerial_hit/
-	
+
 	public final double finalVelocity, acceleration;
 	public final boolean viable;
 
@@ -36,7 +36,7 @@ public class AerialCalculator {
 
 		if(car.hasWheelContact){
 			carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE * ((type == AerialType.DOUBLE_JUMP ? 2 : 1) * time - Aerial.JUMP_TIME) + Constants.JUMP_ACCELERATION * (time * Aerial.JUMP_TIME - 0.5 * Aerial.JUMP_TIME * Aerial.JUMP_TIME)));
-			carVelocity = carVelocity.plus(car.orientation.up.scale((type == AerialType.DOUBLE_JUMP ? 2 : 1) * Constants.JUMP_IMPULSE + Constants.JUMP_ACCELERATION * Aerial.JUMP_TIME));			
+			carVelocity = carVelocity.plus(car.orientation.up.scale((type == AerialType.DOUBLE_JUMP ? 2 : 1) * Constants.JUMP_IMPULSE + Constants.JUMP_ACCELERATION * Aerial.JUMP_TIME));
 		}
 
 		Vector3 deltaPosition = target.minus(carPosition);
@@ -58,7 +58,7 @@ public class AerialCalculator {
 		Vector3 velocityEstimate = carVelocity.plus(forward.scale(Constants.BOOST_AIR_ACCELERATION * (tau2 - tau1)));
 
 		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
-		
+
 //		final double easy = MathsUtils.lerp(0.75, 0.9, car.boost / 100);
 		final double easy = 0.94;
 
@@ -78,10 +78,10 @@ public class AerialCalculator {
 		double time = 1.7 * Math.sqrt(phi / 9);
 		return time;
 	}
-	
+
 //	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
 //		double dot = orientation.forward.dot(desiredForward.normalised());
-//		return Math.pow((dot - 1) / 0.9, 2); 
+//		return Math.pow((dot - 1) / 0.9, 2);
 //	}
 
 }

@@ -1,11 +1,11 @@
 package ibot.bot.utils;
 
 public class Constants extends StaticClass {
-	
+
 	public static final double DT = (1D / 120);
 
 	public static final double BALL_RADIUS = 92.75;
-	
+
 	public static final double BOOST_GROUND_ACCELERATION = (911 + (2 / 3));
 	public static final double BOOST_AIR_ACCELERATION = 1060;
 	public static final double COAST_ACCELERATION = 525;
@@ -21,7 +21,7 @@ public class Constants extends StaticClass {
 	public static final double JUMP_ACCELERATION = 1400;
 	public static final double THROTTLE_AIR_ACCELERATION = (200D / 3);
 	public static final double JUMP_MAX_HOLD = 0.2;
-	
+
 	public static final double CEILING = 2044;
 	public static final double PITCH_LENGTH_HOOPS = 3586; // Half.
 	public static final double PITCH_WIDTH_HOOPS = 2966.67; // Half.
@@ -29,5 +29,5 @@ public class Constants extends StaticClass {
 	public static final double PITCH_WIDTH_SOCCAR = 4096; // Half.
 	public static final double GOAL_WIDTH = 892.755; // Half.
 	public static final double GOAL_HEIGHT = 642.775;
-	
+
 }

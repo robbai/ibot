@@ -15,7 +15,7 @@ public class DataPacket {
     public final int playerIndex;
 
 	public final double time, gravity;
-	
+
 	public final boolean isKickoffPause, isRoundActive, hasMatchEnded;
 
     public DataPacket(GameTickPacket rawPacket, int playerIndex){
@@ -24,9 +24,9 @@ public class DataPacket {
     	this.isKickoffPause = rawPacket.gameInfo().isKickoffPause();
     	this.isRoundActive = rawPacket.gameInfo().isRoundActive();
     	this.hasMatchEnded = rawPacket.gameInfo().isMatchEnded();
-    	
+
         this.ball = new Ball(rawPacket.ball(), this.time);
-        
+
         this.team = rawPacket.players(playerIndex).team();
 
         int teammateCount = 0, enemyCount = 0;
@@ -57,5 +57,5 @@ public class DataPacket {
         this.car = this.cars[playerIndex];
         this.robbie = (this.cars.length == 2 ? this.cars[1 - playerIndex] : null);
     }
-    
+
 }

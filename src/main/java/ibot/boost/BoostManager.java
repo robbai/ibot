@@ -39,7 +39,7 @@ public class BoostManager {
             for(int i = 0; i < fieldInfo.boostPadsLength(); i++){
                 rlbot.flat.BoostPad rawPad = fieldInfo.boostPads(i);
                 BoostPad pad = new BoostPad(rawPad);
-                
+
                 orderedBoosts.add(pad);
                 if(pad.isFullBoost()){
                     fullBoosts.add(pad);
@@ -52,7 +52,7 @@ public class BoostManager {
 
     public static void loadGameTickPacket(GameTickPacket packet){
     	final int boostPadStatesLength = packet.boostPadStatesLength();
-    	
+
         while(boostPadStatesLength > orderedBoosts.size()){
             try{
                 loadFieldInfo(RLBotDll.getFieldInfo());

@@ -11,10 +11,10 @@ public class AirControl {
 	 */
 	public static double[] getRollPitchYaw(Car car, Vector3 desiredForward, Vector3 desiredRoof, boolean useRoof){
 		CarOrientation orientation = car.orientation;
-		
+
 		desiredForward = desiredForward.normalised();
 		desiredRoof = desiredRoof.normalised();
-		
+
 	    Vector3 desiredFacingAngVel = car.orientation.forward.cross(desiredForward);
 	    Vector3 desiredUpVel = car.orientation.up.cross(desiredRoof);
 
@@ -55,11 +55,11 @@ public class AirControl {
 //	    final double threshold = 0.1;
 //	    return new double[] {
 //	    		Math.abs(roll) > threshold ? Math.signum(roll) : roll,
-//	    		Math.abs(pitch) > threshold ? Math.signum(pitch) : pitch, 
+//	    		Math.abs(pitch) > threshold ? Math.signum(pitch) : pitch,
 //	    		Math.abs(yaw) > threshold ? Math.signum(yaw) : yaw
 //	    };
 	}
-	
+
 	public static double[] getRollPitchYaw(Car car, Vector3 desiredForward){
 //		final double border = 500;
 ////		Vector3 desiredRoof = car.orientation.right.scale(Math.signum(car.position.y * car.sign));
@@ -74,12 +74,12 @@ public class AirControl {
 //		}else if(Math.abs(soonPosition.y) > Constants.PITCH_LENGTH - border){
 //			desiredRoof = Vector3.Y.scale(-Math.signum(soonPosition.y));
 //		}
-		
+
 		Vector3 desiredRoof = Vector3.Z;
-		
+
 		return getRollPitchYaw(car, desiredForward, desiredRoof, false);
 	}
-	
+
 	public static double[] getRollPitchYaw(Car car, Vector3 desiredForward, Vector3 desiredRoof){
 		return getRollPitchYaw(car, desiredForward, desiredRoof, false);
 	}

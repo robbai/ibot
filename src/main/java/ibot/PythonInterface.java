@@ -15,5 +15,5 @@ public class PythonInterface extends SocketServer {
     	System.out.println("Receiving: " + botType);
         return (botType.toLowerCase().contains("testbot") ? new TestBot(index) : new IBot(index));
     }
-    
+
 }

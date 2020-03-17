@@ -10,7 +10,7 @@ import ibot.output.ControlsOutput;
 public class Jump extends Action {
 
 	private static final double ORIENT_DELAY = 0.1;
-	
+
 	private final double holdTime;
 
 	public Jump(DataBot bot, double holdTime){

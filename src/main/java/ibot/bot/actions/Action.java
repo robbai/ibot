@@ -9,19 +9,19 @@ import ibot.output.ControlsOutput;
 import ibot.output.Output;
 
 public abstract class Action extends Output {
-	
+
 	protected DataBot bot;
 	private boolean finished;
 	private double startTime;
 	private ArrayList<AbortCondition> abortConditions;
-	
+
 	public Action(DataBot bot){
 		this.bot = bot;
 		this.finished = false;
 		this.startTime = bot.time;
 		this.abortConditions = new ArrayList<AbortCondition>();
 	}
-	
+
 	public abstract ControlsOutput getOutput(DataPacket packet);
 
 	public boolean isFinished(DataPacket packet){
@@ -44,17 +44,17 @@ public abstract class Action extends Output {
 	public double getStartTime(){
 		return startTime;
 	}
-	
+
 	@Override
 	public boolean isControls(){
 		return false;
 	}
-	
+
 	@Override
 	public boolean isAction(){
 		return true;
 	}
-	
+
 	public Action withAbortCondition(AbortCondition... abortConditions){
 		for(AbortCondition abort : abortConditions){
 			this.abortConditions.add(abort);

@@ -138,7 +138,7 @@ public class Aerial extends Action {
 		//		bot.stackRenderString((int)deltaVelocity.magnitude() + "uu/s", Color.WHITE);
 
 		//		if(true){
-		//			double B = ((2 * deltaPosition.magnitude()) / (Constants.BOOST_AIR_ACCELERATION * timeLeft)); 
+		//			double B = ((2 * deltaPosition.magnitude()) / (Constants.BOOST_AIR_ACCELERATION * timeLeft));
 		//			bot.stackRenderString("Boost time: " + MathsUtils.round(B, 3) + "s", Color.WHITE);
 		//			B = B * car.orientation.forward.dot(deltaPosition.normalised());
 		//			bot.stackRenderString("Boost time direction: " + MathsUtils.round(B, 3) + "s", Color.WHITE);

@@ -3,8 +3,8 @@ package ibot.bot.utils;
 import java.util.OptionalDouble;
 
 public class Kinematic {
-	
-	private OptionalDouble displacement, initialVelocity, finalVelocity, acceleration, time; 
+
+	private OptionalDouble displacement, initialVelocity, finalVelocity, acceleration, time;
 
 	public Kinematic(){
 		this.displacement = OptionalDouble.empty();

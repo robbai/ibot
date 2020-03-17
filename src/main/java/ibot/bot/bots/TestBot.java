@@ -48,16 +48,16 @@ public class TestBot extends DataBot {
 				this.action = null;
 			}
 		}
-		
+
 		if(packet.robbie != null){
 //			CompositeArc compositeArc = CompositeArc.create(this.car, packet.robbie.position.flatten(), new Vector2(), 200, 0);
-			
+
 			CompositeArc compositeArc = CompositeArc.create(this.car, this.groundIntercept.position.flatten(), packet.robbie.position.flatten(), 200, 300);
 			if(this.ballPosition.z < 120 && this.ballVelocity.z <= 0){
 				GameState gameState = new GameState().withBallState(new BallState().withPhysics(new PhysicsState().withVelocity(new DesiredVector3(0F, 0F, 0F)).withAngularVelocity(new DesiredVector3(0F, 0F, 0F))));
 				RLBotDll.setGameState(gameState.buildPacket());
 			}
-			
+
 			this.action = new FollowArcs(this, compositeArc);
 			return action.getOutput(packet);
 		}
@@ -77,12 +77,12 @@ public class TestBot extends DataBot {
 //							.withPhysics(new PhysicsState()
 //									.withLocation(new DesiredVector3(1500F * x, ballY, (float)Constants.BALL_RADIUS))
 //									.withVelocity(new DesiredVector3(
-//											(float)random(300, 450) * -x, 
-//											(float)(random(0, 800) * -this.sign), 
+//											(float)random(300, 450) * -x,
+//											(float)(random(0, 800) * -this.sign),
 //											(float)random(1100, 1300) / (AERIAL_TYPE == AerialType.DOUBLE_JUMP ? 1.2F : 1.4F)
 //											)
 //										)
-//									));	
+//									));
 //			if(packet.robbie != null){
 //				gameState.withCarState(packet.robbie.index, new CarState().withBoostAmount(100F)
 //						.withPhysics(new PhysicsState()
@@ -116,7 +116,7 @@ public class TestBot extends DataBot {
 			target = target.lerp(this.bounce.intersectPosition, 0.5);
 		}
 		return (ControlsOutput)Handling.driveTime(this, target, false, false, this.time + 1.5);
-		
+
 //		if(this.groundIntercept == null) return new ControlsOutput();
 //		if((packet.secondsElapsed - timeSet) < 0.05 || !this.car.hasWheelContact){
 //			return (ControlsOutput)Handling.driveTime(this, this.bounce != null ? this.groundIntercept.position.lerp(this.bounce.position, 0.5) : this.groundIntercept.position, false, false, this.secondsElapsed + 0.75);
