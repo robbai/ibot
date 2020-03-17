@@ -5,16 +5,12 @@ import java.util.OptionalDouble;
 
 import ibot.boost.BoostManager;
 import ibot.bot.abort.BallTouchedAbort;
-import ibot.bot.abort.BoostYoinkedAbort;
-import ibot.bot.abort.CommitAbort;
 import ibot.bot.abort.SliceOffPredictionAbort;
 import ibot.bot.actions.Action;
 import ibot.bot.actions.Aerial;
 import ibot.bot.actions.DriveStrike;
 import ibot.bot.actions.FastDodge;
 import ibot.bot.actions.Jump;
-import ibot.bot.actions.arcs.CompositeArc;
-import ibot.bot.actions.arcs.FollowArcs;
 import ibot.bot.controls.Handling;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
@@ -79,7 +75,7 @@ public class IBot extends DataBot {
 				Vector3 localIntercept = MathsUtils.local(this.car, aerialIntercept.position);
 				double radians = Vector2.Y.correctionAngle(localIntercept.flatten());
 				boolean theirSide = (aerialIntercept.position.y * this.sign >= 0);
-				if(betterThanDriveStrike && Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45) * (this.goingInHomeGoal ? 1.5 : 1) && 
+				if(betterThanDriveStrike && Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45) * (this.goingInHomeGoal ? 1.5 : 1) &&
 						(this.groundIntercept == null || localIntercept.z > (localIntercept.magnitude() < 700 ? 90 : (theirSide ? 180 : 230))
 						|| (this.carPosition.z > Math.max(500, aerialIntercept.position.z)))){
 					//				if(true){
@@ -140,7 +136,7 @@ public class IBot extends DataBot {
 							target = this.groundIntercept.position.plus(this.groundIntercept.getOffset().multiply(xSkew));
 //						}
 					}
-					
+
 					double distance = MathsUtils.local(this.car, target).flatten().magnitude();
 					double addedOffset = 1500 * Math.floor(distance / 4000);
 					if(addedOffset > 0.001){
@@ -267,19 +263,22 @@ public class IBot extends DataBot {
 					target = target.withY(Math.copySign(Constants.PITCH_LENGTH_SOCCAR - 400, target.y));
 				}
 
-				if(!this.furthestBack || this.car.orientation.forward.y * this.sign > Math.sin(Math.toRadians(25))){
-					if(this.teamPossession * this.earliestEnemyIntercept.position.y * this.sign > 0){
+				if(!this.furthestBack/* || this.car.orientation.forward.y * this.sign > Math.sin(Math.toRadians(25)) || goalDistance > 6000*/){
+					if(this.teamPossession * this.earliestEnemyIntercept.position.y * this.sign > 0 || this.furthestBack){
 						target = target.withX(target.x * 0.7);
 					}
 
-					if(this.car.boost < 40 && target.y * this.sign < -1500 && goalDistance > 3500){
+					if(this.car.boost < 40 && target.y * this.sign < -1500 && goalDistance > 4000){
 						target = findNearestBoost(target.plus(this.car.velocity.scale(0.5)).flatten(), BoostManager.getSmallBoosts()).getLocation().withZ(Constants.CAR_HEIGHT);
 					}
 				}else{
-					double distance = this.homeGoal.distance(car.position);
-					final double dist = 1000;
+					double distance = this.homeGoal.distance(this.car.position);
+					final double closingDistance = 1000;
 					double nose = Math.max(0, this.car.orientation.forward.y * this.sign);
-					target = this.homeGoal.multiply(new Vector3(new Vector3(MathsUtils.clamp((dist - distance) / dist, -2.5, 1), MathsUtils.clamp((Constants.PITCH_LENGTH_SOCCAR - 800 - nose * 1100) / Math.abs(this.car.position.y), 0.7, 0.95), 1)));
+
+					double x = MathsUtils.clamp((closingDistance - distance) / closingDistance, -2.5, 1);
+					double y = MathsUtils.clamp((Constants.PITCH_LENGTH_SOCCAR - 400 - nose * 700) / Math.abs(this.car.position.y), Math.max(0.5, 3000 / goalDistance), 0.9);
+					target = this.homeGoal.multiply(new Vector3(x, y, 1));
 				}
 //				else{
 //					Vector2 fromGoal = this.backTeammate.position.minus(this.homeGoal).flatten();

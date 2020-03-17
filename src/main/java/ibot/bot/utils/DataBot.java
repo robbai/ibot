@@ -30,7 +30,7 @@ import rlbot.manager.BotLoopRenderer;
 
 public abstract class DataBot implements Bot {
 
-	protected static boolean ranGc;	
+	protected static boolean ranGc;
 
 	protected final int playerIndex;
 
@@ -65,7 +65,7 @@ public abstract class DataBot implements Bot {
 
 		// Just return immediately if something looks wrong with the data.
 		//    	System.out.println(rawPacket.gameInfo().isKickoffPause() + ", " + rawPacket.gameInfo().isMatchEnded() + ", " + rawPacket.gameInfo().isRoundActive());
-		if(rawPacket.playersLength() <= playerIndex){ 
+		if(rawPacket.playersLength() <= playerIndex){
 			return new ControlsOutput();
 		}
 
@@ -170,7 +170,7 @@ public abstract class DataBot implements Bot {
 		this.carForwardComponent = this.car.velocity.normalised().dot(this.car.orientation.forward);
 
 		this.gravity = packet.gravity;
-		
+
 		// Kickoff reset.
 		this.isKickoff = packet.isKickoffPause;
 		if(this.isKickoff != this.lastIsKickoff){
@@ -189,7 +189,7 @@ public abstract class DataBot implements Bot {
 
 		// Goals.
 		double ballForwards = (this.ballPosition.y * this.sign + Constants.PITCH_LENGTH_SOCCAR) / (2 * Constants.PITCH_LENGTH_SOCCAR);
-		this.enemyGoal = new Vector3((this.mode != Mode.SOCCAR ? 0 : ballForwards * Math.copySign(Math.min(Constants.GOAL_WIDTH - 350, Math.abs(ballPosition.x)), ballPosition.x)), 
+		this.enemyGoal = new Vector3((this.mode != Mode.SOCCAR ? 0 : ballForwards * Math.copySign(Math.min(Constants.GOAL_WIDTH - 350, Math.abs(ballPosition.x)), ballPosition.x)),
 				(this.mode == Mode.HOOPS ? Constants.PITCH_LENGTH_HOOPS - 700 : Constants.PITCH_LENGTH_SOCCAR) * this.car.sign, 0);
 		this.homeGoal = new Vector3(this.enemyGoal.x, this.enemyGoal.y * -1, this.enemyGoal.z);
 //		if(this.ballPosition.y * this.sign > Constants.PITCH_WIDTH_SOCCAR - 2000 && Math.abs(this.ballPosition.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS * 2){
@@ -231,7 +231,7 @@ public abstract class DataBot implements Bot {
 				this.backTeammate = c;
 			}
 			if(c.position.y * this.sign < this.carPosition.y * this.sign){
-				this.furthestBack = false;	
+				this.furthestBack = false;
 			}
 		}
 		this.lastMan = true;
@@ -255,7 +255,7 @@ public abstract class DataBot implements Bot {
 			}else{
 				this.commit = true;
 				for(Car c : packet.teammates){
-					if(this.groundIntercepts[c.index].time + 0.01 < this.groundIntercept.time){
+					if(this.groundIntercepts[c.index].time + 0.02 < this.groundIntercept.time){
 						this.commit = false;
 						break;
 					}
@@ -265,17 +265,17 @@ public abstract class DataBot implements Bot {
 				}
 				this.pickupBoost = !this.commit;
 			}
-		}else if(this.ballPosition.y * this.sign < -3000 && this.teamPossession < 0 && (!this.pickupBoost || this.lastMan)){
-			this.commit = this.commit || (this.ballPosition.y - this.carPosition.y) * this.sign > 0;
-//			this.pickupBoost &= !this.commit;
-			this.pickupBoost &= false;
+//		}else if((this.ballPosition.y * this.sign < -3000 || this.goingInHomeGoal) && this.teamPossession < 0.4 && (!this.pickupBoost || this.lastMan)){
+//			this.commit = this.commit || (this.ballPosition.y - this.carPosition.y) * this.sign > 0 && !(this.furthestBack && this.lastMan);
+////			this.pickupBoost &= !this.commit;
+//			this.pickupBoost = false;
 		}else if(!this.car.onSuperFlatGround){
 			this.commit = this.groundIntercept.position.z > 300 || this.lastMan;
 			this.pickupBoost &= !this.commit;
 //		}else if(this.lastMan && (!this.pickupBoost || this.teamPossession < 1.2) && packet.enemies.length > 0){
 //			this.commit = this.groundIntercept.position.y * this.sign < -MathsUtils.lerp(2000, 3000, 1 - Math.abs(this.car.position.x / Constants.PITCH_WIDTH_SOCCAR)) || this.earliestEnemyIntercept.time - this.groundIntercept.time > -0.25;
 //			this.pickupBoost = false;
-		}else if(this.pickupBoost){
+		}else if(this.pickupBoost/* && this.ballPosition.distance(this.homeGoal) > 2000*/){
 			//						this.commit = this.lastMan && Math.abs((-3000 - this.ballPosition.y * this.sign) / (this.ballVelocity.y * this.sign)) < 0.5;
 			this.commit = false;
 			this.pickupBoost = !this.commit;
@@ -292,7 +292,7 @@ public abstract class DataBot implements Bot {
 				if(c.isDemolished) continue;
 				//				if(interceptValue(this.groundIntercepts[c.index], c, this.enemyEarliestIntercept, this.enemyGoal, this.secondsElapsed) > carInterceptValue + (this.groundIntercept.ballPosition.y * this.sign < 0 ? 1 : 0)){
 				//				if(interceptValue(this.groundIntercepts[c.index], c, this.enemyEarliestIntercept, this.enemyGoal, this.secondsElapsed) > carInterceptValue + (this.pickupBoost ? -3 : 0)){
-				if(interceptValue(this.groundIntercepts[c.index], c, this.earliestEnemyIntercept.time, this.enemyGoal, this.time) > carInterceptValue + (lastCommit ? 0.45 : -0.3)){
+				if(interceptValue(this.groundIntercepts[c.index], c, this.earliestEnemyIntercept.time, this.enemyGoal, this.time) > carInterceptValue + (lastCommit ? 0.45 : -0.2)){
 					this.commit = false;
 					break;
 				}
@@ -344,9 +344,9 @@ public abstract class DataBot implements Bot {
 
 	private static double interceptValue(Intercept intercept, Car car, double enemyEarliestIntercept, Vector3 goal, double secondsElapsed){
 		//		if((car.position.y - intercept.interceptPosition.y) * car.sign > 0) return -100;
-		return car.velocity.dot(intercept.position.minus(car.position).normalised()) / 1700 + 
-				Math.min(4 / (intercept.time - secondsElapsed), 1.7) + 
-				MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.3 + 
+		return car.velocity.dot(intercept.position.minus(car.position).normalised()) / 1500 +
+				Math.min(4 / (intercept.time - secondsElapsed), 1.7) +
+				MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.5 +
 				Math.cos(goal.minus(car.position).flatten().angle(intercept.position.minus(car.position).flatten())) * 1.5 * (intercept.position.y * car.sign + Constants.PITCH_LENGTH_SOCCAR) / (2 * Constants.PITCH_LENGTH_SOCCAR);
 	}
 
@@ -415,7 +415,7 @@ public abstract class DataBot implements Bot {
 		}
 		return shortestBoost;
 	}
-	
+
 	protected static BoostPad findNearestBoost(Vector2 position, ArrayList<BoostPad> boosts){
 		BoostPad shortestBoost = null;
 		double shortestDistance = 0;
