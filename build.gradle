@@ -75,7 +75,7 @@ applicationDistribution.exclude(dllDirectory)
 distZip {
     into ('python') {
         from fileTree('src/main/python') {
-            exclude '__pycache__'
+            include 'ibot.cfg', 'ibot.py', 'ibotLooks.cfg'
         }
     }
 }
@@ -84,7 +84,7 @@ distZip {
 installDist {
     into ('../python') {
         from fileTree('src/main/python') {
-            exclude '__pycache__'
+            include 'ibot.cfg', 'ibot.py', 'ibotLooks.cfg'
         }
     }
 }
