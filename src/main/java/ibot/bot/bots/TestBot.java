@@ -2,6 +2,11 @@ package ibot.bot.bots;
 
 import java.util.Random;
 
+import rlbot.cppinterop.RLBotDll;
+import rlbot.gamestate.BallState;
+import rlbot.gamestate.DesiredVector3;
+import rlbot.gamestate.GameState;
+import rlbot.gamestate.PhysicsState;
 import ibot.bot.abort.BallTouchedAbort;
 import ibot.bot.actions.Action;
 import ibot.bot.actions.Aerial;
@@ -10,18 +15,10 @@ import ibot.bot.actions.arcs.FollowArcs;
 import ibot.bot.controls.Handling;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
-import ibot.bot.utils.Constants;
 import ibot.bot.utils.DataBot;
 import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
 import ibot.vectors.Vector3;
-import rlbot.cppinterop.RLBotDll;
-import rlbot.gamestate.BallState;
-import rlbot.gamestate.CarState;
-import rlbot.gamestate.DesiredRotation;
-import rlbot.gamestate.DesiredVector3;
-import rlbot.gamestate.GameState;
-import rlbot.gamestate.PhysicsState;
 
 @SuppressWarnings ("unused")
 public class TestBot extends DataBot {
@@ -52,9 +49,12 @@ public class TestBot extends DataBot {
 		if(packet.robbie != null){
 //			CompositeArc compositeArc = CompositeArc.create(this.car, packet.robbie.position.flatten(), new Vector2(), 200, 0);
 
-			CompositeArc compositeArc = CompositeArc.create(this.car, this.groundIntercept.position.flatten(), packet.robbie.position.flatten(), 200, 300);
+			CompositeArc compositeArc = CompositeArc.create(this.car, this.groundIntercept.position.flatten(),
+					packet.robbie.position.flatten(), 200, 300);
 			if(this.ballPosition.z < 120 && this.ballVelocity.z <= 0){
-				GameState gameState = new GameState().withBallState(new BallState().withPhysics(new PhysicsState().withVelocity(new DesiredVector3(0F, 0F, 0F)).withAngularVelocity(new DesiredVector3(0F, 0F, 0F))));
+				GameState gameState = new GameState().withBallState(
+						new BallState().withPhysics(new PhysicsState().withVelocity(new DesiredVector3(0F, 0F, 0F))
+								.withAngularVelocity(new DesiredVector3(0F, 0F, 0F))));
 				RLBotDll.setGameState(gameState.buildPacket());
 			}
 
@@ -106,7 +106,8 @@ public class TestBot extends DataBot {
 
 		Intercept aerialIntercept = (AERIAL_TYPE == AerialType.DODGE_STRIKE ? this.aerialDodge : this.aerialDouble);
 		if(aerialIntercept != null && (packet.time - 0.5) > timeSet){
-			this.action = new Aerial(this, aerialIntercept, AERIAL_TYPE).withAbortCondition(new BallTouchedAbort(this, packet.ball.latestTouch, this.playerIndex));
+			this.action = new Aerial(this, aerialIntercept, AERIAL_TYPE)
+					.withAbortCondition(new BallTouchedAbort(this, packet.ball.latestTouch, this.playerIndex));
 			return this.action.getOutput(packet);
 		}else{
 			this.action = null;

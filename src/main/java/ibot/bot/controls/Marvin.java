@@ -8,6 +8,7 @@ public class Marvin {
 
 	/**
 	 * Time until throttle full stop.
+	 *
 	 * @param throttleSpeed
 	 * @return
 	 */
@@ -17,6 +18,7 @@ public class Marvin {
 
 	/**
 	 * Time until pitch full stop.
+	 *
 	 * @param pitchSpeed
 	 * @return
 	 */
@@ -26,6 +28,7 @@ public class Marvin {
 
 	/**
 	 * Time until yaw full stop.
+	 *
 	 * @param yawSpeed
 	 * @return
 	 */
@@ -35,6 +38,7 @@ public class Marvin {
 
 	/**
 	 * Time until roll full stop.
+	 *
 	 * @param rollSpeed
 	 * @return
 	 */
@@ -54,6 +58,7 @@ public class Marvin {
 
 	/**
 	 * PD steer to point.
+	 *
 	 * @param ang
 	 * @param angVel
 	 * @return
@@ -64,17 +69,20 @@ public class Marvin {
 
 	/**
 	 * PD throttle to point
+	 *
 	 * @param loc
 	 * @param vel
 	 * @param brakes
 	 * @return
 	 */
 	public static double throttlePoint(double loc, double vel, double brakes){
-		return Math.signum(loc - brakes * tfs(vel) * vel) * MathsUtils.clamp((Math.abs(loc) + Math.abs(vel)) * DT, -1, 1);
+		return Math.signum(loc - brakes * tfs(vel) * vel)
+				* MathsUtils.clamp((Math.abs(loc) + Math.abs(vel)) * DT, -1, 1);
 	}
 
 	/**
 	 * PD throttle to point
+	 *
 	 * @param loc
 	 * @param vel
 	 * @return
@@ -85,6 +93,7 @@ public class Marvin {
 
 	/**
 	 * PD throttle to velocity.
+	 *
 	 * @param vel
 	 * @param deltaSpeed
 	 * @param lastThrottle
@@ -108,42 +117,47 @@ public class Marvin {
 		}else if(throttle == 0){
 			return -525 * Math.signum(vel);
 		}else{
-			return (-THROTTLE_ACCEL / THROTTLE_MAX_SPEED * Math.min(Math.abs(vel), THROTTLE_MAX_SPEED) + THROTTLE_ACCEL) * throttle;
+			return (-THROTTLE_ACCEL / THROTTLE_MAX_SPEED * Math.min(Math.abs(vel), THROTTLE_MAX_SPEED) + THROTTLE_ACCEL)
+					* throttle;
 		}
 	}
 
-	//	/**
-	//	 * PD yaw to point.
-	//	 * @param ang
-	//	 * @param angVel
-	//	 * @return
-	//	 */
-	//	public static double yawPoint(double ang, double angVel){
-	//		return Math.signum(range180(ang - angVel * yfs(angVel), 1)) * MathsUtils.clamp(Math.abs(ang) * 5 + Math.abs(angVel), -1, 1);
-	//	}
+	// /**
+	// * PD yaw to point.
+	// * @param ang
+	// * @param angVel
+	// * @return
+	// */
+	// public static double yawPoint(double ang, double angVel){
+	// return Math.signum(range180(ang - angVel * yfs(angVel), 1)) *
+	// MathsUtils.clamp(Math.abs(ang) * 5 + Math.abs(angVel), -1, 1);
+	// }
 	//
-	//	/**
-	//	 * PD pitch to point.
-	//	 * @param ang
-	//	 * @param angVel
-	//	 * @return
-	//	 */
-	//	public static double pitchPoint(double ang, double angVel){
-	//		return Math.signum(range180(-ang - angVel * pfs(angVel), 1)) * MathsUtils.clamp(Math.abs(ang) * 5 + Math.abs(angVel), -1, 1);
-	//	}
+	// /**
+	// * PD pitch to point.
+	// * @param ang
+	// * @param angVel
+	// * @return
+	// */
+	// public static double pitchPoint(double ang, double angVel){
+	// return Math.signum(range180(-ang - angVel * pfs(angVel), 1)) *
+	// MathsUtils.clamp(Math.abs(ang) * 5 + Math.abs(angVel), -1, 1);
+	// }
 	//
-	//	/**
-	//	 * PD roll to point.
-	//	 * @param ang
-	//	 * @param angVel
-	//	 * @return
-	//	 */
-	//	public static double rollPoint(double ang, double angVel){
-	//		return Math.signum(range180(-ang + angVel * rfs(angVel), 1)) * MathsUtils.clamp(Math.abs(ang) * 4 + Math.abs(angVel), -1, 1);
-	//	}
+	// /**
+	// * PD roll to point.
+	// * @param ang
+	// * @param angVel
+	// * @return
+	// */
+	// public static double rollPoint(double ang, double angVel){
+	// return Math.signum(range180(-ang + angVel * rfs(angVel), 1)) *
+	// MathsUtils.clamp(Math.abs(ang) * 4 + Math.abs(angVel), -1, 1);
+	// }
 
 	/**
 	 * P velocity boost control.
+	 *
 	 * @param vel
 	 * @param deltaVel
 	 * @param lastBoost
@@ -166,6 +180,7 @@ public class Marvin {
 
 	/**
 	 * P velocity boost control.
+	 *
 	 * @param vel
 	 * @param deltaVel
 	 * @return
@@ -176,6 +191,7 @@ public class Marvin {
 
 	/**
 	 * Limits any angle a to [-pi, pi] range, example: Range180(270, 180) = -90.
+	 *
 	 * @param a
 	 * @param pi
 	 * @return
@@ -191,7 +207,9 @@ public class Marvin {
 	}
 
 	/**
-	 * Limits any angle a to [-Math.PI, Math.PI] range, example: Range180(270, 180) = -90.
+	 * Limits any angle a to [-Math.PI, Math.PI] range, example: Range180(270, 180)
+	 * = -90.
+	 *
 	 * @param a
 	 * @return
 	 */
@@ -201,6 +219,7 @@ public class Marvin {
 
 	/**
 	 * Limits any angle to [0, 2 * pi] range.
+	 *
 	 * @param a
 	 * @param pi
 	 * @return
@@ -211,6 +230,7 @@ public class Marvin {
 
 	/**
 	 * Limits any angle to [0, 2 * Math.PI] range.
+	 *
 	 * @param a
 	 * @return
 	 */

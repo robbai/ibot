@@ -37,7 +37,8 @@ public abstract class Action extends Output {
 	}
 
 	protected void setFinished(boolean finished){
-		if(this.finished) return;
+		if(this.finished)
+			return;
 		this.finished = finished;
 	}
 

@@ -19,11 +19,8 @@ public class Rotator {
 
 	public static Rotator fromAngularVelocity(CarOrientation orientation, rlbot.flat.Vector3 vector3){
 		Vector3 angularVelocity = new Vector3(vector3);
-		return new Rotator(
-				orientation.forward.dot(angularVelocity),
-				orientation.right.dot(angularVelocity),
-				orientation.up.dot(angularVelocity)
-				);
+		return new Rotator(orientation.forward.dot(angularVelocity), orientation.right.dot(angularVelocity),
+				orientation.up.dot(angularVelocity));
 	}
 
 }

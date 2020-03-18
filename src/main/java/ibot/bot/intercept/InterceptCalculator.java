@@ -20,8 +20,10 @@ public class InterceptCalculator extends StaticClass {
 
 	public static final Vector2 xSkew = new Vector2(Math.sqrt(0.2) * 2, Math.sqrt(0.2));
 
-	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, OptionalDouble boost, AerialType type, Mode mode, boolean kickoff, boolean chooseStrongest){
-		if(BallPrediction.isEmpty()) return null;
+	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, OptionalDouble boost, AerialType type,
+			Mode mode, boolean kickoff, boolean chooseStrongest){
+		if(BallPrediction.isEmpty())
+			return null;
 
 		Vector3 carPosition = car.position;
 		Vector3 interceptFrom = carPosition;
@@ -36,7 +38,8 @@ public class InterceptCalculator extends StaticClass {
 //		for(int i = (type == AerialType.DODGE_STRIKE ? (int)((Constants.MAX_DODGE_DELAY + Aerial.DODGE_TIME - 0.1) * 60) : ballPrediction.slicesLength() - 1); i >= 0; i--){
 			Slice slice = BallPrediction.get(i);
 
-			if(type == AerialType.DODGE_STRIKE && slice.time - car.time > (Constants.MAX_DODGE_DELAY + DriveStrike.DODGE_TIME - 0.05)){
+			if(type == AerialType.DODGE_STRIKE
+					&& slice.time - car.time > (Constants.MAX_DODGE_DELAY + DriveStrike.DODGE_TIME - 0.05)){
 				break;
 			}
 
@@ -44,10 +47,13 @@ public class InterceptCalculator extends StaticClass {
 			if(mode == Mode.DROPSHOT){
 				if(slice.position.y * car.sign <= 0){
 					Vector3 offset = interceptFrom.minus(slice.position).normalised();
-					interceptPosition = slice.position.plus(offset.withZ(MathsUtils.clamp(offset.z, -0.5 / Math.abs(offset.z), 0)).scaleToMagnitude(RADIUS));
+					interceptPosition = slice.position.plus(offset
+							.withZ(MathsUtils.clamp(offset.z, -0.5 / Math.abs(offset.z), 0)).scaleToMagnitude(RADIUS));
 				}else{
 					Vector3 offset = interceptFrom.minus(slice.position).normalised();
-					interceptPosition = slice.position.plus(offset.withZ(MathsUtils.clamp(offset.z, 0.65 / Math.abs(offset.z), 1 / Math.abs(offset.z))).scaleToMagnitude(RADIUS));
+					interceptPosition = slice.position.plus(
+							offset.withZ(MathsUtils.clamp(offset.z, 0.65 / Math.abs(offset.z), 1 / Math.abs(offset.z)))
+									.scaleToMagnitude(RADIUS));
 				}
 			}else{
 //				Vector2 goal = new Vector2(0, (mode == Mode.HOOPS ? Constants.PITCH_LENGTH_HOOPS : Constants.PITCH_WIDTH_SOCCAR) * car.sign);
@@ -76,20 +82,24 @@ public class InterceptCalculator extends StaticClass {
 			}
 		}
 
-		if(strongest == null) return null; // Uh oh.
+		if(strongest == null)
+			return null; // Uh oh.
 		return new Intercept(strongestSlice.position, car, strongestInterceptPosition, strongestSlice.time);
 	}
 
-	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, AerialType type, Mode mode, boolean kickoff, boolean chooseStrongest){
+	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, AerialType type, Mode mode,
+			boolean kickoff, boolean chooseStrongest){
 		return aerialCalculate(bot, car, gravity, OptionalDouble.empty(), type, mode, kickoff, chooseStrongest);
 	}
 
-	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, double boost, AerialType type, Mode mode, boolean kickoff, boolean chooseStrongest){
+	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, double boost, AerialType type,
+			Mode mode, boolean kickoff, boolean chooseStrongest){
 		return aerialCalculate(bot, car, gravity, OptionalDouble.of(boost), type, mode, kickoff, chooseStrongest);
 	}
 
 	public static Intercept groundCalculate(DataBot bot, Car car, Mode mode){
-		if(BallPrediction.isEmpty()) return null;
+		if(BallPrediction.isEmpty())
+			return null;
 
 		final double RADIUS = (Constants.BALL_RADIUS + 15);
 
@@ -125,11 +135,12 @@ public class InterceptCalculator extends StaticClass {
 	}
 
 	/**
-	 * This is intended for finding a intercept on the wall to aim for
-	 * when the car is still on the ground, it is imprecise.
+	 * This is intended for finding a intercept on the wall to aim for when the car
+	 * is still on the ground, it is imprecise.
 	 */
 	public static Intercept wallCalculate(DataBot bot, Car car, double maxTime){
-		if(BallPrediction.isEmpty() || bot.mode != Mode.SOCCAR || !car.onFlatGround) return null;
+		if(BallPrediction.isEmpty() || bot.mode != Mode.SOCCAR || !car.onFlatGround)
+			return null;
 
 		final double RADIUS = (Constants.BALL_RADIUS + 30);
 		final double WALL_SIZE = 260;
@@ -139,19 +150,23 @@ public class InterceptCalculator extends StaticClass {
 			Slice slice = BallPrediction.get(i);
 			boolean finalSlice = (i == BallPrediction.SLICE_COUNT - 1);
 
-			if(slice.time > maxTime) break;
+			if(slice.time > maxTime)
+				break;
 
 			boolean xSide = (Math.abs(slice.position.x) > Constants.PITCH_WIDTH_SOCCAR - WALL_SIZE);
 			boolean ySide = (Math.abs(slice.position.y) > Constants.PITCH_LENGTH_SOCCAR - WALL_SIZE);
 //			if(!(xSide || ySide)) continue;
 //			if(!(xSide || (ySide && slice.position.y * car.sign < 0))) continue;
-			if(!(xSide || ySide) || slice.position.y * car.sign > Constants.PITCH_LENGTH_SOCCAR - 600) continue;
+			if(!(xSide || ySide) || slice.position.y * car.sign > Constants.PITCH_LENGTH_SOCCAR - 600)
+				continue;
 
-			if(Math.abs(slice.position.x) < Constants.GOAL_WIDTH && slice.position.z < Constants.GOAL_HEIGHT) continue;
+			if(Math.abs(slice.position.x) < Constants.GOAL_WIDTH && slice.position.z < Constants.GOAL_HEIGHT)
+				continue;
 
 			Vector3 local = MathsUtils.local(car, slice.position);
 //			if(local.z < 250) continue;
-			if(slice.position.z < 275) continue;
+			if(slice.position.z < 275)
+				continue;
 
 //			Vector2 goal = (car.team == bot.team ? bot.enemyGoal.flatten() : bot.homeGoal.flatten());
 //			Vector3 offset = slice.position.minus(goal).withZ(0).scaledToMagnitude(RADIUS);
@@ -160,7 +175,11 @@ public class InterceptCalculator extends StaticClass {
 			double initialVelocity = car.velocity.dot(slice.position.minus(car.position).normalised());
 
 			if(finalSlice || DrivePhysics.maxDistance(slice.time - car.time, initialVelocity, car.boost) > distance){
-				Vector3 interceptPosition = slice.position.minus(car.position).multiply(new Vector3(xSide || Math.abs(car.position.x) < Constants.GOAL_WIDTH + 200 ? VIOLENCE : 0, ySide ? VIOLENCE : 0, 0)).plus(car.position);
+				Vector3 interceptPosition = slice.position.minus(car.position)
+						.multiply(new Vector3(
+								xSide || Math.abs(car.position.x) < Constants.GOAL_WIDTH + 200 ? VIOLENCE : 0,
+								ySide ? VIOLENCE : 0, 0))
+						.plus(car.position);
 				return new Intercept(slice.position, car, interceptPosition, slice.time);
 			}
 		}
@@ -176,7 +195,8 @@ public class InterceptCalculator extends StaticClass {
 	}
 
 	public static Intercept groundCalculate(CarSlice[] slices, Car car){
-		if(slices == null) return null;
+		if(slices == null)
+			return null;
 
 		final double RADIUS = 60;
 
@@ -187,7 +207,8 @@ public class InterceptCalculator extends StaticClass {
 			double initialVelocity = car.velocity.dot(slice.position.minus(car.position).normalised());
 
 			if(DrivePhysics.maxDistance(slice.time - car.time, initialVelocity, car.boost) > distance){
-				Vector3 interceptPosition = slice.position.plus(car.position.minus(slice.position).scaleToMagnitude(RADIUS));
+				Vector3 interceptPosition = slice.position
+						.plus(car.position.minus(slice.position).scaleToMagnitude(RADIUS));
 				return new Intercept(slice.position, car, interceptPosition, slice.time);
 			}
 		}

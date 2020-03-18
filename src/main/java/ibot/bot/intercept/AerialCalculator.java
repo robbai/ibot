@@ -24,9 +24,11 @@ public class AerialCalculator {
 	}
 
 	/*
-	 * https://raw.githubusercontent.com/samuelpmish/RLUtilities/master/src/mechanics/aerial.cc
+	 * https://raw.githubusercontent.com/samuelpmish/RLUtilities/master/src/
+	 * mechanics/aerial.cc
 	 */
-	public static AerialCalculator isViable(Car car, Vector3 target, double globalTime, double gravityAcceleration, AerialType type){
+	public static AerialCalculator isViable(Car car, Vector3 target, double globalTime, double gravityAcceleration,
+			AerialType type){
 		double time = (globalTime - car.time);
 
 		Vector3 gravity = Vector3.Z.scale(gravityAcceleration);
@@ -35,8 +37,13 @@ public class AerialCalculator {
 		Vector3 carVelocity = car.velocity.plus(gravity.scale(time));
 
 		if(car.hasWheelContact){
-			carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE * ((type == AerialType.DOUBLE_JUMP ? 2 : 1) * time - Aerial.JUMP_TIME) + Constants.JUMP_ACCELERATION * (time * Aerial.JUMP_TIME - 0.5 * Aerial.JUMP_TIME * Aerial.JUMP_TIME)));
-			carVelocity = carVelocity.plus(car.orientation.up.scale((type == AerialType.DOUBLE_JUMP ? 2 : 1) * Constants.JUMP_IMPULSE + Constants.JUMP_ACCELERATION * Aerial.JUMP_TIME));
+			carPosition = carPosition.plus(car.orientation.up
+					.scale(Constants.JUMP_IMPULSE * ((type == AerialType.DOUBLE_JUMP ? 2 : 1) * time - Aerial.JUMP_TIME)
+							+ Constants.JUMP_ACCELERATION
+									* (time * Aerial.JUMP_TIME - 0.5 * Aerial.JUMP_TIME * Aerial.JUMP_TIME)));
+			carVelocity = carVelocity
+					.plus(car.orientation.up.scale((type == AerialType.DOUBLE_JUMP ? 2 : 1) * Constants.JUMP_IMPULSE
+							+ Constants.JUMP_ACCELERATION * Aerial.JUMP_TIME));
 		}
 
 		Vector3 deltaPosition = target.minus(carPosition);
@@ -63,7 +70,8 @@ public class AerialCalculator {
 		final double easy = 0.94;
 
 		double finalVelocity = velocityEstimate.magnitude();
-		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY) && (boostEstimate < MathsUtils.lerp(easy, 1, 0.5) * car.boost) && (Math.abs(ratio) < easy);
+		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY)
+				&& (boostEstimate < MathsUtils.lerp(easy, 1, 0.5) * car.boost) && (Math.abs(ratio) < easy);
 		return new AerialCalculator(finalVelocity, requiredAcceleration, viable);
 	}
 

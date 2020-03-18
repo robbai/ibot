@@ -1,7 +1,7 @@
 package ibot.input;
 
-import ibot.vectors.Vector3;
 import rlbot.flat.Physics;
+import ibot.vectors.Vector3;
 
 public class Car {
 
@@ -24,7 +24,7 @@ public class Car {
 		this.forwardVelocity = this.orientation.forward.dot(this.velocity);
 		this.forwardVelocityAbs = Math.abs(forwardVelocity);
 
-		//      this.angularVelocity = new Vector3(physics.angularVelocity());
+		// this.angularVelocity = new Vector3(physics.angularVelocity());
 		this.angularVelocity = Rotator.fromAngularVelocity(this.orientation, physics.angularVelocity());
 
 		this.boost = playerInfo.boost();

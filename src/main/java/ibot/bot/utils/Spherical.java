@@ -32,11 +32,13 @@ public class Spherical {
 
 	@Override
 	public String toString(){
-		return "(polar=" + MathsUtils.round(this.polar, 2) + ", azimuthal=" + MathsUtils.round(this.azimuthal, 2) + ", radial=" + MathsUtils.round(this.radial, 2) + ")";
+		return "(polar=" + MathsUtils.round(this.polar, 2) + ", azimuthal=" + MathsUtils.round(this.azimuthal, 2)
+				+ ", radial=" + MathsUtils.round(this.radial, 2) + ")";
 	}
 
 	public String toOtherString(){
-		return "(perpendicular=" + MathsUtils.round(this.getPerpendicular(), 2) + ", elevation=" + MathsUtils.round(this.getElevation(), 2) + ", radial=" + MathsUtils.round(this.radial, 2) + ")";
+		return "(perpendicular=" + MathsUtils.round(this.getPerpendicular(), 2) + ", elevation="
+				+ MathsUtils.round(this.getElevation(), 2) + ", radial=" + MathsUtils.round(this.radial, 2) + ")";
 	}
 
 }

@@ -18,7 +18,8 @@ import ibot.vectors.Vector3;
 
 public class Aerial extends Action {
 
-	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + Constants.DT * 3), ANGLE_THRESHOLD = 0.3;
+	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + Constants.DT * 3),
+			ANGLE_THRESHOLD = 0.3;
 
 	public final Intercept intercept;
 	public final AerialType type;
@@ -73,7 +74,8 @@ public class Aerial extends Action {
 		renderRoot(car, timeLeft, timeElapsed);
 
 		bot.stackRenderString(MathsUtils.round(timeElapsed, 3) + "s", Color.WHITE);
-		Vector3 carPosition = car.position.plus(car.velocity.scale(timeLeft).plus(gravity.scale(0.5 * Math.pow(timeLeft, 2))));
+		Vector3 carPosition = car.position
+				.plus(car.velocity.scale(timeLeft).plus(gravity.scale(0.5 * Math.pow(timeLeft, 2))));
 		Vector3 carVelocity = car.velocity.plus(gravity.scale(timeLeft));
 		if(this.startGrounded){
 			if(timeElapsed <= JUMP_TIME){
@@ -83,11 +85,13 @@ public class Aerial extends Action {
 					carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE * timeLeft));
 				}
 				carVelocity = carVelocity.plus(car.orientation.up.scale(Constants.JUMP_ACCELERATION * tau));
-				carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_ACCELERATION * tau * (timeLeft - 0.5 * tau)));
+				carPosition = carPosition
+						.plus(car.orientation.up.scale(Constants.JUMP_ACCELERATION * tau * (timeLeft - 0.5 * tau)));
 			}
 			if(timeElapsed <= DOUBLE_JUMP_TIME && this.type == AerialType.DOUBLE_JUMP){
 				carVelocity = carVelocity.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE));
-				carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE * (timeLeft - DOUBLE_JUMP_TIME)));
+				carPosition = carPosition
+						.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE * (timeLeft - DOUBLE_JUMP_TIME)));
 			}
 		}
 
@@ -121,28 +125,35 @@ public class Aerial extends Action {
 		}
 		bot.stackRenderString((int)deltaPosition.magnitude() + "uu", Color.WHITE);
 
-		//		Vector3 deltaVelocity = deltaPosition.scale(1 / timeLeft);
-		//		Spherical spherical = new Spherical(MathsUtils.local(car.orientation, direction));
-		//		double angle = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
-		//		double minVelocity = (Constants.BOOST_AIR_ACCELERATION * 3 * Constants.DT);
-		//		if(car.orientation.forward.dot(deltaVelocity) < minVelocity){
-		//			turnTarget = this.intercept.interceptPosition.minus(car.position);
-		//			boost = false;
-		//			throttle = 0;
-		//		}else{
-		//			turnTarget = direction;
-		//			if(!bot.lastControls.holdBoost()) minVelocity = (Constants.BOOST_AIR_ACCELERATION * 0.1);
-		//			boost = (car.orientation.forward.dot(deltaVelocity) > minVelocity && angle < ANGLE_THRESHOLD);
-		//			throttle = 0;
-		//		}
-		//		bot.stackRenderString((int)deltaVelocity.magnitude() + "uu/s", Color.WHITE);
+		// Vector3 deltaVelocity = deltaPosition.scale(1 / timeLeft);
+		// Spherical spherical = new Spherical(MathsUtils.local(car.orientation,
+		// direction));
+		// double angle = Math.abs(spherical.getElevation()) +
+		// Math.abs(spherical.getPerpendicular());
+		// double minVelocity = (Constants.BOOST_AIR_ACCELERATION * 3 * Constants.DT);
+		// if(car.orientation.forward.dot(deltaVelocity) < minVelocity){
+		// turnTarget = this.intercept.interceptPosition.minus(car.position);
+		// boost = false;
+		// throttle = 0;
+		// }else{
+		// turnTarget = direction;
+		// if(!bot.lastControls.holdBoost()) minVelocity =
+		// (Constants.BOOST_AIR_ACCELERATION * 0.1);
+		// boost = (car.orientation.forward.dot(deltaVelocity) > minVelocity && angle <
+		// ANGLE_THRESHOLD);
+		// throttle = 0;
+		// }
+		// bot.stackRenderString((int)deltaVelocity.magnitude() + "uu/s", Color.WHITE);
 
-		//		if(true){
-		//			double B = ((2 * deltaPosition.magnitude()) / (Constants.BOOST_AIR_ACCELERATION * timeLeft));
-		//			bot.stackRenderString("Boost time: " + MathsUtils.round(B, 3) + "s", Color.WHITE);
-		//			B = B * car.orientation.forward.dot(deltaPosition.normalised());
-		//			bot.stackRenderString("Boost time direction: " + MathsUtils.round(B, 3) + "s", Color.WHITE);
-		//		}
+		// if(true){
+		// double B = ((2 * deltaPosition.magnitude()) /
+		// (Constants.BOOST_AIR_ACCELERATION * timeLeft));
+		// bot.stackRenderString("Boost time: " + MathsUtils.round(B, 3) + "s",
+		// Color.WHITE);
+		// B = B * car.orientation.forward.dot(deltaPosition.normalised());
+		// bot.stackRenderString("Boost time direction: " + MathsUtils.round(B, 3) +
+		// "s", Color.WHITE);
+		// }
 
 		// Crosshair.
 		final double size = 75;
@@ -153,30 +164,36 @@ public class Aerial extends Action {
 		bot.renderer.drawLine3d(bot.colour, this.intercept.position.plus(line1), this.intercept.position.minus(line1));
 
 		// Rendering.
-		//bot.stackRenderString((int)acceleration + "uu/s^2", Color.WHITE, car.position, 1, 1);
-		//		bot.renderer.drawLine3d(Color.WHITE, this.intercept.interceptPosition, carPosition);
-		//		bot.renderer.drawLine3d(Color.BLACK, result, result.plus(prophecy));
-		//		bot.renderer.drawLine3d(Color.RED, this.intercept.interceptPosition, this.intercept.interceptPosition.plus(car.orientation.forward.minus(correction.normalised()).scale(500)));
+		// bot.stackRenderString((int)acceleration + "uu/s^2", Color.WHITE,
+		// car.position, 1, 1);
+		// bot.renderer.drawLine3d(Color.WHITE, this.intercept.interceptPosition,
+		// carPosition);
+		// bot.renderer.drawLine3d(Color.BLACK, result, result.plus(prophecy));
+		// bot.renderer.drawLine3d(Color.RED, this.intercept.interceptPosition,
+		// this.intercept.interceptPosition.plus(car.orientation.forward.minus(correction.normalised()).scale(500)));
 		bot.renderer.drawLine3d(Color.RED, car.position, car.position.plus(direction.scale(500)));
 		bot.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(car.orientation.forward.scale(500)));
 
 		// Controls.
 		ControlsOutput controls = new ControlsOutput().withJump(jump).withBoost(boost).withThrottle(throttle);
 		if(orient){
-			//			Vector3 targetForward = (correction.magnitude() < 35 ? this.intercept.ballPosition.minus(car.position) : correction);
-			//			Vector3 targetForward = correction;
+			// Vector3 targetForward = (correction.magnitude() < 35 ?
+			// this.intercept.ballPosition.minus(car.position) : correction);
+			// Vector3 targetForward = correction;
 			controls.withOrient(AirControl.getRollPitchYaw(car, turnTarget, this.targetUp));
-			//			controls.withOrient(AirControl.getRollPitchYaw(car, turnTarget));
+			// controls.withOrient(AirControl.getRollPitchYaw(car, turnTarget));
 		}
 		return controls;
 	}
 
-	private void render(Vector3 carPosition, Vector3 carVelocity, CarOrientation carOrientation, boolean hasDoubleJumped, double timeLeft, double timeElapsed){
+	private void render(Vector3 carPosition, Vector3 carVelocity, CarOrientation carOrientation,
+			boolean hasDoubleJumped, double timeLeft, double timeElapsed){
 		Vector3 lastCarPosition = new Vector3(carPosition);
 
 		// Jumping.
 		if(this.startGrounded){
-			if(timeElapsed == 0 || (timeElapsed >= DOUBLE_JUMP_TIME && !hasDoubleJumped && this.type == AerialType.DOUBLE_JUMP)){
+			if(timeElapsed == 0
+					|| (timeElapsed >= DOUBLE_JUMP_TIME && !hasDoubleJumped && this.type == AerialType.DOUBLE_JUMP)){
 				// Jump or double-jump.
 				carVelocity = carVelocity.plus(carOrientation.up.scale(Constants.JUMP_IMPULSE));
 				hasDoubleJumped |= (timeElapsed >= DOUBLE_JUMP_TIME);
@@ -190,9 +207,11 @@ public class Aerial extends Action {
 		// Gravity.
 		carVelocity = carVelocity.plus(gravity.scale(Constants.DT));
 
-		//		if(bot.lastControls.holdBoost() && timeElapsed < Constants.DT * 3){
-		//			carVelocity = carVelocity.plus(carOrientation.forward.scale(Constants.BOOST_AIR_ACCELERATION * Constants.DT));
-		//		}
+		// if(bot.lastControls.holdBoost() && timeElapsed < Constants.DT * 3){
+		// carVelocity =
+		// carVelocity.plus(carOrientation.forward.scale(Constants.BOOST_AIR_ACCELERATION
+		// * Constants.DT));
+		// }
 
 		carVelocity = carVelocity.scale(Math.min(1, Constants.MAX_CAR_VELOCITY / carVelocity.magnitude()));
 
@@ -203,7 +222,8 @@ public class Aerial extends Action {
 
 		bot.renderer.drawLine3d(bot.altColour, lastCarPosition, carPosition);
 
-		if(timeLeft <= 0) return;
+		if(timeLeft <= 0)
+			return;
 		render(carPosition, carVelocity, carOrientation, hasDoubleJumped, timeLeft, timeElapsed);
 	}
 

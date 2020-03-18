@@ -17,7 +17,8 @@ public class SliceOffPredictionAbort extends AbortCondition {
 	@Override
 	public boolean shouldAbort(DataPacket packet){
 		Slice timed = this.getClosestToTime();
-		boolean condition = Math.abs(timed.time - this.slice.time) > 0.2 || timed.position.distance(this.slice.position) > 80;
+		boolean condition = Math.abs(timed.time - this.slice.time) > 0.2
+				|| timed.position.distance(this.slice.position) > 80;
 //		if(condition) System.out.println(this.bot.getIndex() + ": yeah @ " + (int)(packet.secondsElapsed / 60) + ":" + (int)(packet.secondsElapsed % 60));
 		return condition;
 	}

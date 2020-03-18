@@ -4,18 +4,48 @@
 apply plugin: 'java'
 apply plugin: 'application'
 
+
 sourceCompatibility = 1.8
 
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+    	// Spotless.
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:3.27.2"
+    }
+}
+
+
 repositories {
+    mavenCentral()
     jcenter()
 }
 
+
 mainClassName = 'ibot.Main'
+
 
 // This directory will be created and the interface dll copied into it at runtime.
 // The end result is that the interface dll will be available for loading.
 def dllDirectory = 'build/dll'
 applicationDefaultJvmArgs = ["-Djna.library.path=" + dllDirectory]
+
+
+// Spotless.
+apply plugin: com.diffplug.gradle.spotless.SpotlessPlugin
+spotless {
+    java {
+        importOrderFile './spotless/importorder.importorder'  // An import ordering file, exported from Eclipse
+        removeUnusedImports()                                 // Removes any unused imports
+        eclipse().configFile './spotless/format.xml'          // XML file dumped out by the Eclipse formatter
+    }
+}
+
 
 dependencies {
     // Fetch the framework jar file
@@ -24,6 +54,7 @@ dependencies {
     // This is makes it easy to find the dll when running in intellij, where JVM args don't get passed from gradle.
     runtime files(dllDirectory)
 }
+
 
 task checkPipUpgradeSafety {
     doLast {
@@ -57,9 +88,11 @@ task pipInstallRequirements {
     }
 }
 
+
 task createDllDirectory {
     mkdir dllDirectory
 }
+
 
 // Installs or updates RLBot. Empty task for now. It still does stuff because it "dependsOn" tasks that do things.
 task updateRLBot {
@@ -68,7 +101,9 @@ task updateRLBot {
 }
 updateRLBot.dependsOn pipInstallRequirements
 
+
 applicationDistribution.exclude(dllDirectory)
+
 
 // You can run gradew.bat distZip to generate a zip file suitable for tournament submissions.
 // It will be generated in build/distributions
@@ -79,6 +114,7 @@ distZip {
         }
     }
 }
+
 
 // This is the same as distZip, but not zipped. Handy for testing your tournament submission more rapidly.
 installDist {

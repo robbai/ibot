@@ -28,7 +28,7 @@ public class CarTrajectory {
 		// Determine acceleration.
 		Vector3 acceleration = car.velocity.minus(lastVelocity).scale(1D / dt);
 		double maxAcceleration = maxAcceleration(car);
-		if(acceleration.magnitude() > maxAcceleration) {
+		if(acceleration.magnitude() > maxAcceleration){
 			acceleration = acceleration.scaleToMagnitude(maxAcceleration);
 		}
 
@@ -54,7 +54,8 @@ public class CarTrajectory {
 			time += STEP;
 
 			i++;
-			if(i >= path.length) break;
+			if(i >= path.length)
+				break;
 		}
 
 		return path;

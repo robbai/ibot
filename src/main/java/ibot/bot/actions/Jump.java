@@ -23,7 +23,8 @@ public class Jump extends Action {
 		double timeElapsed = (packet.time - this.getStartTime());
 		this.setFinished(timeElapsed > this.holdTime);
 		ControlsOutput controls = new ControlsOutput().withJump(timeElapsed <= this.holdTime).withThrottle(0.02);
-		if(timeElapsed > this.holdTime + ORIENT_DELAY) controls.withOrient(AirControl.getRollPitchYaw(packet.car, packet.car.velocity.withZ(0)));
+		if(timeElapsed > this.holdTime + ORIENT_DELAY)
+			controls.withOrient(AirControl.getRollPitchYaw(packet.car, packet.car.velocity.withZ(0)));
 		return controls;
 	}
 

@@ -44,11 +44,13 @@ public class Vector2 {
 	}
 
 	/**
-	 * If magnitude is negative, we will return a vector facing the opposite direction.
+	 * If magnitude is negative, we will return a vector facing the opposite
+	 * direction.
 	 */
 	public Vector2 scaleToMagnitude(double magnitude){
 		if(isZero()){
-			//            throw new IllegalStateException("Cannot scale up a vector with length zero!");
+			// throw new IllegalStateException("Cannot scale up a vector with length
+			// zero!");
 			return new Vector2(0, 0);
 		}
 		double scaleRequired = magnitude / magnitude();
@@ -73,8 +75,9 @@ public class Vector2 {
 	}
 
 	public Vector2 normalised(){
-		if (isZero()){
-			//            throw new IllegalStateException("Cannot normalize a vector with length zero!");
+		if(isZero()){
+			// throw new IllegalStateException("Cannot normalize a vector with length
+			// zero!");
 			return new Vector2(0, 0);
 		}
 		return scale(1 / magnitude());
@@ -89,8 +92,9 @@ public class Vector2 {
 	}
 
 	/**
-	 * The correction angle is how many radians you need to rotate this vector to make it line up with the "ideal"
-	 * vector. This is very useful for deciding which direction to steer.
+	 * The correction angle is how many radians you need to rotate this vector to
+	 * make it line up with the "ideal" vector. This is very useful for deciding
+	 * which direction to steer.
 	 */
 	public double correctionAngle(Vector2 ideal){
 		double currentRad = Math.atan2(y, x);
@@ -115,9 +119,9 @@ public class Vector2 {
 
 	@Override
 	public String toString(){
-		if(this.magnitude() <= 1) {
+		if(this.magnitude() <= 1){
 			return "(" + MathsUtils.round(x, 2) + ", " + MathsUtils.round(y, 2) + ")";
-		}else {
+		}else{
 			return "(" + (int)x + ", " + (int)y + ")";
 		}
 	}
@@ -147,13 +151,15 @@ public class Vector2 {
 	}
 
 	public Vector2 rotate(double angle){
-		return new Vector2(this.x * Math.cos(angle) - this.y * Math.sin(angle), this.x * Math.sin(angle) + this.y * Math.cos(angle));
+		return new Vector2(this.x * Math.cos(angle) - this.y * Math.sin(angle),
+				this.x * Math.sin(angle) + this.y * Math.cos(angle));
 	}
 
 	public Vector3 withAngleZ(double radians){
 		double magnitude = this.magnitude();
 		double z = (Math.tan(radians) * magnitude);
-		//		System.out.println("vec3 with mag=" + (int)magnitude + "uu at incline=" + (int)Math.toDegrees(radians) + "deg makes z=" + (int)z + "uu");
+		// System.out.println("vec3 with mag=" + (int)magnitude + "uu at incline=" +
+		// (int)Math.toDegrees(radians) + "deg makes z=" + (int)z + "uu");
 		return this.withZ(z);
 	}
 

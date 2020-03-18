@@ -11,7 +11,7 @@ import ibot.vectors.Vector3;
 
 public class HalfFlip extends Action {
 
-	private static final double[] TIMING = new double[] {0.1, 0.15, 0.3, 0.45};
+	private static final double[] TIMING = new double[] { 0.1, 0.15, 0.3, 0.45 };
 
 	private static final double MIN_RADIANS = Math.toRadians(155), MAX_RADIANS = Math.toRadians(170);
 
@@ -23,7 +23,8 @@ public class HalfFlip extends Action {
 
 		this.directionGlobal = bot.car.orientation.forward.withZ(0).scaleToMagnitude(-1);
 
-		double radians = Vector2.Y.correctionAngle(MathsUtils.local(bot.car.orientation, this.directionGlobal).flatten());
+		double radians = Vector2.Y
+				.correctionAngle(MathsUtils.local(bot.car.orientation, this.directionGlobal).flatten());
 		radians = Math.copySign(MathsUtils.clamp(Math.abs(radians), MIN_RADIANS, MAX_RADIANS), radians);
 
 		this.pitch = -Math.cos(radians);
@@ -43,7 +44,8 @@ public class HalfFlip extends Action {
 		if(timeElapsed < TIMING[0]){
 			return new ControlsOutput().withJump(true).withPitch(this.pitch).withBoost(boost);
 		}else if(timeElapsed < TIMING[2]){
-			ControlsOutput controls = new ControlsOutput().withJump(timeElapsed > TIMING[1]).withBoost(boost).withPitch(this.pitch);
+			ControlsOutput controls = new ControlsOutput().withJump(timeElapsed > TIMING[1]).withBoost(boost)
+					.withPitch(this.pitch);
 			if(controls.holdJump() == this.bot.lastControls.holdJump()){
 				controls.withRoll(orient[0]);
 			}

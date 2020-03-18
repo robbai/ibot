@@ -24,7 +24,8 @@ public class ControlsOutput extends Output implements ControllerState {
 	private boolean handbrake;
 	private boolean useItem;
 
-	public ControlsOutput(){}
+	public ControlsOutput(){
+	}
 
 	public ControlsOutput(ControlsOutput other){
 		this.steer = other.steer;

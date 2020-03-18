@@ -13,14 +13,15 @@ public class CompositeArc {
 
 	private static final boolean RESCALE = false;
 
-	private static final double[] SIGNS = new double[] {1, -1};
+	private static final double[] SIGNS = new double[] { 1, -1 };
 
 	public Vector2 p1, p2, t1, t2, n1, n2, o1, o2, q1, q2;
 	private double length, r1, r2, phi1, phi2;
 
 	private double[] L = new double[5];
 
-	private CompositeArc(double _L0, Vector2 _p1, Vector2 _t1, double _r1, double _L4, Vector2 _p2, Vector2 _t2, double _r2){
+	private CompositeArc(double _L0, Vector2 _p1, Vector2 _t1, double _r1, double _L4, Vector2 _p2, Vector2 _t2,
+			double _r2){
 		this.p1 = _p1.plus(_t1.scale(_L0));
 		this.t1 = new Vector2(_t2);
 		this.n1 = this.t1.cross();
@@ -73,11 +74,13 @@ public class CompositeArc {
 
 		Vector2 pq1 = this.q1.minus(this.p1).normalised();
 		this.phi1 = 2D * Math.signum(pq1.dot(this.t1)) * Math.asin(Math.abs(pq1.dot(this.n1)));
-		if(this.phi1 < 0) this.phi1 += 2D * Math.PI;
+		if(this.phi1 < 0)
+			this.phi1 += 2D * Math.PI;
 
 		Vector2 pq2 = this.q2.minus(this.p2).normalised();
 		this.phi2 = -2D * Math.signum(pq2.dot(this.t2)) * Math.asin(Math.abs(pq2.dot(this.n2)));
-		if(this.phi2 < 0) this.phi2 += 2D * Math.PI;
+		if(this.phi2 < 0)
+			this.phi2 += 2D * Math.PI;
 
 		L[0] = _L0;
 		L[1] = this.phi1 * Math.abs(this.r1);
@@ -87,7 +90,8 @@ public class CompositeArc {
 		length = L[0] + L[1] + L[2] + L[3] + L[4];
 	}
 
-	public static CompositeArc create(Car car, Vector2 ballPosition, Vector2 goal, double finalVelocity, double L0, double L4){
+	public static CompositeArc create(Car car, Vector2 ballPosition, Vector2 goal, double finalVelocity, double L0,
+			double L4){
 		// Sanitise.
 		L0 = Math.max(1, Math.abs(L0));
 		L4 = Math.max(1, Math.abs(L4));
@@ -96,8 +100,10 @@ public class CompositeArc {
 		Vector2 carPosition = car.position.flatten();
 
 		Vector2 goalDirection = goal.minus(ballPosition).normalised();
-		double playerTurnRadius = DrivePhysics.getTurnRadius(Math.max(Constants.MAX_CAR_THROTTLE_VELOCITY, car.forwardVelocityAbs)), ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
-		//		double playerTurnRadius = 1000, ballTurnRadius = 1000;
+		double playerTurnRadius = DrivePhysics
+				.getTurnRadius(Math.max(Constants.MAX_CAR_THROTTLE_VELOCITY, car.forwardVelocityAbs)),
+				ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
+		// double playerTurnRadius = 1000, ballTurnRadius = 1000;
 
 		// Find the shortest composite-arc based on a rough guess of the travel time.
 		CompositeArc shortestCompositeArc = null;
@@ -107,7 +113,9 @@ public class CompositeArc {
 				for(double ballTurn : SIGNS){
 					CompositeArc compositeArc;
 					try{
-						compositeArc = new CompositeArc(L0, carPosition, carDirection.scale(direction), playerTurn * playerTurnRadius, L4, ballPosition, goalDirection, ballTurn * ballTurnRadius);
+						compositeArc = new CompositeArc(L0, carPosition, carDirection.scale(direction),
+								playerTurn * playerTurnRadius, L4, ballPosition, goalDirection,
+								ballTurn * ballTurnRadius);
 					}catch(Exception e){
 						compositeArc = null;
 						e.printStackTrace();
@@ -194,10 +202,8 @@ public class CompositeArc {
 	 * Matrix 2x2
 	 */
 	private static Pair<Vector2, Vector2> rotation(double theta){
-		return new Pair<Vector2, Vector2>(
-				new Vector2(Math.cos(theta), -Math.sin(theta)),
-				new Vector2(Math.sin(theta), Math.cos(theta))
-				);
+		return new Pair<Vector2, Vector2>(new Vector2(Math.cos(theta), -Math.sin(theta)),
+				new Vector2(Math.sin(theta), Math.cos(theta)));
 	}
 
 	/**
@@ -231,9 +237,8 @@ public class CompositeArc {
 		double firstArcFinalVel = DrivePhysics.getSpeedFromRadius(this.getR1()) * sign,
 				firstArcAccTime = DrivePhysics.timeToReachVel(velocity, boost, firstArcFinalVel);
 
-		double traversed = (reverse
-				? DrivePhysics.maxDistanceReverse(firstArcAccTime, velocity)
-						: DrivePhysics.maxDistance(firstArcAccTime, velocity, boost));
+		double traversed = (reverse ? DrivePhysics.maxDistanceReverse(firstArcAccTime, velocity)
+				: DrivePhysics.maxDistance(firstArcAccTime, velocity, boost));
 		velocity = firstArcFinalVel;
 		boost -= (Constants.BOOST_USAGE * firstArcAccTime);
 		double time = firstArcAccTime;
@@ -247,8 +252,8 @@ public class CompositeArc {
 		double secondArcMaxVel = DrivePhysics.getSpeedFromRadius(this.getR2()) * sign;
 
 		double distanceToTravel = (this.getLength() - (includeL0 ? 0 : this.getL(0)) - (includeL4 ? 0 : this.getL(4)));
-		double straightawayTime = (includeL4 ? (reverse
-				? DrivePhysics.minTravelTimeReverse(velocity, distanceToTravel - traversed, secondArcMaxVel)
+		double straightawayTime = (includeL4
+				? (reverse ? DrivePhysics.minTravelTimeReverse(velocity, distanceToTravel - traversed, secondArcMaxVel)
 						: DrivePhysics.minTravelTime(velocity, boost, distanceToTravel - traversed, secondArcMaxVel))
 				: 0);
 

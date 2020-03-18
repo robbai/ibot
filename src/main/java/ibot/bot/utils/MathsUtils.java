@@ -16,7 +16,8 @@ public class MathsUtils extends StaticClass {
 	}
 
 	public static Vector3 local(CarOrientation orientation, Vector3 relative){
-		return new Vector3(orientation.right.dot(relative), orientation.forward.dot(relative), orientation.up.dot(relative));
+		return new Vector3(orientation.right.dot(relative), orientation.forward.dot(relative),
+				orientation.up.dot(relative));
 	}
 
 	public static Vector3 local(Car car, Vector3 vector){
@@ -55,12 +56,13 @@ public class MathsUtils extends StaticClass {
 	public static double correctAngle(double angle){
 		if(Math.abs(angle) > Math.PI){
 			angle -= Math.copySign(Math.PI * 2, angle);
-        }
+		}
 		return angle;
 	}
 
 	public static Vector3 global(Car car, Vector3 local){
-		return car.position.plus(car.orientation.right.scale(local.x)).plus(car.orientation.forward.scale(local.y)).plus(car.orientation.up.scale(local.z));
+		return car.position.plus(car.orientation.right.scale(local.x)).plus(car.orientation.forward.scale(local.y))
+				.plus(car.orientation.up.scale(local.z));
 	}
 
 	/**
@@ -69,18 +71,19 @@ public class MathsUtils extends StaticClass {
 	public static Pair<Double, Double> closestPointToLineSegment(Vector2 P, Pair<Vector2, Vector2> lineSegment){
 		Vector2 A = lineSegment.getOne(), B = lineSegment.getTwo();
 
-	    Vector2 v = B.minus(A);
-	    Vector2 u = A.minus(P);
+		Vector2 v = B.minus(A);
+		Vector2 u = A.minus(P);
 
-	    double vu = v.dot(u);
-	    double vv = v.dot(v);
+		double vu = v.dot(u);
+		double vv = v.dot(v);
 
-	    double t = -vu / vv;
+		double t = -vu / vv;
 
-	    if(t >= 0 && t <= 1) return new Pair<Double, Double>(P.distance(A.lerp(B, t)), t);
+		if(t >= 0 && t <= 1)
+			return new Pair<Double, Double>(P.distance(A.lerp(B, t)), t);
 
-	    double distA = P.distance(A), distB = P.distance(B);
-	    return new Pair<Double, Double>(Math.min(distA, distB), MathsUtils.clamp(t, 0, 1));
+		double distA = P.distance(A), distB = P.distance(B);
+		return new Pair<Double, Double>(Math.min(distA, distB), MathsUtils.clamp(t, 0, 1));
 	}
 
 	public static double shorterAngle(double radians){

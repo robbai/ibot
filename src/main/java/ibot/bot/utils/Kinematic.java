@@ -43,13 +43,18 @@ public class Kinematic {
 		if(displacement.isPresent()){
 			return displacement;
 		}else if(!initialVelocity.isPresent()){
-			return OptionalDouble.of(finalVelocity.getAsDouble() * time.getAsDouble() - 0.5 * acceleration.getAsDouble() * Math.pow(time.getAsDouble(), 2));
+			return OptionalDouble.of(finalVelocity.getAsDouble() * time.getAsDouble()
+					- 0.5 * acceleration.getAsDouble() * Math.pow(time.getAsDouble(), 2));
 		}else if(!finalVelocity.isPresent()){
-			return OptionalDouble.of(initialVelocity.getAsDouble() * time.getAsDouble() + 0.5 * acceleration.getAsDouble() * Math.pow(time.getAsDouble(), 2));
+			return OptionalDouble.of(initialVelocity.getAsDouble() * time.getAsDouble()
+					+ 0.5 * acceleration.getAsDouble() * Math.pow(time.getAsDouble(), 2));
 		}else if(!acceleration.isPresent()){
-			return OptionalDouble.of(0.5 * (initialVelocity.getAsDouble() + finalVelocity.getAsDouble()) * time.getAsDouble());
+			return OptionalDouble
+					.of(0.5 * (initialVelocity.getAsDouble() + finalVelocity.getAsDouble()) * time.getAsDouble());
 		}else if(!time.isPresent()){
-			return OptionalDouble.of((Math.pow(finalVelocity.getAsDouble(), 2) - Math.pow(initialVelocity.getAsDouble(), 2)) / (2 * acceleration.getAsDouble()));
+			return OptionalDouble
+					.of((Math.pow(finalVelocity.getAsDouble(), 2) - Math.pow(initialVelocity.getAsDouble(), 2))
+							/ (2 * acceleration.getAsDouble()));
 		}
 		return OptionalDouble.empty();
 	}
@@ -60,11 +65,14 @@ public class Kinematic {
 		}else if(!displacement.isPresent()){
 			return OptionalDouble.of(finalVelocity.getAsDouble() - acceleration.getAsDouble() * time.getAsDouble());
 		}else if(!finalVelocity.isPresent()){
-			return OptionalDouble.of(displacement.getAsDouble() / time.getAsDouble() - (acceleration.getAsDouble() * time.getAsDouble()) / 2);
+			return OptionalDouble.of(displacement.getAsDouble() / time.getAsDouble()
+					- (acceleration.getAsDouble() * time.getAsDouble()) / 2);
 		}else if(!acceleration.isPresent()){
-			return OptionalDouble.of((2 * displacement.getAsDouble()) / time.getAsDouble() - finalVelocity.getAsDouble());
+			return OptionalDouble
+					.of((2 * displacement.getAsDouble()) / time.getAsDouble() - finalVelocity.getAsDouble());
 		}else if(!time.isPresent()){
-			return OptionalDouble.of(Math.sqrt(Math.pow(finalVelocity.getAsDouble(), 2) - 2 * acceleration.getAsDouble() * displacement.getAsDouble()));
+			return OptionalDouble.of(Math.sqrt(Math.pow(finalVelocity.getAsDouble(), 2)
+					- 2 * acceleration.getAsDouble() * displacement.getAsDouble()));
 		}
 		return OptionalDouble.empty();
 	}
@@ -75,11 +83,14 @@ public class Kinematic {
 		}else if(!displacement.isPresent()){
 			return OptionalDouble.of(initialVelocity.getAsDouble() + acceleration.getAsDouble() * time.getAsDouble());
 		}else if(!initialVelocity.isPresent()){
-			return OptionalDouble.of(displacement.getAsDouble() / time.getAsDouble() + (acceleration.getAsDouble() * time.getAsDouble()) / 2);
+			return OptionalDouble.of(displacement.getAsDouble() / time.getAsDouble()
+					+ (acceleration.getAsDouble() * time.getAsDouble()) / 2);
 		}else if(!acceleration.isPresent()){
-			return OptionalDouble.of((2 * displacement.getAsDouble()) / time.getAsDouble() - initialVelocity.getAsDouble());
+			return OptionalDouble
+					.of((2 * displacement.getAsDouble()) / time.getAsDouble() - initialVelocity.getAsDouble());
 		}else if(!time.isPresent()){
-			return OptionalDouble.of(Math.sqrt(2 * acceleration.getAsDouble() * displacement.getAsDouble() + Math.pow(initialVelocity.getAsDouble(), 2)));
+			return OptionalDouble.of(Math.sqrt(2 * acceleration.getAsDouble() * displacement.getAsDouble()
+					+ Math.pow(initialVelocity.getAsDouble(), 2)));
 		}
 		return OptionalDouble.empty();
 	}
@@ -88,13 +99,20 @@ public class Kinematic {
 		if(acceleration.isPresent()){
 			return acceleration;
 		}else if(!displacement.isPresent()){
-			return OptionalDouble.of((finalVelocity.getAsDouble() - initialVelocity.getAsDouble()) / time.getAsDouble());
+			return OptionalDouble
+					.of((finalVelocity.getAsDouble() - initialVelocity.getAsDouble()) / time.getAsDouble());
 		}else if(!initialVelocity.isPresent()){
-			return OptionalDouble.of((2 * (finalVelocity.getAsDouble() * time.getAsDouble() - displacement.getAsDouble())) / Math.pow(time.getAsDouble(), 2));
+			return OptionalDouble
+					.of((2 * (finalVelocity.getAsDouble() * time.getAsDouble() - displacement.getAsDouble()))
+							/ Math.pow(time.getAsDouble(), 2));
 		}else if(!finalVelocity.isPresent()){
-			return OptionalDouble.of((2 * (displacement.getAsDouble() - initialVelocity.getAsDouble() * time.getAsDouble())) / Math.pow(time.getAsDouble(), 2));
+			return OptionalDouble
+					.of((2 * (displacement.getAsDouble() - initialVelocity.getAsDouble() * time.getAsDouble()))
+							/ Math.pow(time.getAsDouble(), 2));
 		}else if(!time.isPresent()){
-			return OptionalDouble.of((Math.pow(finalVelocity.getAsDouble(), 2) - Math.pow(initialVelocity.getAsDouble(), 2)) / (2 * displacement.getAsDouble()));
+			return OptionalDouble
+					.of((Math.pow(finalVelocity.getAsDouble(), 2) - Math.pow(initialVelocity.getAsDouble(), 2))
+							/ (2 * displacement.getAsDouble()));
 		}
 		return OptionalDouble.empty();
 	}
@@ -103,13 +121,18 @@ public class Kinematic {
 		if(time.isPresent()){
 			return time;
 		}else if(!displacement.isPresent()){
-			return OptionalDouble.of((finalVelocity.getAsDouble() - initialVelocity.getAsDouble()) / acceleration.getAsDouble());
+			return OptionalDouble
+					.of((finalVelocity.getAsDouble() - initialVelocity.getAsDouble()) / acceleration.getAsDouble());
 		}else if(!initialVelocity.isPresent()){
-			return OptionalDouble.of((finalVelocity.getAsDouble() - Math.sqrt(Math.pow(finalVelocity.getAsDouble(), 2) - 2 * acceleration.getAsDouble() * displacement.getAsDouble())) / acceleration.getAsDouble());
+			return OptionalDouble.of((finalVelocity.getAsDouble() - Math.sqrt(Math.pow(finalVelocity.getAsDouble(), 2)
+					- 2 * acceleration.getAsDouble() * displacement.getAsDouble())) / acceleration.getAsDouble());
 		}else if(!finalVelocity.isPresent()){
-			return OptionalDouble.of((Math.sqrt(2 * acceleration.getAsDouble() * displacement.getAsDouble() + Math.pow(initialVelocity.getAsDouble(), 2)) - initialVelocity.getAsDouble()) / acceleration.getAsDouble());
+			return OptionalDouble.of((Math.sqrt(2 * acceleration.getAsDouble() * displacement.getAsDouble()
+					+ Math.pow(initialVelocity.getAsDouble(), 2)) - initialVelocity.getAsDouble())
+					/ acceleration.getAsDouble());
 		}else if(!acceleration.isPresent()){
-			return OptionalDouble.of((2 * displacement.getAsDouble()) / (initialVelocity.getAsDouble() + finalVelocity.getAsDouble()));
+			return OptionalDouble.of(
+					(2 * displacement.getAsDouble()) / (initialVelocity.getAsDouble() + finalVelocity.getAsDouble()));
 		}
 		return OptionalDouble.empty();
 	}

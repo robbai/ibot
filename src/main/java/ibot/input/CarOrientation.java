@@ -1,7 +1,7 @@
 package ibot.input;
 
-import ibot.vectors.Vector3;
 import rlbot.flat.PlayerInfo;
+import ibot.vectors.Vector3;
 
 public class CarOrientation extends Rotator {
 
@@ -19,11 +19,8 @@ public class CarOrientation extends Rotator {
 	}
 
 	public static CarOrientation fromFlatbuffer(PlayerInfo playerInfo){
-		return convert(
-				playerInfo.physics().rotation().roll(),
-				playerInfo.physics().rotation().pitch(),
-				playerInfo.physics().rotation().yaw()
-				);
+		return convert(playerInfo.physics().rotation().roll(), playerInfo.physics().rotation().pitch(),
+				playerInfo.physics().rotation().yaw());
 	}
 
 	private static CarOrientation convert(double roll, double pitch, double yaw){
@@ -35,7 +32,8 @@ public class CarOrientation extends Rotator {
 		double upY = Math.cos(yaw) * Math.sin(roll) - Math.cos(roll) * Math.sin(pitch) * Math.sin(yaw);
 		double upZ = Math.cos(roll) * Math.cos(pitch);
 
-		return new CarOrientation(roll, pitch, yaw, new Vector3(forwardX, forwardY, forwardZ), new Vector3(upX, upY, upZ));
+		return new CarOrientation(roll, pitch, yaw, new Vector3(forwardX, forwardY, forwardZ),
+				new Vector3(upX, upY, upZ));
 	}
 
 }

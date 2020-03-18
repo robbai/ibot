@@ -13,15 +13,18 @@ public class DrivePhysics extends StaticClass {
 	 * Piecewise-linear
 	 * https://samuelpmish.github.io/notes/RocketLeague/ground_control/#turning
 	 */
-	private static double[][] speedCurvature = new double[][] {{0.0, 0.00690}, {500.0, 0.00398}, {1000.0, 0.00235}, {1500.0, 0.00138}, {1750.0, 0.00110}, {2300.0, 0.00088}};
+	private static double[][] speedCurvature = new double[][] { { 0.0, 0.00690 }, { 500.0, 0.00398 },
+			{ 1000.0, 0.00235 }, { 1500.0, 0.00138 }, { 1750.0, 0.00110 }, { 2300.0, 0.00088 } };
 	/**
 	 * Piecewise-linear
 	 * https://samuelpmish.github.io/notes/RocketLeague/ground_control/#throttle
 	 */
-	private static double[][] throttleAcceleration = new double[][] {{0, 1600}, {1400, 160}, {1410, 0}, {2300, 0}};
+	private static double[][] throttleAcceleration = new double[][] { { 0, 1600 }, { 1400, 160 }, { 1410, 0 },
+			{ 2300, 0 } };
 
 	/*
-	 *  https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc#L34-L53
+	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc
+	 * #L34-L53
 	 */
 	private static double curvature(double v){
 		v = MathsUtils.clamp(Math.abs(v), 0, Constants.MAX_CAR_VELOCITY);
@@ -37,10 +40,11 @@ public class DrivePhysics extends StaticClass {
 	}
 
 	/*
-	 *  https://samuelpmish.github.io/notes/RocketLeague/ground_control/#acceleration
+	 * https://samuelpmish.github.io/notes/RocketLeague/ground_control/#acceleration
 	 */
 	public static double determineAcceleration(double velocityForward, double throttle, boolean boost){
-		if(boost) throttle = 1;
+		if(boost)
+			throttle = 1;
 
 		double boostAcceleration = (boost ? Constants.BOOST_GROUND_ACCELERATION : 0);
 
@@ -57,8 +61,10 @@ public class DrivePhysics extends StaticClass {
 		velocityForward = MathsUtils.clamp(Math.abs(velocityForward), 0, 2300);
 		for(int i = 0; i < 3; i++){
 			if(throttleAcceleration[i][0] <= velocityForward && velocityForward < throttleAcceleration[i + 1][0]){
-				double u = (velocityForward - throttleAcceleration[i][0]) / (throttleAcceleration[i + 1][0] - throttleAcceleration[i][0]);
-				return MathsUtils.lerp(throttleAcceleration[i][1], throttleAcceleration[i + 1][1], u) + boostAcceleration;
+				double u = (velocityForward - throttleAcceleration[i][0])
+						/ (throttleAcceleration[i + 1][0] - throttleAcceleration[i][0]);
+				return MathsUtils.lerp(throttleAcceleration[i][1], throttleAcceleration[i + 1][1], u)
+						+ boostAcceleration;
 			}
 		}
 
@@ -66,7 +72,8 @@ public class DrivePhysics extends StaticClass {
 	}
 
 	/*
-	 *  https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc#L55-L74
+	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc
+	 * #L55-L74
 	 */
 	public static double getSpeedFromRadius(double r){
 		double k = (1D / r);
@@ -83,7 +90,8 @@ public class DrivePhysics extends StaticClass {
 	}
 
 	public static double getTurnRadius(double v){
-		if(v == 0) return 0;
+		if(v == 0)
+			return 0;
 		return 1.0 / curvature(v);
 	}
 
@@ -118,11 +126,13 @@ public class DrivePhysics extends StaticClass {
 		double velocity = velocityForward, time = 0;
 		while(time < maxTime){
 			double acceleration = determineAcceleration(velocity, 1, boost >= 1);
-			if(Math.abs(acceleration) < 0.1) break;
+			if(Math.abs(acceleration) < 0.1)
+				break;
 
 			velocity += acceleration * Constants.DT;
 
-			if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY) return Constants.MAX_CAR_VELOCITY * Math.signum(velocity);
+			if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY)
+				return Constants.MAX_CAR_VELOCITY * Math.signum(velocity);
 
 			boost -= Constants.BOOST_USAGE * Constants.DT;
 
@@ -140,11 +150,13 @@ public class DrivePhysics extends StaticClass {
 		double velocity = velocityForward, time = 0, distance = 0;
 		while(time < 20 && distance < maxDistance){
 			double acceleration = determineAcceleration(velocity, 1, boost >= 1);
-			if(Math.abs(acceleration) < 0.1) break;
+			if(Math.abs(acceleration) < 0.1)
+				break;
 
 			velocity += acceleration * Constants.DT;
 
-			if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY) return Constants.MAX_CAR_VELOCITY * Math.signum(velocity);
+			if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY)
+				return Constants.MAX_CAR_VELOCITY * Math.signum(velocity);
 
 			distance += velocity * Constants.DT;
 
@@ -158,14 +170,16 @@ public class DrivePhysics extends StaticClass {
 
 	public static double maxDistance(double maxTime, double velocity, double boost){
 		boolean reverse = boost < -0.0001;
-		if(reverse) boost = 0;
+		if(reverse)
+			boost = 0;
 		double sign = (reverse ? -1 : 1);
 
 		double time = 0, displace = 0;
 
 		while(time < maxTime){
 			double acceleration = determineAcceleration(velocity, sign, boost >= 1);
-			if(Math.abs(acceleration) < 1 && Math.abs(velocity) < 1) break;
+			if(Math.abs(acceleration) < 1 && Math.abs(velocity) < 1)
+				break;
 
 			velocity += acceleration * Constants.DT;
 			velocity = MathsUtils.clamp(velocity, -Constants.MAX_CAR_VELOCITY, Constants.MAX_CAR_VELOCITY);
@@ -190,7 +204,8 @@ public class DrivePhysics extends StaticClass {
 
 		while(Math.abs(velocity - targetVelocity) > 50 && time < 10){
 			velocity += determineAcceleration(velocity, brake ? -1 : 1, boost >= 1 && !brake) * Constants.DT;
-			if(!brake) boost -= Constants.BOOST_USAGE * Constants.DT;
+			if(!brake)
+				boost -= Constants.BOOST_USAGE * Constants.DT;
 			time += Constants.DT;
 		}
 
@@ -199,7 +214,8 @@ public class DrivePhysics extends StaticClass {
 
 	public static double minTravelTime(double forwardVelocity, double startBoost, double targetDistance, double maxVel){
 		boolean reverse = startBoost < -0.0001;
-		if(reverse) startBoost = 0;
+		if(reverse)
+			startBoost = 0;
 		double sign = (reverse ? -1 : 1);
 
 		double time = 0, distance = 0, boost = startBoost, velocity = forwardVelocity;
@@ -207,7 +223,8 @@ public class DrivePhysics extends StaticClass {
 		while(distance < targetDistance){
 			velocity += determineAcceleration(velocity, sign, boost >= 1) * Constants.DT;
 			velocity = MathsUtils.clamp(velocity, -maxVel, maxVel);
-			if(velocity != maxVel) boost -= Constants.BOOST_USAGE * Constants.DT;
+			if(velocity != maxVel)
+				boost -= Constants.BOOST_USAGE * Constants.DT;
 			distance += velocity * sign * Constants.DT;
 			time += Constants.DT;
 		}

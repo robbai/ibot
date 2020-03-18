@@ -8,39 +8,40 @@ import ibot.vectors.Vector3;
  */
 public class BoostPad {
 
-    private final Vector2 location;
-    private final boolean isFullBoost;
+	private final Vector2 location;
+	private final boolean isFullBoost;
 
-    private boolean isActive = false;
-    private float timer;
+	private boolean isActive = false;
+	private float timer;
 
-    public BoostPad(rlbot.flat.BoostPad rawPad){
+	public BoostPad(rlbot.flat.BoostPad rawPad){
 		this.location = new Vector3(rawPad.location()).flatten();
 		this.isFullBoost = rawPad.isFullBoost();
 	}
 
 	public void setActive(boolean active){
-        isActive = active;
-    }
+		isActive = active;
+	}
 
-    public Vector2 getLocation(){
-        return location;
-    }
+	public Vector2 getLocation(){
+		return location;
+	}
 
-    public boolean isFullBoost(){
-        return isFullBoost;
-    }
+	public boolean isFullBoost(){
+		return isFullBoost;
+	}
 
-    public boolean isActive(){
-        return isActive;
-    }
+	public boolean isActive(){
+		return isActive;
+	}
 
 	public float getTimer(){
 		return timer;
 	}
 
 	public float getTimeLeft(){
-		if(!this.isActive()) return 0;
+		if(!this.isActive())
+			return 0;
 		return 10 - timer;
 	}
 

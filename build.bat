@@ -1,2 +1,3 @@
 gradlew.bat distZip
+
 PAUSE

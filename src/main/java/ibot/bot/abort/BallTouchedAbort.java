@@ -13,7 +13,7 @@ public class BallTouchedAbort extends AbortCondition {
 	public BallTouchedAbort(DataBot bot, Touch latestTouch, int... indexExceptions){
 		super(bot);
 		this.initialTouchSeconds = getSeconds(latestTouch);
-		this.indexExceptions = (indexExceptions == null ? new int[]{} : indexExceptions);
+		this.indexExceptions = (indexExceptions == null ? new int[] {} : indexExceptions);
 	}
 
 	public BallTouchedAbort(DataBot bot, Touch latestTouch){

@@ -1,8 +1,8 @@
 package ibot.prediction;
 
-import ibot.vectors.Vector3;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.cppinterop.RLBotInterfaceException;
+import ibot.vectors.Vector3;
 
 public class BallPrediction {
 

@@ -15,42 +15,44 @@ public class AirControl {
 		desiredForward = desiredForward.normalised();
 		desiredRoof = desiredRoof.normalised();
 
-	    Vector3 desiredFacingAngVel = car.orientation.forward.cross(desiredForward);
-	    Vector3 desiredUpVel = car.orientation.up.cross(desiredRoof);
+		Vector3 desiredFacingAngVel = car.orientation.forward.cross(desiredForward);
+		Vector3 desiredUpVel = car.orientation.up.cross(desiredRoof);
 
 //	    double pitch = desiredFacingAngVel.dot(orientation.right);
-	    double pitch;
-	    if(useRoof){
-	    	pitch = desiredUpVel.dot(orientation.right);
-	    }else{
-	    	pitch = desiredFacingAngVel.dot(orientation.right);
-	    }
-	    double yaw = -desiredFacingAngVel.dot(orientation.up);
-	    double roll = desiredUpVel.dot(orientation.forward);
+		double pitch;
+		if(useRoof){
+			pitch = desiredUpVel.dot(orientation.right);
+		}else{
+			pitch = desiredFacingAngVel.dot(orientation.right);
+		}
+		double yaw = -desiredFacingAngVel.dot(orientation.up);
+		double roll = desiredUpVel.dot(orientation.forward);
 
-	    double pitchVel = car.angularVelocity.pitch;
-	    double yawVel = -car.angularVelocity.yaw;
-	    double rollVel = car.angularVelocity.roll;
+		double pitchVel = car.angularVelocity.pitch;
+		double yawVel = -car.angularVelocity.yaw;
+		double rollVel = car.angularVelocity.roll;
 
-	    if(orientation.up.dot(desiredRoof) < -0.8 && orientation.forward.dot(desiredForward) > 0.8){
-	        if(roll == 0) roll = 1;
-	        roll *= Math.pow(10, 10);
-	    }
-	    if(orientation.forward.dot(desiredForward) < -0.8){
-	    	if(pitch == 0) pitch = 1;
-	    	pitch *= Math.pow(10, 10);
-	    }
+		if(orientation.up.dot(desiredRoof) < -0.8 && orientation.forward.dot(desiredForward) > 0.8){
+			if(roll == 0)
+				roll = 1;
+			roll *= Math.pow(10, 10);
+		}
+		if(orientation.forward.dot(desiredForward) < -0.8){
+			if(pitch == 0)
+				pitch = 1;
+			pitch *= Math.pow(10, 10);
+		}
 
-	    roll  = 5 * roll  + 0.30 * rollVel;
-	    yaw   = 5 * yaw   + 0.70 * yawVel;
-	    pitch = 5 * pitch + 0.90 * pitchVel;
+		roll = 5 * roll + 0.30 * rollVel;
+		yaw = 5 * yaw + 0.70 * yawVel;
+		pitch = 5 * pitch + 0.90 * pitchVel;
 
-	    if(orientation.forward.dot(desiredForward) < 0){
-	        roll = 0;
-	    }
+		if(orientation.forward.dot(desiredForward) < 0){
+			roll = 0;
+		}
 
 //	    return new double[] {roll, pitch, yaw};
-	    return new double[] {Math.signum(roll), Math.signum(pitch), Math.signum(yaw)};
+		return new double[] { Math.signum(roll), Math.signum(pitch), Math.signum(yaw) };
 //	    return new double[] {Marvin.curve1(roll), Marvin.curve1(pitch), Marvin.curve1(yaw)};
 //	    final double threshold = 0.1;
 //	    return new double[] {
