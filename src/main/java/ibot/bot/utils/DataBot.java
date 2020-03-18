@@ -133,7 +133,7 @@ public abstract class DataBot implements Bot {
 	private boolean lastWheelContact, lastIsKickoff, hasMatchEnded;
 	public Car enemyCar;
 	public Color colour, altColour;
-	public double gravity, time, carSpeed, sign, lastWheelContactTime, timeToHitGround, teamPossession,
+	public double gravity, time, carSpeed, sign, lastWheelContactTime, timeToHitGround, possession, teamPossession,
 			carForwardComponent;
 	public Intercept[] groundIntercepts;
 	public int team;
@@ -206,9 +206,11 @@ public abstract class DataBot implements Bot {
 						* this.car.sign,
 				0);
 		this.homeGoal = new Vector3(this.enemyGoal.x, this.enemyGoal.y * -1, this.enemyGoal.z);
-//		if(this.ballPosition.y * this.sign > Constants.PITCH_WIDTH_SOCCAR - 2000 && Math.abs(this.ballPosition.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS * 2){
-//			this.enemyGoal = this.enemyGoal.withX(-this.enemyGoal.x);
-//		}
+		// if(this.ballPosition.y * this.sign > Constants.PITCH_WIDTH_SOCCAR - 2000 &&
+		// Math.abs(this.ballPosition.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS
+		// * 2){
+		// this.enemyGoal = this.enemyGoal.withX(-this.enemyGoal.x);
+		// }
 
 		// Intercept.
 		this.aerialDodge = InterceptCalculator.aerialCalculate(this, car, gravity, car.boost, AerialType.DODGE_STRIKE,
@@ -236,6 +238,8 @@ public abstract class DataBot implements Bot {
 		this.teamPossession = MathsUtils
 				.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
 						- (this.earliestTeammateIntercept == null ? 10 : this.earliestTeammateIntercept.time), -10, 10);
+		this.possession = MathsUtils.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
+				- (this.groundIntercept == null ? 10 : this.groundIntercept.time), -10, 10);
 		this.groundIntercept = this.groundIntercepts[this.playerIndex];
 		this.wallIntercept = (this.groundIntercept == null ? null
 				: InterceptCalculator.wallCalculate(this, this.car, this.groundIntercept.time));
@@ -287,26 +291,29 @@ public abstract class DataBot implements Bot {
 				}
 				this.pickupBoost = !this.commit;
 			}
-//		}else if((this.ballPosition.y * this.sign < -3000 || this.goingInHomeGoal) && this.teamPossession < 0.4 && (!this.pickupBoost || this.lastMan)){
-//			this.commit = this.commit || (this.ballPosition.y - this.carPosition.y) * this.sign > 0 && !(this.furthestBack && this.lastMan);
-////			this.pickupBoost &= !this.commit;
-//			this.pickupBoost = false;
+			// }else if((this.ballPosition.y * this.sign < -3000 || this.goingInHomeGoal) &&
+			// this.teamPossession < 0.4 && (!this.pickupBoost || this.lastMan)){
+			// this.commit = this.commit || (this.ballPosition.y - this.carPosition.y) *
+			// this.sign > 0 && !(this.furthestBack && this.lastMan);
+			// this.pickupBoost &= !this.commit;
 		}else if(!this.car.onSuperFlatGround){
-			this.commit = this.groundIntercept.position.z > 300 || this.lastMan;
+			this.commit |= this.groundIntercept.position.z > 300 || this.lastMan;
 			this.pickupBoost &= !this.commit;
-//		}else if(this.lastMan && (!this.pickupBoost || this.teamPossession < 1.2) && packet.enemies.length > 0){
-//			this.commit = this.groundIntercept.position.y * this.sign < -MathsUtils.lerp(2000, 3000, 1 - Math.abs(this.car.position.x / Constants.PITCH_WIDTH_SOCCAR)) || this.earliestEnemyIntercept.time - this.groundIntercept.time > -0.25;
-//			this.pickupBoost = false;
-		}else if(this.pickupBoost/* && this.ballPosition.distance(this.homeGoal) > 2000 */){
-			// this.commit = this.lastMan && Math.abs((-3000 - this.ballPosition.y *
-			// this.sign) / (this.ballVelocity.y * this.sign)) < 0.5;
-			this.commit = false;
-			this.pickupBoost = !this.commit;
-			// }else if(this.groundIntercept.ballPosition.y * this.sign < 0){
-			// this.commit = !furthestBack || lastMan;
-			//// this.commit = furthestBack;
+			// }else if(this.lastMan && (!this.pickupBoost || this.teamPossession < 1.2) &&
+			// packet.enemies.length > 0){
+			// this.commit = this.groundIntercept.position.y * this.sign <
+			// -MathsUtils.lerp(2000, 3000, 1 - Math.abs(this.car.position.x /
+			// Constants.PITCH_WIDTH_SOCCAR)) || this.earliestEnemyIntercept.time -
+			// this.groundIntercept.time > -0.25;
+			// this.pickupBoost = false;
+			// }else if(this.pickupBoost && this.ballPosition.distance(this.homeGoal) >
+			// 2000){
+			// this.commit = false;
+			// this.pickupBoost = !this.commit;
+			// }else if(this.groundIntercept.position.y * this.sign < 0){
+			// this.commit = !this.furthestBack || this.lastMan;
 			// }else if(this.mode != Mode.DROPSHOT && (this.carPosition.y -
-			// this.groundIntercept.ballPosition.y) * this.sign > 0){
+			// this.groundIntercept.position.y) * this.sign > 0){
 			// this.commit = false;
 		}else{
 			boolean lastCommit = this.commit;
@@ -314,18 +321,18 @@ public abstract class DataBot implements Bot {
 			double carInterceptValue = interceptValue(this.groundIntercept, this.car,
 					(this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time), this.enemyGoal,
 					this.time);
+			double ourBonus = (lastCommit ? 0.4 : -0.2);
+			if(this.groundIntercept.position.y * this.sign < 0
+					&& (this.groundIntercept.position.y - this.car.position.y) * this.sign > 0){
+				ourBonus += (this.car.onFlatGround && (!this.furthestBack || (this.lastMan && this.possession > -0.5))
+						? 2
+						: 0.5);
+			}
 			for(Car c : packet.teammates){
 				if(c.isDemolished)
 					continue;
-				// if(interceptValue(this.groundIntercepts[c.index], c,
-				// this.enemyEarliestIntercept, this.enemyGoal, this.secondsElapsed) >
-				// carInterceptValue + (this.groundIntercept.ballPosition.y * this.sign < 0 ? 1
-				// : 0)){
-				// if(interceptValue(this.groundIntercepts[c.index], c,
-				// this.enemyEarliestIntercept, this.enemyGoal, this.secondsElapsed) >
-				// carInterceptValue + (this.pickupBoost ? -3 : 0)){
 				if(interceptValue(this.groundIntercepts[c.index], c, this.earliestEnemyIntercept.time, this.enemyGoal,
-						this.time) > carInterceptValue + (lastCommit ? 0.45 : -0.2)){
+						this.time) > carInterceptValue + ourBonus){
 					this.commit = false;
 					break;
 				}
@@ -339,8 +346,13 @@ public abstract class DataBot implements Bot {
 		if(!this.commit && this.pickupBoost && !lastPickupBoost){
 			this.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		}
-//		this.commit &= !this.furthestBack || this.earliestEnemyIntercept.time - this.groundIntercept.time > -0.8 || this.goingInHomeGoal || this.goingInEnemyGoal; // TODO
-//		this.commit &= !this.furthestBack || ((packet.enemies.length == 0 || this.earliestEnemyIntercept.time - this.groundIntercept.time > -1.5) || this.groundIntercept.position.y * this.sign < 3000) || this.goingInHomeGoal; // TODO
+		// this.commit &= !this.furthestBack || this.earliestEnemyIntercept.time -
+		// this.groundIntercept.time > -0.8 || this.goingInHomeGoal ||
+		// this.goingInEnemyGoal; // TODO
+		// this.commit &= !this.furthestBack || ((packet.enemies.length == 0 ||
+		// this.earliestEnemyIntercept.time - this.groundIntercept.time > -1.5) ||
+		// this.groundIntercept.position.y * this.sign < 3000) || this.goingInHomeGoal;
+		// // TODO
 
 		if(this.hasMatchEnded != packet.hasMatchEnded){
 			this.sendQuickChat(QuickChatSelection.PostGame_Gg, QuickChatSelection.PostGame_EverybodyDance,
@@ -448,7 +460,8 @@ public abstract class DataBot implements Bot {
 
 	protected static BoostPad findNearestBoost(Car car, ArrayList<BoostPad> boosts){
 		Vector2 carPosition = car.position.flatten();
-//		carPosition = carPosition.lerp(new Vector2(0, Constants.PITCH_LENGTH_SOCCAR * -car.sign), 0.3);
+		// carPosition = carPosition.lerp(new Vector2(0, Constants.PITCH_LENGTH_SOCCAR *
+		// -car.sign), 0.3);
 
 		BoostPad shortestBoost = null;
 		double shortestDistance = 0;

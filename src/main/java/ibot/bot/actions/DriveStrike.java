@@ -51,7 +51,6 @@ public class DriveStrike extends Action {
 
 		Car car = packet.car;
 
-		Vector3 localInterceptBall = MathsUtils.local(car, this.intercept.position);
 		Vector3 localIntercept = MathsUtils.local(car, this.intercept.intersectPosition);
 
 		double fullDistance = localIntercept.flatten().magnitude();
@@ -123,11 +122,17 @@ public class DriveStrike extends Action {
 				double[] orient = AirControl.getRollPitchYaw(car, desiredForward);
 				return new ControlsOutput().withJump(timeJumping < this.holdTime).withOrient(orient);
 			}
-			double radians = Vector2.Y.correctionAngle(localInterceptBall.flatten());
+
+			Vector3 localInterceptDodge = MathsUtils.local(car, getDodgeTarget(this.intercept));
+			double radians = Vector2.Y.correctionAngle(localInterceptDodge.flatten());
 			return new ControlsOutput().withJump(true).withPitch(-Math.cos(radians)).withYaw(-Math.sin(radians) * 2);
 		}
 
 		return (ControlsOutput)Handling.driveVelocity(bot, this.intercept.intersectPosition, false, false, targetSpeed);
+	}
+
+	public static Vector3 getDodgeTarget(Intercept intercept){
+		return intercept.intersectPosition.lerp(intercept.position, 0.3);
 	}
 
 }
