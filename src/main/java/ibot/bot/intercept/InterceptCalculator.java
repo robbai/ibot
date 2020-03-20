@@ -103,7 +103,7 @@ public class InterceptCalculator extends StaticClass {
 
 		final double RADIUS = (Constants.BALL_RADIUS + 15);
 
-		final double MAX_Z = JumpPhysics.maxZ(bot, Constants.JUMP_MAX_HOLD, true) + Constants.BALL_RADIUS * 0.25;
+		final double MAX_Z = JumpPhysics.maxZ(bot, Constants.JUMP_MAX_HOLD, true) + 50;
 
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
 			Slice slice = BallPrediction.get(i);

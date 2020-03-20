@@ -65,7 +65,7 @@ public class Aerial extends Action {
 
 		// Dodge.
 		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrike.DODGE_TIME * 2){
-			Vector3 local = MathsUtils.local(car, this.intercept.position);
+			Vector3 local = MathsUtils.local(car, DriveStrike.getDodgeTarget(this.intercept));
 			double radians = Vector2.Y.correctionAngle(local.flatten());
 			return new ControlsOutput().withJump(true).withPitch(-Math.cos(radians)).withYaw(-Math.sin(radians));
 		}

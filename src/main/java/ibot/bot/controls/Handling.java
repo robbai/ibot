@@ -93,7 +93,7 @@ public class Handling {
 		boolean wavedash = (!car.hasWheelContact && !car.hasDoubleJumped && car.orientation.up.z > 0.65);
 		boolean wavedashTime = (wavedash && bot.timeToHitGround < 0.07);
 
-		boolean boostDown = (bot.timeToHitGround > 1.05 && car.boost > 0);
+		boolean boostDown = (bot.timeToHitGround > 1.15 && car.boost > 0);
 		if(boostDown){
 			boost = car.orientation.forward.z < -0.8;
 		}
