@@ -1,6 +1,7 @@
 package ibot.vectors;
 
 import com.google.flatbuffers.FlatBufferBuilder;
+import ibot.bot.utils.Constants;
 
 public class Vector3 extends rlbot.vector.Vector3 {
 
@@ -156,6 +157,15 @@ public class Vector3 extends rlbot.vector.Vector3 {
 
 	public Vector3 setDistanceFrom(Vector3 other, double distance){
 		return this.minus(other).scaleToMagnitude(distance).plus(other);
+	}
+
+	public Vector3 clamp(double x, double y){
+		return new Vector3(Math.copySign(Math.min(Math.abs(this.x), x), this.x),
+				Math.copySign(Math.min(Math.abs(this.y), y), this.y), this.z);
+	}
+
+	public Vector3 clamp(){
+		return clamp(Constants.PITCH_WIDTH_SOCCAR - 250, Constants.PITCH_LENGTH_SOCCAR - 250);
 	}
 
 }

@@ -137,7 +137,7 @@ public class TestBot extends DataBot {
 							: this.groundIntercept.position,
 					false, false, this.time + 0.75);
 		}
-		this.action = new DriveStrike(this, this.groundIntercept)
+		this.action = new DriveStrike(this, this.groundIntercept, this.enemyGoal)
 				.withAbortCondition(new BallTouchedAbort(this, packet.ball.latestTouch, this.playerIndex));
 		return this.action.getOutput(packet);
 	}

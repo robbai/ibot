@@ -22,9 +22,13 @@ public class DriveStrike extends Action {
 	/*
 	 * Constants.
 	 */
-	public static final double MIN_JUMP_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 4);
+	public static final double MIN_JUMP_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 5);
 
 	public final Intercept intercept;
+
+	private final Vector3 enemyGoal;
+
+	private final boolean curve;
 
 	private final double holdTime, startUpZ;
 
@@ -34,9 +38,15 @@ public class DriveStrike extends Action {
 
 	private double lastGoTimeChange;
 
-	public DriveStrike(DataBot bot, Intercept intercept){
+	public DriveStrike(DataBot bot, Intercept intercept, Vector3 enemyGoal){
 		super(bot);
 		this.intercept = intercept;
+		this.enemyGoal = enemyGoal;
+
+		Car car = bot.car;
+		double angle = intercept.intersectPosition.minus(car.position).flatten()
+				.angle(enemyGoal.minus(car.position).flatten());
+		this.curve = (angle > Math.toRadians(40) && car.onFlatGround);
 
 		double z = MathsUtils.local(bot.car, intercept.intersectPosition).z;
 		double minZ = JumpPhysics.maxZ(bot, 0, false);
@@ -62,7 +72,9 @@ public class DriveStrike extends Action {
 		double targetSpeed = (fullDistance / timeLeft);
 		double maxZ = JumpPhysics.maxZ(bot, this.holdTime, true);
 		double jumpTime = JumpPhysics.timeZ(bot, Math.min(localIntercept.z, maxZ), this.holdTime);
+		double driveTime = Math.max(0, timeLeft - jumpTime);
 
+		this.go |= this.curve;
 		if(!this.go){
 			double goNecessaryTime = (car.forwardVelocityAbs / Constants.BRAKE_ACCELERATION);
 			boolean nowGo = targetSpeed >= DrivePhysics.maxVelocity(car.forwardVelocity, car.boost,
@@ -97,7 +109,8 @@ public class DriveStrike extends Action {
 			double accuracy = freeCar.minus(localIntercept).flatten().magnitude();
 			if(timeLeft - Constants.DT <= jumpTime)
 				System.out.println((int)accuracy + "uu");
-//			if((timeLeft - Constants.DT <= jumpTime || car.forwardVelocity < 0) && accuracy < 50){
+			// if((timeLeft - Constants.DT <= jumpTime || car.forwardVelocity < 0) &&
+			// accuracy < 50){
 			if(timeLeft - Constants.DT <= jumpTime){
 				this.jumpStart = OptionalDouble.of(time);
 			}
@@ -121,17 +134,23 @@ public class DriveStrike extends Action {
 			bot.stackRenderString(MathsUtils.round(timeLeft, 3) + "s", dodgeSoon ? Color.YELLOW : Color.WHITE);
 
 			if(!dodgeSoon){
-//				Vector3 desiredForward = MathsUtils.global(car, localVelocity.normalised().withZ(localIntercept.plus(MathsUtils.local(car.orientation, Vector3.Z.scale(100))).normalised().z));
-//				Vector3 desiredRoof = car.position.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z, 0.65);
+				// Vector3 desiredForward = MathsUtils.global(car,
+				// localVelocity.normalised().withZ(localIntercept.plus(MathsUtils.local(car.orientation,
+				// Vector3.Z.scale(100))).normalised().z));
+				// Vector3 desiredRoof =
+				// car.position.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z,
+				// 0.65);
 
 				Vector3 desiredForward = this.intercept.intersectPosition.plus(new Vector3(0, 0, 100))
 						.minus(car.position);
 
 				bot.renderer.drawLine3d(Color.RED, car.position,
 						car.position.plus(desiredForward.scaleToMagnitude(200)));
-//				bot.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(desiredRoof.scaleToMagnitude(200)));
+				// bot.renderer.drawLine3d(Color.GREEN, car.position,
+				// car.position.plus(desiredRoof.scaleToMagnitude(200)));
 
-//				double[] orient = AirControl.getRollPitchYaw(car, desiredForward, desiredRoof, true);
+				// double[] orient = AirControl.getRollPitchYaw(car, desiredForward,
+				// desiredRoof, true);
 				double[] orient = AirControl.getRollPitchYaw(car, desiredForward);
 				return new ControlsOutput().withJump(timeJumping < this.holdTime).withOrient(orient);
 			}
@@ -144,8 +163,19 @@ public class DriveStrike extends Action {
 					.withRoll(-Math.sin(this.radians.getAsDouble()) * 2);
 		}
 
-		ControlsOutput controls = (ControlsOutput)Handling.driveVelocity(bot, this.intercept.intersectPosition, false,
-				false, targetSpeed);
+		// Aim.
+		Vector3 target = this.intercept.intersectPosition;
+		if(this.curve){
+			double distance = car.position.distance(target);
+			distance *= MathsUtils.clamp((timeLeft - 1.5) * 0.6, 0, 0.6);
+			if(distance > 100){
+				target = target.plus(target.minus(this.enemyGoal).scaleToMagnitude(distance)).clamp();
+				bot.stackRenderString((int)distance + "uu", Color.MAGENTA);
+				bot.renderer.drawLine3d(Color.MAGENTA, car.position, target.withZ(car.position.z));
+			}
+		}
+
+		ControlsOutput controls = (ControlsOutput)Handling.driveVelocity(bot, target, false, false, targetSpeed);
 		if(!this.go){
 			if(Math.abs(controls.getSteer()) < 0.2)
 				controls.withThrottle(10 - car.forwardVelocity);

@@ -11,7 +11,7 @@ import ibot.vectors.Vector3;
 
 public class HalfFlip extends Action {
 
-	private static final double[] TIMING = new double[] { 0.1, 0.15, 0.3, 0.45 };
+	private static final double[] TIMING = new double[] { 0.075, 0.15, 0.3, 0.45 };
 
 	private static final double MIN_RADIANS = Math.toRadians(155), MAX_RADIANS = Math.toRadians(170);
 

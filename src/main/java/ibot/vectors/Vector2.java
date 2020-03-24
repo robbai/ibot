@@ -1,5 +1,6 @@
 package ibot.vectors;
 
+import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 
 public class Vector2 {
@@ -161,6 +162,15 @@ public class Vector2 {
 		// System.out.println("vec3 with mag=" + (int)magnitude + "uu at incline=" +
 		// (int)Math.toDegrees(radians) + "deg makes z=" + (int)z + "uu");
 		return this.withZ(z);
+	}
+
+	public Vector2 clamp(double x, double y){
+		return new Vector2(Math.copySign(Math.min(Math.abs(this.x), x), this.x),
+				Math.copySign(Math.min(Math.abs(this.y), y), this.y));
+	}
+
+	public Vector2 clamp(){
+		return clamp(Constants.PITCH_WIDTH_SOCCAR - 250, Constants.PITCH_LENGTH_SOCCAR - 250);
 	}
 
 }

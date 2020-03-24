@@ -5,15 +5,12 @@ import java.util.OptionalDouble;
 
 import ibot.boost.BoostManager;
 import ibot.bot.abort.BallTouchedAbort;
-import ibot.bot.abort.CommitAbort;
 import ibot.bot.abort.SliceOffPredictionAbort;
 import ibot.bot.actions.Action;
 import ibot.bot.actions.Aerial;
 import ibot.bot.actions.DriveStrike;
 import ibot.bot.actions.FastDodge;
 import ibot.bot.actions.Jump;
-import ibot.bot.actions.arcs.CompositeArc;
-import ibot.bot.actions.arcs.FollowArcs;
 import ibot.bot.controls.Handling;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
@@ -86,11 +83,12 @@ public class IBot extends DataBot {
 				Vector3 localIntercept = MathsUtils.local(this.car, aerialIntercept.position);
 				double radians = Vector2.Y.correctionAngle(localIntercept.flatten());
 				boolean theirSide = (aerialIntercept.position.y * this.sign >= 0);
-				if(betterThanDriveStrike
-						&& Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45) * (this.goingInHomeGoal ? 1.5 : 1)
+				if(betterThanDriveStrike && (Math.abs(this.possession) < 0.15 || (Math
+						.abs(radians) < Math.toRadians(doubleJump ? 35 : 45) * (this.goingInHomeGoal ? 1.5 : 1)
 						&& (this.groundIntercept == null
 								|| localIntercept.z > (localIntercept.magnitude() < 700 ? 90 : (theirSide ? 180 : 230))
-								|| (this.carPosition.z > Math.max(500, aerialIntercept.position.z)))){
+								|| (this.carPosition.z > Math.max(500, aerialIntercept.position.z)
+										&& this.mode == Mode.DROPSHOT))))){
 					// if(true){
 					// if(localIntercept.z > (doubleJump ? 190 : 110)){
 					this.action = new Aerial(this, aerialIntercept, type).withAbortCondition(
@@ -148,26 +146,27 @@ public class IBot extends DataBot {
 						Vector2 toIntercept = target.minus(this.car.position).flatten().normalised();
 						Vector2 trace = this.car.position.flatten()
 								.plus(toIntercept.scale((-this.sign * Constants.PITCH_LENGTH_SOCCAR) / toIntercept.y));
-//						if(Math.abs(trace.x) < Constants.GOAL_WIDTH + 250){
+						// if(Math.abs(trace.x) < Constants.GOAL_WIDTH + 250){
 						Vector3 xSkew = InterceptCalculator.xSkew.withZ(1);
 						if(xSkew.x * trace.x > 0){
 							xSkew = xSkew.withX(-xSkew.x);
 						}
 						target = this.groundIntercept.position.plus(this.groundIntercept.getOffset().multiply(xSkew));
-//						}
+						// }
 					}
 
 					double distance = MathsUtils.local(this.car, target).flatten().magnitude();
-					double addedOffset = 1500 * Math.floor(distance / 4000);
+					double addedOffset = 1500 * Math.floor(distance / 3000);
 					if(addedOffset > 0.001){
-						target = target.plus(target.minus(this.groundIntercept.position).scaleToMagnitude(addedOffset));
+						target = target.plus(target.minus(this.groundIntercept.position).scaleToMagnitude(addedOffset))
+								.clamp();
 					}else if(MathsUtils.local(this.car, this.groundIntercept.position).z > 160
 							&& this.car.hasWheelContact){
 						double radians = Vector2.Y.correctionAngle(localInterceptBall.flatten());
 						radians = MathsUtils.shorterAngle(radians);
 						if(Math.abs(this.carForwardComponent) > 0.975 /* && Math.abs(radians) < Math.toRadians(50) */){
-							this.action = new DriveStrike(this,
-									this.groundIntercept/* .withIntersectPosition(dodgeTarget) */).withAbortCondition(
+							this.action = new DriveStrike(this, this.groundIntercept.withIntersectPosition(dodgeTarget),
+									this.enemyGoal).withAbortCondition(
 											new BallTouchedAbort(this, packet.ball.latestTouch, this.playerIndex),
 											new SliceOffPredictionAbort(this, this.groundIntercept));
 							return this.action.getOutput(packet);
@@ -178,10 +177,11 @@ public class IBot extends DataBot {
 				}
 				this.renderer.drawLine3d(this.altColour, this.groundIntercept.intersectPosition,
 						this.groundIntercept.position);
+				boolean challenge = (Math.abs(this.possession) < 0.2);
 				this.renderer.drawRectangle3d(this.colour, this.groundIntercept.intersectPosition, 8, 8, true);
 				if(this.car.hasWheelContact && this.getTimeOnGround() > 0.2
 						&& (this.groundIntercept.time - this.time) < 0.3
-						&& Math.abs(this.lastControls.getSteer()) < (this.goingInHomeGoal ? 0.4 : 0.2)){
+						&& Math.abs(this.lastControls.getSteer()) < (this.goingInHomeGoal || challenge ? 0.4 : 0.2)){
 					// boolean opponentBlocking = false;
 					// for(Car car : packet.enemies){
 					// if(this.groundIntercept.position.minus(this.car.position).angle(car.position.minus(this.car.position))
@@ -190,8 +190,7 @@ public class IBot extends DataBot {
 					// break;
 					// }
 					// }
-					if(Math.abs(localInterceptBall.z) > 105
-							|| Math.abs(this.groundIntercept.time - this.earliestEnemyIntercept.time) < 0.15
+					if(Math.abs(localInterceptBall.z) > 105 || challenge
 							|| this.carSpeed < (this.car.onFlatGround ? 1100 : 1550)){
 						if((this.groundIntercept.time - this.time) < 0.255){
 							this.action = new FastDodge(this, dodgeTarget.minus(this.carPosition));
@@ -204,11 +203,18 @@ public class IBot extends DataBot {
 			}
 		}else{
 			boolean high = (this.car.position.z > 150);
+
 			// Intercept enemyIntersect = (this.furthestBack ? null :
 			// this.enemyIntersect());
-//			Intercept enemyIntersect = (!this.furthestBack && this.car.isSupersonic && this.groundIntercept.time - this.time > 1.1 ? this.enemyIntersect() : null);
+			// Intercept enemyIntersect = (!this.furthestBack && this.car.isSupersonic &&
+			// this.groundIntercept.time - this.time > 1.1 ? this.enemyIntersect() : null);
+//			Intercept enemyIntersect = this.enemyIntersect();
+//			if(enemyIntersect != null && (enemyIntersect.position.y - this.car.position.y) * this.sign > 0){
+//				enemyIntersect = null;
+//			}
+
 			this.pickupBoost = false;
-			if(carSpeed < 1300 && high && car.hasWheelContact && this.car.velocity.z < 450){
+			if(this.carSpeed < 1300 && high && this.car.hasWheelContact && this.car.velocity.z < 450){
 				this.action = new Jump(this, 30D / 120);
 				return action.getOutput(packet);
 
@@ -285,11 +291,13 @@ public class IBot extends DataBot {
 				// car.boost / 100), -car.sign));
 				// }
 			}else{
-				dontBoost = this.teamPossession > 0;
+//				dontBoost = this.teamPossession > 0;
+				dontBoost = !this.lastMan;
 
-				final double MIN_DEPTH = 0.4;
-				final double MAX_DEPTH = 0.85;
-				double depthLerp = MathsUtils.clamp((this.teamPossession * 0.5) + 0.25, 0, 1);
+				final double MIN_DEPTH = 0.3;
+				final double MAX_DEPTH = 0.8;
+//				double depthLerp = MathsUtils.clamp((this.teamPossession * 0.6) + 0.35, 0, 1);
+				double depthLerp = this.car.boost / 100;
 				this.stackRenderString("Depth: " + MathsUtils.round(depthLerp), this.colour);
 
 				// target = this.homeGoal.lerp(this.earliestEnemyIntercept.position,
@@ -298,7 +306,9 @@ public class IBot extends DataBot {
 
 				double goalDistance = this.earliestEnemyIntercept.position.distance(this.homeGoal);
 				Vector2 direction = this.earliestEnemyIntercept.getOffset().flatten().scaleToMagnitude(-1);
-//				direction = direction.plus(this.earliestEnemyIntercept.car.velocity.flatten().scale(0.3 / Constants.SUPERSONIC_VELOCITY));
+				// direction =
+				// direction.plus(this.earliestEnemyIntercept.car.velocity.flatten().scale(0.3 /
+				// Constants.SUPERSONIC_VELOCITY));
 				target = this.earliestEnemyIntercept.position.plus(direction
 						.scaleToMagnitude(goalDistance * (1 - MathsUtils.lerp(MIN_DEPTH, MAX_DEPTH, depthLerp))));
 				if(Math.abs(target.x) > Constants.PITCH_WIDTH_SOCCAR - 400){
@@ -308,16 +318,14 @@ public class IBot extends DataBot {
 					target = target.withY(Math.copySign(Constants.PITCH_LENGTH_SOCCAR - 400, target.y));
 				}
 
-				if(!this.furthestBack/*
-										 * || this.car.orientation.forward.y * this.sign > Math.sin(Math.toRadians(25))
-										 * || goalDistance > 6000
-										 */){
+//				if(this.furthestBack || this.possession > -0.2){
+				if(true){
 					if(this.teamPossession * this.earliestEnemyIntercept.position.y * this.sign > 0
 							|| this.furthestBack){
-						target = target.withX(target.x * 0.7);
+						target = target.withX(target.x * 0.6);
 					}
 
-					if(this.car.boost < 40 && target.y * this.sign < -1500 && goalDistance > 4000){
+					if(this.car.boost < 45 && target.y * this.sign < -1000 && goalDistance > 3500){
 						target = findNearestBoost(target.plus(this.car.velocity.scale(0.5)).flatten(),
 								BoostManager.getSmallBoosts()).getLocation().withZ(Constants.CAR_HEIGHT);
 					}
@@ -326,31 +334,31 @@ public class IBot extends DataBot {
 					final double closingDistance = 1000;
 					double nose = Math.max(0, this.car.orientation.forward.y * this.sign);
 
-					double x = MathsUtils.clamp((closingDistance - distance) / closingDistance, -2.5, 1);
-					double y = MathsUtils.clamp(
-							(Constants.PITCH_LENGTH_SOCCAR - 600 - nose * 900) / Math.abs(this.car.position.y),
-							Math.max(0.5, 3000 / goalDistance), 0.9);
+					double x = MathsUtils.clamp((closingDistance - distance) / closingDistance, -3.5, 1);
+					double y = (Constants.PITCH_LENGTH_SOCCAR - 300 - nose * 1200) / Math.abs(this.car.position.y);
 					target = this.homeGoal.multiply(new Vector3(x, y, 1));
 				}
-//				else{
-//					Vector2 fromGoal = this.backTeammate.position.minus(this.homeGoal).flatten();
-//					fromGoal = fromGoal.multiply(new Vector2(-0.35, 0.45));
-//					target = this.homeGoal.plus(fromGoal);
-//				}
+				// else{
+				// Vector2 fromGoal = this.backTeammate.position.minus(this.homeGoal).flatten();
+				// fromGoal = fromGoal.multiply(new Vector2(-0.35, 0.45));
+				// target = this.homeGoal.plus(fromGoal);
+				// }
 
 				renderer.drawLine3d(Color.BLACK, this.carPosition, target);
 				renderer.drawLine3d(this.altColour, this.earliestEnemyIntercept.position, target);
 
-				double distance = target.distance(this.car.position);
-//				////				//								boolean correctSide = (this.car.position.y - this.groundIntercept.intersectPosition.y) * this.sign < 0;
-				if(distance > 3000 && this.carForwardComponent > 0.95){
-					Vector2 endTarget = this.earliestEnemyIntercept.position.flatten();
-					CompositeArc compositeArc = CompositeArc.create(this.car, target.flatten(), endTarget, 1300, 200,
-							300);
-					this.action = new FollowArcs(this, compositeArc).withBoost(false)
-							.withAbortCondition(new CommitAbort(this, 0.1));
-					return action.getOutput(packet);
-				}
+				// double distance = target.distance(this.car.position);
+				// //// // boolean correctSide = (this.car.position.y -
+				// this.groundIntercept.intersectPosition.y) * this.sign < 0;
+				// if(distance > 3000 && this.carForwardComponent > 0.95){
+				// Vector2 endTarget = this.earliestEnemyIntercept.position.flatten();
+				// CompositeArc compositeArc = CompositeArc.create(this.car, target.flatten(),
+				// endTarget, 1300, 200,
+				// 300);
+				// this.action = new FollowArcs(this, compositeArc).withBoost(false)
+				// .withAbortCondition(new CommitAbort(this, 0.1));
+				// return action.getOutput(packet);
+				// }
 			}
 		}
 		Output output = Handling.driveTime(this, target, (!this.isKickoff || this.mode == Mode.SOCCAR && !wall),

@@ -321,10 +321,10 @@ public abstract class DataBot implements Bot {
 			double carInterceptValue = interceptValue(this.groundIntercept, this.car,
 					(this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time), this.enemyGoal,
 					this.time);
-			double ourBonus = (lastCommit ? 0.4 : -0.2);
+			double ourBonus = (lastCommit ? 0.3 : -0.25);
 			if(this.groundIntercept.position.y * this.sign < 0
 					&& (this.groundIntercept.position.y - this.car.position.y) * this.sign > 0){
-				ourBonus += (this.car.onFlatGround && (!this.furthestBack || (this.lastMan && this.possession > -0.5))
+				ourBonus += (this.car.onFlatGround && (!this.furthestBack || (this.lastMan && this.possession > -0.75))
 						? 2
 						: 0.5);
 			}
@@ -394,14 +394,11 @@ public abstract class DataBot implements Bot {
 
 	private static double interceptValue(Intercept intercept, Car car, double enemyEarliestIntercept, Vector3 goal,
 			double secondsElapsed){
-		// if((car.position.y - intercept.interceptPosition.y) * car.sign > 0) return
-		// -100;
 		return car.velocity.dot(intercept.position.minus(car.position).normalised()) / 1500
-				+ Math.min(4 / (intercept.time - secondsElapsed), 1.7)
-				+ MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.5
+				+ Math.min(4 / (intercept.time - secondsElapsed), 1.5)
+				+ MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.4
 				+ Math.cos(goal.minus(car.position).flatten().angle(intercept.position.minus(car.position).flatten()))
-						* 1.5 * (intercept.position.y * car.sign + Constants.PITCH_LENGTH_SOCCAR)
-						/ (2 * Constants.PITCH_LENGTH_SOCCAR);
+						* 1.7 * (Math.abs(intercept.position.y / Constants.PITCH_LENGTH_SOCCAR));
 	}
 
 	private static double estimateTimeToHitGround(Car car, double gravity){
