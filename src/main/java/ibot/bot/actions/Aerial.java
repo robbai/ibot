@@ -3,10 +3,11 @@ package ibot.bot.actions;
 import java.awt.Color;
 
 import ibot.bot.controls.AirControl;
+import ibot.bot.input.Bundle;
+import ibot.bot.input.Pencil;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Spherical;
 import ibot.input.Car;
@@ -26,8 +27,8 @@ public class Aerial extends Action {
 	private Vector3 targetUp = Vector3.Z, offset, gravity;
 	private boolean startGrounded;
 
-	public Aerial(DataBot bot, Intercept intercept, AerialType type){
-		super(bot);
+	public Aerial(Bundle bundle, Intercept intercept, AerialType type){
+		super(bundle);
 		this.intercept = intercept;
 		this.type = type;
 
@@ -36,13 +37,15 @@ public class Aerial extends Action {
 			this.targetUp = this.offset.normalised();
 		}
 
-		this.startGrounded = bot.car.hasWheelContact;
+		this.startGrounded = bundle.packet.car.hasWheelContact;
 
-		this.gravity = Vector3.Z.scale(bot.gravity);
+		this.gravity = Vector3.Z.scale(bundle.packet.gravity);
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket packet){
+	public ControlsOutput getOutput(){
+		DataPacket packet = this.bundle.packet;
+		Pencil pencil = this.bundle.pencil;
 		Car car = packet.car;
 
 		double timeLeft = (this.intercept.time - packet.time);
@@ -73,7 +76,7 @@ public class Aerial extends Action {
 		// Render freefall.
 		renderRoot(car, timeLeft, timeElapsed);
 
-		bot.stackRenderString(MathsUtils.round(timeElapsed, 3) + "s", Color.WHITE);
+		pencil.stackRenderString(MathsUtils.round(timeElapsed, 3) + "s", Color.WHITE);
 		Vector3 carPosition = car.position
 				.plus(car.velocity.scale(timeLeft).plus(gravity.scale(0.5 * Math.pow(timeLeft, 2))));
 		Vector3 carVelocity = car.velocity.plus(gravity.scale(timeLeft));
@@ -123,7 +126,7 @@ public class Aerial extends Action {
 			boost = false;
 			throttle = 0;
 		}
-		bot.stackRenderString((int)deltaPosition.magnitude() + "uu", Color.WHITE);
+		pencil.stackRenderString((int)deltaPosition.magnitude() + "uu", Color.WHITE);
 
 		// Vector3 deltaVelocity = deltaPosition.scale(1 / timeLeft);
 		// Spherical spherical = new Spherical(MathsUtils.local(car.orientation,
@@ -159,9 +162,11 @@ public class Aerial extends Action {
 		final double size = 75;
 		Vector3 line1 = this.intercept.position.minus(car.position).withZ(0);
 		Vector3 line2 = line1.flatten().rotate(Math.PI / 2).withZ(0).scaleToMagnitude(size);
-		bot.renderer.drawLine3d(bot.colour, this.intercept.position.plus(line2), this.intercept.position.minus(line2));
+		pencil.renderer.drawLine3d(pencil.colour, this.intercept.position.plus(line2),
+				this.intercept.position.minus(line2));
 		line1 = line1.cross(line2).scaleToMagnitude(size);
-		bot.renderer.drawLine3d(bot.colour, this.intercept.position.plus(line1), this.intercept.position.minus(line1));
+		pencil.renderer.drawLine3d(pencil.colour, this.intercept.position.plus(line1),
+				this.intercept.position.minus(line1));
 
 		// Rendering.
 		// bot.stackRenderString((int)acceleration + "uu/s^2", Color.WHITE,
@@ -171,8 +176,8 @@ public class Aerial extends Action {
 		// bot.renderer.drawLine3d(Color.BLACK, result, result.plus(prophecy));
 		// bot.renderer.drawLine3d(Color.RED, this.intercept.interceptPosition,
 		// this.intercept.interceptPosition.plus(car.orientation.forward.minus(correction.normalised()).scale(500)));
-		bot.renderer.drawLine3d(Color.RED, car.position, car.position.plus(direction.scale(500)));
-		bot.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(car.orientation.forward.scale(500)));
+		pencil.renderer.drawLine3d(Color.RED, car.position, car.position.plus(direction.scale(500)));
+		pencil.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(car.orientation.forward.scale(500)));
 
 		// Controls.
 		ControlsOutput controls = new ControlsOutput().withJump(jump).withBoost(boost).withThrottle(throttle);
@@ -220,7 +225,7 @@ public class Aerial extends Action {
 		timeElapsed += Constants.DT;
 		timeLeft -= Constants.DT;
 
-		bot.renderer.drawLine3d(bot.altColour, lastCarPosition, carPosition);
+		this.bundle.pencil.renderer.drawLine3d(this.bundle.pencil.altColour, lastCarPosition, carPosition);
 
 		if(timeLeft <= 0)
 			return;

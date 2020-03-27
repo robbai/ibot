@@ -4,11 +4,13 @@ import java.util.OptionalDouble;
 
 import ibot.bot.actions.FastDodge;
 import ibot.bot.actions.HalfFlip;
+import ibot.bot.input.Bundle;
+import ibot.bot.input.Info;
 import ibot.bot.physics.DrivePhysics;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
+import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
@@ -18,9 +20,11 @@ public class Handling {
 
 	private final static double GOAL_SAFE_WIDTH = (Constants.GOAL_WIDTH - 150);
 
-	public static Output drive(DataBot bot, Vector3 target, boolean dodge, boolean conserveBoost,
+	public static Output drive(Bundle bundle, Vector3 target, boolean dodge, boolean conserveBoost,
 			OptionalDouble targetTime, OptionalDouble targetVelocity){
-		Car car = bot.car;
+		Info info = bundle.info;
+		DataPacket packet = bundle.packet;
+		Car car = packet.car;
 
 		if(Math.abs(target.y) > Constants.PITCH_LENGTH_SOCCAR != Math
 				.abs(car.position.y) > Constants.PITCH_LENGTH_SOCCAR){
@@ -60,10 +64,11 @@ public class Handling {
 		desiredVelocity *= reverseSign;
 
 		// Throttle.
-		double throttle = Marvin.throttleVelocity(car.forwardVelocity, desiredVelocity, bot.lastControls.getThrottle());
+		double throttle = Marvin.throttleVelocity(car.forwardVelocity, desiredVelocity,
+				info.lastControls.getThrottle());
 
 		// Boost.
-		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, bot.lastControls.holdBoost());
+		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, info.lastControls.holdBoost());
 		boost &= !car.isSupersonic;
 //		boost &= (throttle > 0 && forwardDot > 0.9);
 		boost &= (throttle > 0);
@@ -75,31 +80,31 @@ public class Handling {
 			}
 			double dodgeDistance = DrivePhysics.estimateDodgeDistance(car);
 			double flatDistance = local.flatten().magnitude();
-			boolean commitKickoff = bot.isKickoff && bot.commit;
-			if((bot.getTimeOnGround() > 0.05 || commitKickoff) && dodge
+			boolean commitKickoff = packet.isKickoffPause && info.commit;
+			if((info.getTimeOnGround() > 0.05 || commitKickoff) && dodge
 					&& (commitKickoff || Math.abs(velocityTowards) > (car.forwardVelocity < 0 ? 800 : 1250))
 					&& (dodgeDistance < flatDistance || car.forwardVelocity < 0)
 					&& (!commitKickoff || dodgeDistance > flatDistance - 300)){
 				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(30)){
-					return new HalfFlip(bot);
+					return new HalfFlip(bundle);
 				}else if(commitKickoff || ((!boost || car.boost < 10) && velocityStraight > 0.9
 						&& Math.abs(radians) < Math.toRadians(30)
 						&& car.forwardVelocity + Constants.DODGE_IMPULSE < desiredVelocity)){
-					return new FastDodge(bot, target.minus(car.position));
+					return new FastDodge(bundle, target.minus(car.position));
 				}
 			}
 		}
 
 		boolean wavedash = (!car.hasWheelContact && !car.hasDoubleJumped && car.orientation.up.z > 0.65);
-		boolean wavedashTime = (wavedash && bot.timeToHitGround < 0.07);
+		boolean wavedashTime = (wavedash && info.timeToHitGround < 0.07);
 
-		boolean boostDown = (bot.timeToHitGround > 1.15 && car.boost > 0);
+		boolean boostDown = (info.timeToHitGround > 1.15 && car.boost > 0);
 		if(boostDown){
 			boost = car.orientation.forward.z < -0.8;
 		}
 
 		// Handbrake.
-		boolean handbrake = (velocityStraight < 0.8 && bot.getTimeOnGround() < 0.3) || (car.onFlatGround
+		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3) || (car.onFlatGround
 				&& (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300 && velocityStraight > 0.9)
 				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800));
 //		if(car.angularVelocity.yaw * radians > 0 || car.forwardVelocity * throttle < 0){
@@ -118,23 +123,23 @@ public class Handling {
 				.withJump(wavedashTime);
 	}
 
-	public static Output drive(DataBot bot, Vector3 target, boolean dodge, boolean conserveBoost){
-		return drive(bot, target, dodge, conserveBoost, OptionalDouble.empty(), OptionalDouble.empty());
+	public static Output drive(Bundle bundle, Vector3 target, boolean dodge, boolean conserveBoost){
+		return drive(bundle, target, dodge, conserveBoost, OptionalDouble.empty(), OptionalDouble.empty());
 	}
 
-	public static Output driveTime(DataBot bot, Vector3 target, boolean dodge, boolean conserveBoost,
+	public static Output driveTime(Bundle bundle, Vector3 target, boolean dodge, boolean conserveBoost,
 			OptionalDouble targetTime){
-		return drive(bot, target, dodge, conserveBoost, targetTime, OptionalDouble.empty());
+		return drive(bundle, target, dodge, conserveBoost, targetTime, OptionalDouble.empty());
 	}
 
-	public static Output driveTime(DataBot bot, Vector3 target, boolean dodge, boolean conserveBoost,
+	public static Output driveTime(Bundle bundle, Vector3 target, boolean dodge, boolean conserveBoost,
 			double targetTime){
-		return drive(bot, target, dodge, conserveBoost, OptionalDouble.of(targetTime), OptionalDouble.empty());
+		return drive(bundle, target, dodge, conserveBoost, OptionalDouble.of(targetTime), OptionalDouble.empty());
 	}
 
-	public static Output driveVelocity(DataBot bot, Vector3 target, boolean dodge, boolean conserveBoost,
+	public static Output driveVelocity(Bundle bundle, Vector3 target, boolean dodge, boolean conserveBoost,
 			double velocity){
-		return drive(bot, target, dodge, conserveBoost, OptionalDouble.empty(), OptionalDouble.of(velocity));
+		return drive(bundle, target, dodge, conserveBoost, OptionalDouble.empty(), OptionalDouble.of(velocity));
 	}
 
 }

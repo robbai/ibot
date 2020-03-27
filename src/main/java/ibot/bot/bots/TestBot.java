@@ -13,14 +13,16 @@ import ibot.bot.abort.BallTouchedAbort;
 import ibot.bot.actions.Action;
 import ibot.bot.actions.DriveStrike;
 import ibot.bot.controls.Handling;
+import ibot.bot.input.Info;
+import ibot.bot.input.Pencil;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
+import ibot.bot.utils.MathsUtils;
 import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
 
-@SuppressWarnings ("unused")
-public class TestBot extends DataBot {
+//@SuppressWarnings ("unused")
+public class TestBot extends ABot {
 
 	private static final AerialType AERIAL_TYPE = AerialType.DODGE_STRIKE;
 
@@ -29,20 +31,23 @@ public class TestBot extends DataBot {
 	private float ballY, playerY;
 	private Random random;
 
-	public TestBot(int playerIndex){
-		super(playerIndex);
+	public TestBot(int index, int team){
+		super(index, team);
 		this.random = new Random();
 	}
 
 	@Override
-	protected ControlsOutput processInput(DataPacket packet){
+	protected ControlsOutput processInput(){
+		DataPacket packet = this.bundle.packet;
+		Pencil pencil = this.bundle.pencil;
+		Info info = this.bundle.info;
+
 		if(this.action != null){
-			if(!this.action.isFinished(packet)){
-				this.stackRenderString("Action: " + this.action.getClass().getSimpleName(), this.altColour);
-				return action.getOutput(packet);
-			}else{
-				this.action = null;
+			if(!this.action.isFinished()){
+				pencil.stackRenderString("Action: " + this.action.getClass().getSimpleName(), pencil.altColour);
+				return action.getOutput();
 			}
+			this.action = null;
 		}
 
 		// if(packet.robbie != null){
@@ -64,26 +69,26 @@ public class TestBot extends DataBot {
 		// return action.getOutput(packet);
 		// }
 
-		if((packet.ball.position.y - ballY) * this.sign > 2000 || (this.car.position.y - playerY) * this.sign > 5000
+		if((packet.ball.position.y - ballY) * info.sign > 2000 || (info.car.position.y - playerY) * info.sign > 5000
 				|| (packet.time - timeSet) > 5){
-			// if((packet.time - timeSet) > 10 || (this.car.position.y -
-			// packet.ball.position.y) * this.sign > 0 || this.ballVelocity.y * this.sign <
+			// if((packet.time - timeSet) > 10 || (info.car.position.y -
+			// packet.ball.position.y) * info.sign > 0 || info.ballVelocity.y * info.sign <
 			// -1000){
-			float x = (float)Math.signum(this.random(-1, 1));
-			ballY = (float)(random(2000, 3500) * this.sign);
-			playerY = (float)(-random(4000, Constants.PITCH_LENGTH_SOCCAR - 200) * this.sign);
+			float x = (float)Math.signum(MathsUtils.random(-1, 1));
+			ballY = (float)(random(2000, 3500) * info.sign);
+			playerY = (float)(-random(4000, Constants.PITCH_LENGTH_SOCCAR - 200) * info.sign);
 			GameState gameState = new GameState()
-					.withCarState(this.playerIndex,
+					.withCarState(this.index,
 							new CarState().withBoostAmount((float)random(30, 100))
 									.withPhysics(new PhysicsState().withLocation(new DesiredVector3(0F, playerY, 0F))
 											.withVelocity(new DesiredVector3(0F,
-													(float)(Constants.MAX_CAR_VELOCITY * 0.85 * this.sign), 0F))
+													(float)(Constants.MAX_CAR_VELOCITY * 0.85 * info.sign), 0F))
 											.withRotation(new DesiredRotation(0F,
-													(float)(Math.PI * (this.team == 0 ? 0.5 : 1.5)), 0F))))
+													(float)(Math.PI * (info.team == 0 ? 0.5 : 1.5)), 0F))))
 					.withBallState(new BallState().withPhysics(new PhysicsState()
 							.withLocation(new DesiredVector3(1500F * x, ballY, (float)Constants.BALL_RADIUS))
 							.withVelocity(new DesiredVector3((float)random(300, 450) * -x,
-									(float)(random(0, 800) * -this.sign), (float)random(1100, 1300)
+									(float)(random(0, 800) * -info.sign), (float)random(1100, 1300)
 											/ (AERIAL_TYPE == AerialType.DOUBLE_JUMP ? 1.2F : 0.8F)))));
 			if(packet.robbie != null){
 				gameState
@@ -93,10 +98,10 @@ public class TestBot extends DataBot {
 												100F)
 										.withPhysics(new PhysicsState()
 												.withLocation(new DesiredVector3(0F,
-														(float)(this.sign * Constants.PITCH_LENGTH_SOCCAR), 0F))
+														(float)(info.sign * Constants.PITCH_LENGTH_SOCCAR), 0F))
 												.withVelocity(new DesiredVector3(0F, 0F, 0F))
 												.withRotation(new DesiredRotation(0F,
-														(float)(-Math.PI * (this.team == 0 ? 0.5 : 1.5)), 0F))));
+														(float)(-Math.PI * (info.team == 0 ? 0.5 : 1.5)), 0F))));
 			}
 			RLBotDll.setGameState(gameState.buildPacket());
 			this.action = null;
@@ -104,42 +109,42 @@ public class TestBot extends DataBot {
 		}
 
 		if(this.action != null){
-			if(!this.action.isFinished(packet)){
-				this.stackRenderString("Action: " + this.action.getClass().getSimpleName(), this.altColour);
-				return action.getOutput(packet);
+			if(!this.action.isFinished()){
+				pencil.stackRenderString("Action: " + this.action.getClass().getSimpleName(), pencil.altColour);
+				return action.getOutput();
 			}else{
 				this.action = null;
 			}
 		}
 
 		// Intercept aerialIntercept = (AERIAL_TYPE == AerialType.DODGE_STRIKE ?
-		// this.aerialDodge : this.aerialDouble);
+		// info.aerialDodge : info.aerialDouble);
 		// if(aerialIntercept != null && (packet.time - 0.5) > timeSet){
 		// this.action = new Aerial(this, aerialIntercept, AERIAL_TYPE)
 		// .withAbortCondition(new BallTouchedAbort(this, packet.ball.latestTouch,
-		// this.playerIndex));
+		// this.index));
 		// return this.action.getOutput(packet);
 		// }else{
 		// this.action = null;
 		// }
-		// Vector3 target = this.groundIntercept.intersectPosition;
-		// if(this.bounce != null){
-		// target = target.lerp(this.bounce.intersectPosition, 0.5);
+		// Vector3 target = info.groundIntercept.intersectPosition;
+		// if(info.bounce != null){
+		// target = target.lerp(info.bounce.intersectPosition, 0.5);
 		// }
 		// return (ControlsOutput)Handling.driveTime(this, target, false, false,
-		// this.time + 1.5);
+		// info.time + 1.5);
 
-		if(this.groundIntercept == null)
+		if(info.groundIntercept == null)
 			return new ControlsOutput();
-		if(Math.min(packet.time - timeSet, this.getTimeOnGround()) < 0.2 || !this.car.hasWheelContact){
-			return (ControlsOutput)Handling.driveTime(this,
-					this.bounce != null ? this.groundIntercept.position.lerp(this.bounce.position, 0.5)
-							: this.groundIntercept.position,
-					false, false, this.time + 0.75);
+		if(Math.min(packet.time - timeSet, info.getTimeOnGround()) < 0.2 || !info.car.hasWheelContact){
+			return (ControlsOutput)Handling.driveTime(this.bundle,
+					info.bounce != null ? info.groundIntercept.position.lerp(info.bounce.position, 0.5)
+							: info.groundIntercept.position,
+					false, false, info.time + 0.75);
 		}
-		this.action = new DriveStrike(this, this.groundIntercept, this.enemyGoal)
-				.withAbortCondition(new BallTouchedAbort(this, packet.ball.latestTouch, this.playerIndex));
-		return this.action.getOutput(packet);
+		this.action = new DriveStrike(this.bundle, info.groundIntercept, info.enemyGoal)
+				.withAbortCondition(new BallTouchedAbort(this.bundle, packet.ball.latestTouch, this.index));
+		return this.action.getOutput();
 	}
 
 	private double random(double min, double max){

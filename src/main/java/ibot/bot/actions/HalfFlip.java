@@ -1,7 +1,7 @@
 package ibot.bot.actions;
 
 import ibot.bot.controls.AirControl;
-import ibot.bot.utils.DataBot;
+import ibot.bot.input.Bundle;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
@@ -18,13 +18,14 @@ public class HalfFlip extends Action {
 	private Vector3 directionGlobal;
 	private double pitch, yaw;
 
-	public HalfFlip(DataBot bot){
-		super(bot);
+	public HalfFlip(Bundle bundle){
+		super(bundle);
 
-		this.directionGlobal = bot.car.orientation.forward.withZ(0).scaleToMagnitude(-1);
+		Car car = bundle.packet.car;
 
-		double radians = Vector2.Y
-				.correctionAngle(MathsUtils.local(bot.car.orientation, this.directionGlobal).flatten());
+		this.directionGlobal = car.orientation.forward.withZ(0).scaleToMagnitude(-1);
+
+		double radians = Vector2.Y.correctionAngle(MathsUtils.local(car.orientation, this.directionGlobal).flatten());
 		radians = Math.copySign(MathsUtils.clamp(Math.abs(radians), MIN_RADIANS, MAX_RADIANS), radians);
 
 		this.pitch = -Math.cos(radians);
@@ -32,10 +33,11 @@ public class HalfFlip extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket packet){
-		double timeElapsed = (packet.time - this.getStartTime());
-
+	public ControlsOutput getOutput(){
+		DataPacket packet = this.bundle.packet;
 		Car car = packet.car;
+
+		double timeElapsed = (packet.time - this.getStartTime());
 
 		boolean boost = (car.orientation.forward.dot(this.directionGlobal) > 0.75);
 
@@ -46,7 +48,7 @@ public class HalfFlip extends Action {
 		}else if(timeElapsed < TIMING[2]){
 			ControlsOutput controls = new ControlsOutput().withJump(timeElapsed > TIMING[1]).withBoost(boost)
 					.withPitch(this.pitch);
-			if(controls.holdJump() == this.bot.lastControls.holdJump()){
+			if(controls.holdJump() == this.bundle.info.lastControls.holdJump()){
 				controls.withRoll(orient[0]);
 			}
 			if(!car.hasDoubleJumped){

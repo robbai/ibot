@@ -1,20 +1,19 @@
 package ibot.bot.abort;
 
 import ibot.boost.BoostPad;
-import ibot.bot.utils.DataBot;
-import ibot.input.DataPacket;
+import ibot.bot.input.Bundle;
 
 public class BoostYoinkedAbort extends AbortCondition {
 
 	private final BoostPad boostPad;
 
-	public BoostYoinkedAbort(DataBot bot, BoostPad boostPad){
-		super(bot);
+	public BoostYoinkedAbort(Bundle bundle, BoostPad boostPad){
+		super(bundle);
 		this.boostPad = boostPad;
 	}
 
 	@Override
-	public boolean shouldAbort(DataPacket packet){
+	public boolean shouldAbort(){
 		return !this.boostPad.isActive();
 	}
 

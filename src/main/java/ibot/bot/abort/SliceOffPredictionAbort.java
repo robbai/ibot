@@ -1,7 +1,6 @@
 package ibot.bot.abort;
 
-import ibot.bot.utils.DataBot;
-import ibot.input.DataPacket;
+import ibot.bot.input.Bundle;
 import ibot.prediction.BallPrediction;
 import ibot.prediction.Slice;
 
@@ -9,13 +8,13 @@ public class SliceOffPredictionAbort extends AbortCondition {
 
 	private Slice slice;
 
-	public SliceOffPredictionAbort(DataBot bot, Slice slice){
-		super(bot);
+	public SliceOffPredictionAbort(Bundle bundle, Slice slice){
+		super(bundle);
 		this.slice = slice;
 	}
 
 	@Override
-	public boolean shouldAbort(DataPacket packet){
+	public boolean shouldAbort(){
 		Slice timed = this.getClosestToTime();
 		boolean condition = Math.abs(timed.time - this.slice.time) > 0.2
 				|| timed.position.distance(this.slice.position) > 80;

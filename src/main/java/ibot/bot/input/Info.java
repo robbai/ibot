@@ -1,24 +1,24 @@
-package ibot.bot.utils;
+package ibot.bot.input;
 
 import java.awt.Color;
-import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Random;
 
-import rlbot.Bot;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.cppinterop.RLBotInterfaceException;
-import rlbot.flat.GameTickPacket;
 import rlbot.flat.QuickChatSelection;
 import rlbot.manager.BotLoopRenderer;
 import ibot.boost.BoostManager;
 import ibot.boost.BoostPad;
 import ibot.bot.actions.Action;
+import ibot.bot.bots.ABot;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.CarSlice;
 import ibot.bot.intercept.CarTrajectory;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.intercept.InterceptCalculator;
+import ibot.bot.utils.Constants;
+import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.Mode;
 import ibot.input.Car;
 import ibot.input.CarOrientation;
 import ibot.input.DataPacket;
@@ -28,92 +28,13 @@ import ibot.prediction.Slice;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
-public abstract class DataBot implements Bot {
+public class Info {
 
-	protected static boolean ranGc;
+	private final ABot bot;
 
-	protected final int playerIndex;
-
-	private final Random random;
-
-	private final ArrayList<RenderString> renderStack;
-
-	public DataBot(int playerIndex){
+	public Info(ABot bot){
 		super();
-		this.playerIndex = playerIndex;
-		this.random = new Random();
-		this.renderStack = new ArrayList<RenderString>();
-	}
-
-	@Override
-	public int getIndex(){
-		return this.playerIndex;
-	}
-
-	protected abstract ControlsOutput processInput(DataPacket dataPacket);
-
-	@Override
-	public ControlsOutput processInput(GameTickPacket rawPacket){
-		if(!rawPacket.gameInfo().isRoundActive()){
-			if(!ranGc){
-				System.gc();
-				ranGc = true;
-			}
-		}else{
-			ranGc = false;
-		}
-
-		// Just return immediately if something looks wrong with the data.
-		// System.out.println(rawPacket.gameInfo().isKickoffPause() + ", " +
-		// rawPacket.gameInfo().isMatchEnded() + ", " +
-		// rawPacket.gameInfo().isRoundActive());
-		if(rawPacket.playersLength() <= playerIndex){
-			return new ControlsOutput();
-		}
-
-		// Update the boost manager.
-		BoostManager.loadGameTickPacket(rawPacket);
-
-		// Update the ball prediction.
-		BallPrediction.update();
-
-		// Create the packet.
-		DataPacket dataPacket = new DataPacket(rawPacket, playerIndex);
-
-		// if(dataPacket.hasMatchEnded){
-		// Car car = dataPacket.car;
-		// double time = (dataPacket.secondsElapsed % (Math.PI * 2));
-		// return new ControlsOutput().withJump(car.hasWheelContact && (time % 0.8) <
-		// 0.1).withOrient(AirControl.getRollPitchYaw(car, new Vector3(Math.sin(time),
-		// Math.cos(time), 1))).withBoost(car.velocity.z < 0);
-		// }
-
-		this.updateData(dataPacket);
-
-		this.renderStack.clear();
-
-		// Get our output.
-		ControlsOutput controlsOutput = processInput(dataPacket);
-		// if(!dataPacket.isRoundActive) controlsOutput.withJump(false);
-		this.lastControls = new ControlsOutput(controlsOutput)
-				.withBoost(controlsOutput.holdBoost() && this.car.boost >= 1)
-				.withThrottle(controlsOutput.holdBoost() && this.car.boost >= 1 ? 1 : controlsOutput.getThrottle());
-
-		for(int i = 0; i < this.renderStack.size(); i++){
-			renderer.drawString2d(this.renderStack.get(i).string, this.renderStack.get(i).colour,
-					new Point(20 + 300 * this.playerIndex, 30 * (i + 1)), 2, 2);
-		}
-
-		return controlsOutput;
-	}
-
-	public void stackRenderString(String string, Color colour){
-		this.renderStack.add(new RenderString(string, colour));
-	}
-
-	@Override
-	public void retire(){
-		System.out.println("Retiring sample bot " + playerIndex);
+		this.bot = bot;
 	}
 
 	/*
@@ -132,7 +53,6 @@ public abstract class DataBot implements Bot {
 	public boolean isKickoff, commit, pickupBoost, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal;
 	private boolean lastWheelContact, lastIsKickoff, hasMatchEnded;
 	public Car enemyCar;
-	public Color colour, altColour;
 	public double gravity, time, carSpeed, sign, lastWheelContactTime, timeToHitGround, possession, teamPossession,
 			carForwardComponent;
 	public Intercept[] groundIntercepts;
@@ -140,7 +60,7 @@ public abstract class DataBot implements Bot {
 	public Mode mode;
 	public BoostPad nearestBoost;
 
-	protected void updateData(DataPacket packet){
+	public void update(DataPacket packet){
 		this.time = packet.time;
 
 		this.car = packet.car;
@@ -154,7 +74,7 @@ public abstract class DataBot implements Bot {
 		this.ballPosition = packet.ball.position;
 		this.ballVelocity = packet.ball.velocity;
 
-		this.renderer = BotLoopRenderer.forBotLoop(this);
+		// this.renderer = BotLoopRenderer.forBotLoop(this);
 
 		try{
 			if(packet.hasMatchEnded){
@@ -221,15 +141,17 @@ public abstract class DataBot implements Bot {
 		this.earliestTeammateIntercept = null;
 		this.earliestEnemyIntercept = null;
 		for(int i = 0; i < packet.cars.length; i++){
-			Intercept intercept = InterceptCalculator.groundCalculate(this, packet.cars[i], this.mode);
+			Vector2 goal = packet.cars[i].team == this.car.team ? this.enemyGoal.flatten() : this.homeGoal.flatten();
+			Intercept intercept = InterceptCalculator.groundCalculate(packet.cars[i], packet.gravity, goal, this.mode);
 			this.groundIntercepts[i] = intercept;
+
 			if(intercept == null)
 				continue;
 			if(packet.cars[i].team != this.car.team){
 				if(this.earliestEnemyIntercept == null || intercept.time < this.earliestEnemyIntercept.time){
 					this.earliestEnemyIntercept = intercept;
 				}
-			}else if(i != this.playerIndex){
+			}else if(i != this.bot.index){
 				if(this.earliestTeammateIntercept == null || intercept.time < this.earliestTeammateIntercept.time){
 					this.earliestTeammateIntercept = intercept;
 				}
@@ -240,7 +162,7 @@ public abstract class DataBot implements Bot {
 						- (this.earliestTeammateIntercept == null ? 10 : this.earliestTeammateIntercept.time), -10, 10);
 		this.possession = MathsUtils.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
 				- (this.groundIntercept == null ? 10 : this.groundIntercept.time), -10, 10);
-		this.groundIntercept = this.groundIntercepts[this.playerIndex];
+		this.groundIntercept = this.groundIntercepts[this.bot.index];
 		this.wallIntercept = (this.groundIntercept == null ? null
 				: InterceptCalculator.wallCalculate(this, this.car, this.groundIntercept.time));
 		this.bounce = findBounce(this.groundIntercept == null ? 0 : this.groundIntercept.time);
@@ -287,7 +209,8 @@ public abstract class DataBot implements Bot {
 					}
 				}
 				if(!packet.isRoundActive && !this.commit){
-					this.sendQuickChat(QuickChatSelection.Information_GoForIt, QuickChatSelection.Information_AllYours);
+					this.bot.sendQuickChat(QuickChatSelection.Information_GoForIt,
+							QuickChatSelection.Information_AllYours);
 				}
 				this.pickupBoost = !this.commit;
 			}
@@ -338,13 +261,13 @@ public abstract class DataBot implements Bot {
 				}
 			}
 			if(this.commit && !lastCommit){
-				this.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
+				this.bot.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
 			}
 		}
 		if(this.pickupBoost)
 			this.commit = false; // TODO
 		if(!this.commit && this.pickupBoost && !lastPickupBoost){
-			this.sendQuickChat(QuickChatSelection.Information_NeedBoost);
+			this.bot.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		}
 		// this.commit &= !this.furthestBack || this.earliestEnemyIntercept.time -
 		// this.groundIntercept.time > -0.8 || this.goingInHomeGoal ||
@@ -355,7 +278,7 @@ public abstract class DataBot implements Bot {
 		// // TODO
 
 		if(this.hasMatchEnded != packet.hasMatchEnded){
-			this.sendQuickChat(QuickChatSelection.PostGame_Gg, QuickChatSelection.PostGame_EverybodyDance,
+			this.bot.sendQuickChat(QuickChatSelection.PostGame_Gg, QuickChatSelection.PostGame_EverybodyDance,
 					QuickChatSelection.PostGame_NiceMoves, QuickChatSelection.PostGame_WhatAGame,
 					QuickChatSelection.PostGame_OneMoreGame, QuickChatSelection.PostGame_Rematch,
 					QuickChatSelection.PostGame_ThatWasFun, QuickChatSelection.PostGame_WellPlayed);
@@ -363,9 +286,13 @@ public abstract class DataBot implements Bot {
 		this.hasMatchEnded = packet.hasMatchEnded;
 
 		this.enemyCar = getEnemyCar(packet.cars);
-		this.colour = (this.car.team == 0 ? Color.BLUE : Color.ORANGE);
-		this.altColour = (this.car.team == 0 ? Color.CYAN : Color.RED);
+
 		this.determineTrajectories(packet.cars);
+	}
+
+	public void postUpdate(DataPacket packet, ControlsOutput controls){
+		this.lastControls = new ControlsOutput(controls).withBoost(controls.holdBoost() && packet.car.boost >= 1)
+				.withThrottle(controls.holdBoost() && packet.car.boost >= 1 ? 1 : controls.getThrottle());
 	}
 
 	private static boolean goingInGoal(double sign){
@@ -377,19 +304,6 @@ public abstract class DataBot implements Bot {
 			}
 		}
 		return false;
-	}
-
-	public void sendQuickChat(boolean teamOnly, byte... quickChatSelection){
-		try{
-			RLBotDll.sendQuickChat(this.playerIndex, teamOnly,
-					quickChatSelection[this.random.nextInt(quickChatSelection.length)]);
-		}catch(Exception e){
-			System.err.println("Error when trying to send quick-chat [" + quickChatSelection.toString() + "]");
-		}
-	}
-
-	public void sendQuickChat(byte... quickChatSelection){
-		this.sendQuickChat(false, quickChatSelection);
 	}
 
 	private static double interceptValue(Intercept intercept, Car car, double enemyEarliestIntercept, Vector3 goal,
@@ -474,7 +388,7 @@ public abstract class DataBot implements Bot {
 		return shortestBoost;
 	}
 
-	protected static BoostPad findNearestBoost(Vector2 position, ArrayList<BoostPad> boosts){
+	public static BoostPad findNearestBoost(Vector2 position, ArrayList<BoostPad> boosts){
 		BoostPad shortestBoost = null;
 		double shortestDistance = 0;
 		for(BoostPad boost : boosts){

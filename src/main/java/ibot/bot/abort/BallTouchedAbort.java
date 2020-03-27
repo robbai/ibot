@@ -1,8 +1,7 @@
 package ibot.bot.abort;
 
+import ibot.bot.input.Bundle;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
-import ibot.input.DataPacket;
 import ibot.input.Touch;
 
 public class BallTouchedAbort extends AbortCondition {
@@ -10,19 +9,19 @@ public class BallTouchedAbort extends AbortCondition {
 	private float initialTouchSeconds;
 	private int[] indexExceptions;
 
-	public BallTouchedAbort(DataBot bot, Touch latestTouch, int... indexExceptions){
-		super(bot);
+	public BallTouchedAbort(Bundle bundle, Touch latestTouch, int... indexExceptions){
+		super(bundle);
 		this.initialTouchSeconds = getSeconds(latestTouch);
 		this.indexExceptions = (indexExceptions == null ? new int[] {} : indexExceptions);
 	}
 
-	public BallTouchedAbort(DataBot bot, Touch latestTouch){
-		this(bot, latestTouch, null);
+	public BallTouchedAbort(Bundle bundle, Touch latestTouch){
+		this(bundle, latestTouch, null);
 	}
 
 	@Override
-	public boolean shouldAbort(DataPacket packet){
-		Touch latestTouch = packet.ball.latestTouch;
+	public boolean shouldAbort(){
+		Touch latestTouch = this.bundle.packet.ball.latestTouch;
 
 		// Check the exceptions.
 		if(latestTouch != null){

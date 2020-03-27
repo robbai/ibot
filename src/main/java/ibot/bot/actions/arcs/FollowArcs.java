@@ -4,10 +4,12 @@ import java.awt.Color;
 
 import rlbot.flat.QuickChatSelection;
 import ibot.bot.actions.Action;
+import ibot.bot.bots.ABot;
 import ibot.bot.controls.Handling;
+import ibot.bot.input.Bundle;
+import ibot.bot.input.Pencil;
 import ibot.bot.physics.DrivePhysics;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Pair;
 import ibot.input.Car;
@@ -30,24 +32,28 @@ public class FollowArcs extends Action {
 	private double PRESSURE_UU = AIM_UU;
 	private double lastTime;
 
-	public FollowArcs(DataBot bot, CompositeArc compArc){
-		super(bot);
+	public FollowArcs(Bundle bundle, CompositeArc compArc){
+		super(bundle);
 		this.compositeArc = compArc;
 		this.points = (compArc == null ? null : compArc.discretise(N));
 		this.lastTime = this.getStartTime();
 	}
 
-	public ControlsOutput getOutput(DataPacket packet){
+	public ControlsOutput getOutput(){
+		DataPacket packet = this.bundle.packet;
+		Pencil pencil = this.bundle.pencil;
+		ABot bot = this.bundle.bot;
+
 		for(int i = 0; i < N - 1; i += RENDER_STEP){
-			this.bot.renderer.drawLine3d(this.bot.altColour, this.points[i].withZ(Constants.CAR_HEIGHT),
+			pencil.renderer.drawLine3d(pencil.altColour, this.points[i].withZ(Constants.CAR_HEIGHT),
 					this.points[Math.min(N - 1, i + RENDER_STEP)].withZ(Constants.CAR_HEIGHT));
 		}
-		this.bot.renderer.drawRectangle3d(Color.BLACK, this.points[0].withZ(Constants.CAR_HEIGHT), 8, 8, true);
-		this.bot.renderer.drawRectangle3d(Color.BLACK, this.points[N - 1].withZ(Constants.CAR_HEIGHT), 8, 8, true);
+		pencil.renderer.drawRectangle3d(Color.BLACK, this.points[0].withZ(Constants.CAR_HEIGHT), 8, 8, true);
+		pencil.renderer.drawRectangle3d(Color.BLACK, this.points[N - 1].withZ(Constants.CAR_HEIGHT), 8, 8, true);
 
 		if(this.action != null){
-			if(!this.action.isFinished(packet)){
-				return action.getOutput(packet);
+			if(!this.action.isFinished()){
+				return action.getOutput();
 			}else{
 				this.action = null;
 			}
@@ -100,18 +106,18 @@ public class FollowArcs extends Action {
 		this.PRESSURE_UU = MathsUtils.clamp(this.PRESSURE_UU + PRESSURE_RATE * dt, carUu + AIM_UU,
 				this.compositeArc.getLength() + AIM_UU);
 		Vector2 target = this.aim(this.PRESSURE_UU);
-		this.bot.renderer.drawRectangle3d(this.bot.colour, target.withZ(Constants.CAR_HEIGHT), 10, 10, true);
+		pencil.renderer.drawRectangle3d(pencil.colour, target.withZ(Constants.CAR_HEIGHT), 10, 10, true);
 
 		boolean onStraightaway = (carUu >= this.compositeArc.getL(0) + this.compositeArc.getL(1)
 				&& carUu <= this.compositeArc.getL(0) + this.compositeArc.getL(1) + this.compositeArc.getL(2));
 		boolean canDodge = onStraightaway && carUu + DrivePhysics.estimateDodgeDistance(car) < this.compositeArc.getL(0)
 				+ this.compositeArc.getL(1) + this.compositeArc.getL(2) + this.compositeArc.getL(3);
 
-		Output output = Handling.driveVelocity(this.bot, target.withZ(Constants.CAR_HEIGHT), canDodge, false,
+		Output output = Handling.driveVelocity(bundle, target.withZ(Constants.CAR_HEIGHT), canDodge, false,
 				targetVelocity);
 		if(output instanceof Action){
 			this.action = (Action)output;
-			return this.action.getOutput(packet);
+			return this.action.getOutput();
 		}
 
 		ControlsOutput controls = (ControlsOutput)output;

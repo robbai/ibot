@@ -1,23 +1,22 @@
 package ibot.bot.abort;
 
-import ibot.bot.utils.DataBot;
-import ibot.input.DataPacket;
+import ibot.bot.input.Bundle;
 
 public class CommitAbort extends AbortCondition {
 
 	private final double minTime;
 
-	public CommitAbort(DataBot bot, double minTime){
-		super(bot);
+	public CommitAbort(Bundle bundle, double minTime){
+		super(bundle);
 		this.minTime = minTime;
 	}
 
 	@Override
-	public boolean shouldAbort(DataPacket packet){
-		if(packet.time - this.getStartTime() < this.minTime){
+	public boolean shouldAbort(){
+		if(this.bundle.packet.time - this.getStartTime() < this.minTime){
 			return false;
 		}
-		return this.bot.commit;
+		return this.bundle.info.commit;
 	}
 
 }

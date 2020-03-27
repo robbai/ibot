@@ -1,8 +1,9 @@
 package ibot.bot.actions;
 
 import ibot.bot.controls.AirControl;
-import ibot.bot.utils.DataBot;
+import ibot.bot.input.Bundle;
 import ibot.bot.utils.MathsUtils;
+import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
 import ibot.vectors.Vector2;
@@ -15,21 +16,25 @@ public class FastDodge extends Action {
 	private Vector3 directionGlobal;
 	private double pitch, yaw;
 
-	public FastDodge(DataBot bot, Vector3 directionGlobal){
-		super(bot);
+	public FastDodge(Bundle bundle, Vector3 directionGlobal){
+		super(bundle);
 
 		this.directionGlobal = directionGlobal.normalised();
 
-		double radians = Vector2.Y.correctionAngle(MathsUtils.local(bot.car.orientation, directionGlobal).flatten());
+		double radians = Vector2.Y
+				.correctionAngle(MathsUtils.local(bundle.packet.car.orientation, directionGlobal).flatten());
 		this.pitch = -Math.cos(radians);
 		this.yaw = -Math.sin(radians) * 2;
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket packet){
+	public ControlsOutput getOutput(){
+		DataPacket packet = this.bundle.packet;
+		Car car = this.bundle.packet.car;
+
 		double timeElapsed = (packet.time - this.getStartTime());
 
-		double dot = bot.car.orientation.forward.dot(this.directionGlobal);
+		double dot = car.orientation.forward.dot(this.directionGlobal);
 
 		boolean boost = (dot > 0.75);
 
@@ -44,9 +49,9 @@ public class FastDodge extends Action {
 			return new ControlsOutput().withJump(false).withBoost(boost);
 		}
 
-		this.setFinished(bot.car.hasWheelContact || dot > 0.925 || timeElapsed > TIMING[4]);
+		this.setFinished(car.hasWheelContact || dot > 0.925 || timeElapsed > TIMING[4]);
 
-		return new ControlsOutput().withOrient(AirControl.getRollPitchYaw(bot.car, directionGlobal)).withJump(false)
+		return new ControlsOutput().withOrient(AirControl.getRollPitchYaw(car, this.directionGlobal)).withJump(false)
 				.withBoost(boost);
 	}
 

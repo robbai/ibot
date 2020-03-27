@@ -1,8 +1,8 @@
 package ibot.bot.actions;
 
 import ibot.bot.controls.AirControl;
+import ibot.bot.input.Bundle;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
@@ -13,13 +13,14 @@ public class Jump extends Action {
 
 	private final double holdTime;
 
-	public Jump(DataBot bot, double holdTime){
-		super(bot);
+	public Jump(Bundle bundle, double holdTime){
+		super(bundle);
 		this.holdTime = MathsUtils.clamp(holdTime, 0, Constants.JUMP_MAX_HOLD);
 	}
 
 	@Override
-	public ControlsOutput getOutput(DataPacket packet){
+	public ControlsOutput getOutput(){
+		DataPacket packet = this.bundle.packet;
 		double timeElapsed = (packet.time - this.getStartTime());
 		this.setFinished(timeElapsed > this.holdTime);
 		ControlsOutput controls = new ControlsOutput().withJump(timeElapsed <= this.holdTime).withThrottle(0.02);

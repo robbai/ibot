@@ -1,7 +1,6 @@
 package ibot.output;
 
 import ibot.bot.actions.Action;
-import ibot.input.DataPacket;
 
 public abstract class Output {
 
@@ -9,9 +8,9 @@ public abstract class Output {
 
 	public abstract boolean isAction();
 
-	public ControlsOutput getOutput(DataPacket packet){
+	public ControlsOutput getOutput(){
 		if(this.isAction())
-			return ((Action)this).getOutput(packet);
+			return ((Action)this).getOutput();
 		return (ControlsOutput)this;
 	}
 

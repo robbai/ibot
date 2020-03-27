@@ -3,10 +3,10 @@ package ibot.bot.intercept;
 import java.util.OptionalDouble;
 
 import ibot.bot.actions.DriveStrike;
+import ibot.bot.input.Info;
 import ibot.bot.physics.DrivePhysics;
 import ibot.bot.physics.JumpPhysics;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.DataBot;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Mode;
 import ibot.bot.utils.StaticClass;
@@ -18,9 +18,9 @@ import ibot.vectors.Vector3;
 
 public class InterceptCalculator extends StaticClass {
 
-	public static final Vector2 xSkew = new Vector2(Math.sqrt(0.2) * 2, Math.sqrt(0.2));
+	public static final Vector2 X_SKEW = new Vector2(Math.sqrt(0.2) * 2, Math.sqrt(0.2));
 
-	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, OptionalDouble boost, AerialType type,
+	public static Intercept aerialCalculate(Info bot, Car car, double gravity, OptionalDouble boost, AerialType type,
 			Mode mode, boolean kickoff, boolean chooseStrongest){
 		if(BallPrediction.isEmpty())
 			return null;
@@ -61,10 +61,10 @@ public class InterceptCalculator extends StaticClass {
 				Vector2 offset = getOffset(car, slice.position, goal);
 				if(goal.distance(slice.position.flatten()) < 3000){
 //				if(mode == Mode.HOOPS || Math.abs(slice.position.x) > Constants.GOAL_WIDTH - 200)
-					offset = offset.multiply(xSkew);
+					offset = offset.multiply(X_SKEW);
 				}
 //				else{
-//					offset = offset.multiply(xSkew.reciprocal());
+//					offset = offset.multiply(X_SKEW.reciprocal());
 //				}
 				interceptPosition = slice.position.plus(offset.withZ(0).scale(RADIUS));
 			}
@@ -87,23 +87,23 @@ public class InterceptCalculator extends StaticClass {
 		return new Intercept(strongestSlice.position, car, strongestInterceptPosition, strongestSlice.time);
 	}
 
-	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, AerialType type, Mode mode,
+	public static Intercept aerialCalculate(Info bot, Car car, double gravity, AerialType type, Mode mode,
 			boolean kickoff, boolean chooseStrongest){
 		return aerialCalculate(bot, car, gravity, OptionalDouble.empty(), type, mode, kickoff, chooseStrongest);
 	}
 
-	public static Intercept aerialCalculate(DataBot bot, Car car, double gravity, double boost, AerialType type,
-			Mode mode, boolean kickoff, boolean chooseStrongest){
+	public static Intercept aerialCalculate(Info bot, Car car, double gravity, double boost, AerialType type, Mode mode,
+			boolean kickoff, boolean chooseStrongest){
 		return aerialCalculate(bot, car, gravity, OptionalDouble.of(boost), type, mode, kickoff, chooseStrongest);
 	}
 
-	public static Intercept groundCalculate(DataBot bot, Car car, Mode mode){
+	public static Intercept groundCalculate(Car car, double gravity, Vector2 goal, Mode mode){
 		if(BallPrediction.isEmpty())
 			return null;
 
 		final double RADIUS = (Constants.BALL_RADIUS + 15);
 
-		final double MAX_Z = JumpPhysics.maxZ(bot, Constants.JUMP_MAX_HOLD, true) + 50;
+		final double MAX_Z = JumpPhysics.maxZ(car, gravity, Constants.JUMP_MAX_HOLD, true) + 50;
 
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
 			Slice slice = BallPrediction.get(i);
@@ -118,7 +118,7 @@ public class InterceptCalculator extends StaticClass {
 			if(mode == Mode.DROPSHOT){
 				offset = car.position.minus(slice.position).scaleToMagnitude(RADIUS);
 			}else{
-				Vector2 goal = (car.team == bot.team ? bot.enemyGoal.flatten() : bot.homeGoal.flatten());
+//				Vector2 goal = (car.team == bundle.packet.car.team ? bundle.info.enemyGoal.flatten() : bundle.info.homeGoal.flatten());
 				offset = getOffset(car, slice.position, goal).withZ(0).scale(RADIUS);
 			}
 
@@ -138,7 +138,7 @@ public class InterceptCalculator extends StaticClass {
 	 * This is intended for finding a intercept on the wall to aim for when the car
 	 * is still on the ground, it is imprecise.
 	 */
-	public static Intercept wallCalculate(DataBot bot, Car car, double maxTime){
+	public static Intercept wallCalculate(Info bot, Car car, double maxTime){
 		if(BallPrediction.isEmpty() || bot.mode != Mode.SOCCAR || !car.onFlatGround)
 			return null;
 

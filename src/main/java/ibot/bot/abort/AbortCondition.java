@@ -1,22 +1,21 @@
 package ibot.bot.abort;
 
-import ibot.bot.utils.DataBot;
-import ibot.input.DataPacket;
+import ibot.bot.input.Bundle;
 
 public abstract class AbortCondition {
 
-	protected DataBot bot;
+	protected Bundle bundle;
 	private double startTime;
 
-	public AbortCondition(DataBot bot){
-		this.bot = bot;
-		this.startTime = bot.time;
+	public AbortCondition(Bundle bundle){
+		this.bundle = bundle;
+		this.startTime = bundle.packet.time;
 	}
 
-	public abstract boolean shouldAbort(DataPacket packet);
+	public abstract boolean shouldAbort();
 
 	public double getStartTime(){
-		return startTime;
+		return this.startTime;
 	}
 
 }

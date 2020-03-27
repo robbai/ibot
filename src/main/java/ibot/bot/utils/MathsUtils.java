@@ -9,7 +9,7 @@ import ibot.vectors.Vector3;
 
 public class MathsUtils extends StaticClass {
 
-	private static Random random = new Random();
+	public static Random random = new Random();
 
 	public static boolean between(double a, double bound1, double bound2){
 		return a >= Math.min(bound1, bound2) && a <= Math.max(bound1, bound2);
