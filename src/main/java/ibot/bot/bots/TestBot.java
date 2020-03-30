@@ -10,7 +10,6 @@ import rlbot.gamestate.DesiredVector3;
 import rlbot.gamestate.GameState;
 import rlbot.gamestate.PhysicsState;
 import ibot.bot.abort.BallTouchedAbort;
-import ibot.bot.actions.Action;
 import ibot.bot.actions.DriveStrike;
 import ibot.bot.controls.Handling;
 import ibot.bot.input.Info;
@@ -26,7 +25,6 @@ public class TestBot extends ABot {
 
 	private static final AerialType AERIAL_TYPE = AerialType.DODGE_STRIKE;
 
-	private Action action;
 	private double timeSet = 0;
 	private float ballY, playerY;
 	private Random random;

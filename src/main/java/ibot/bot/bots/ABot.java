@@ -4,6 +4,7 @@ import rlbot.Bot;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.GameTickPacket;
 import ibot.boost.BoostManager;
+import ibot.bot.actions.Action;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.utils.MathsUtils;
@@ -19,6 +20,8 @@ public abstract class ABot implements Bot {
 
 	protected Bundle bundle;
 	private Info info;
+
+	public Action action;
 
 	public ABot(int index, int team){
 		super();

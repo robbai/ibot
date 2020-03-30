@@ -29,8 +29,6 @@ import ibot.vectors.Vector3;
 
 public class IBot extends ABot {
 
-	private Action action;
-
 	public IBot(int index, int team){
 		super(index, team);
 	}
