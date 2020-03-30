@@ -8,6 +8,7 @@ import ibot.bot.actions.Action;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.utils.MathsUtils;
+import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
 import ibot.prediction.BallPrediction;
@@ -18,6 +19,8 @@ public abstract class ABot implements Bot {
 
 	public final int index, team;
 
+	public final double sign;
+
 	protected Bundle bundle;
 	private Info info;
 
@@ -27,6 +30,8 @@ public abstract class ABot implements Bot {
 		super();
 		this.index = index;
 		this.team = team;
+
+		this.sign = Car.determineSign(team);
 
 		this.info = new Info(this);
 

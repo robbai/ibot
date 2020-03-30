@@ -27,7 +27,7 @@ import ibot.vectors.Vector3;
 
 public class Info {
 
-	private final ABot bot;
+	public final ABot bot;
 
 	public Info(ABot bot){
 		super();

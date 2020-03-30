@@ -17,6 +17,7 @@ import ibot.bot.input.Pencil;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
+import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.ControlsOutput;
 
@@ -39,6 +40,7 @@ public class TestBot extends ABot {
 		DataPacket packet = this.bundle.packet;
 		Pencil pencil = this.bundle.pencil;
 		Info info = this.bundle.info;
+		Car car = packet.car;
 
 		if(this.action != null){
 			if(!this.action.isFinished()){
@@ -67,26 +69,26 @@ public class TestBot extends ABot {
 		// return action.getOutput(packet);
 		// }
 
-		if((packet.ball.position.y - ballY) * info.sign > 2000 || (info.car.position.y - playerY) * info.sign > 5000
+		if((packet.ball.position.y - ballY) * this.sign > 2000 || (car.position.y - playerY) * this.sign > 5000
 				|| (packet.time - timeSet) > 5){
 			// if((packet.time - timeSet) > 10 || (info.car.position.y -
-			// packet.ball.position.y) * info.sign > 0 || info.ballVelocity.y * info.sign <
+			// packet.ball.position.y) * this.sign > 0 || info.ballVelocity.y * this.sign <
 			// -1000){
 			float x = (float)Math.signum(MathsUtils.random(-1, 1));
-			ballY = (float)(random(2000, 3500) * info.sign);
-			playerY = (float)(-random(4000, Constants.PITCH_LENGTH_SOCCAR - 200) * info.sign);
+			ballY = (float)(random(2000, 3500) * this.sign);
+			playerY = (float)(-random(4000, Constants.PITCH_LENGTH_SOCCAR - 200) * this.sign);
 			GameState gameState = new GameState()
 					.withCarState(this.index,
 							new CarState().withBoostAmount((float)random(30, 100))
 									.withPhysics(new PhysicsState().withLocation(new DesiredVector3(0F, playerY, 0F))
 											.withVelocity(new DesiredVector3(0F,
-													(float)(Constants.MAX_CAR_VELOCITY * 0.85 * info.sign), 0F))
+													(float)(Constants.MAX_CAR_VELOCITY * 0.85 * this.sign), 0F))
 											.withRotation(new DesiredRotation(0F,
-													(float)(Math.PI * (info.team == 0 ? 0.5 : 1.5)), 0F))))
+													(float)(Math.PI * (this.team == 0 ? 0.5 : 1.5)), 0F))))
 					.withBallState(new BallState().withPhysics(new PhysicsState()
 							.withLocation(new DesiredVector3(1500F * x, ballY, (float)Constants.BALL_RADIUS))
 							.withVelocity(new DesiredVector3((float)random(300, 450) * -x,
-									(float)(random(0, 800) * -info.sign), (float)random(1100, 1300)
+									(float)(random(0, 800) * -this.sign), (float)random(1100, 1300)
 											/ (AERIAL_TYPE == AerialType.DOUBLE_JUMP ? 1.2F : 0.8F)))));
 			if(packet.robbie != null){
 				gameState
@@ -96,10 +98,10 @@ public class TestBot extends ABot {
 												100F)
 										.withPhysics(new PhysicsState()
 												.withLocation(new DesiredVector3(0F,
-														(float)(info.sign * Constants.PITCH_LENGTH_SOCCAR), 0F))
+														(float)(this.sign * Constants.PITCH_LENGTH_SOCCAR), 0F))
 												.withVelocity(new DesiredVector3(0F, 0F, 0F))
 												.withRotation(new DesiredRotation(0F,
-														(float)(-Math.PI * (info.team == 0 ? 0.5 : 1.5)), 0F))));
+														(float)(-Math.PI * (this.team == 0 ? 0.5 : 1.5)), 0F))));
 			}
 			RLBotDll.setGameState(gameState.buildPacket());
 			this.action = null;
@@ -134,7 +136,7 @@ public class TestBot extends ABot {
 
 		if(info.groundIntercept == null)
 			return new ControlsOutput();
-		if(Math.min(packet.time - timeSet, info.getTimeOnGround()) < 0.2 || !info.car.hasWheelContact){
+		if(Math.min(packet.time - timeSet, info.getTimeOnGround()) < 0.2 || !car.hasWheelContact){
 			return (ControlsOutput)Handling.driveTime(this.bundle,
 					info.bounce != null ? info.groundIntercept.position.lerp(info.bounce.position, 0.5)
 							: info.groundIntercept.position,

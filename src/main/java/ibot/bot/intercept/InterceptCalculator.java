@@ -20,7 +20,7 @@ public class InterceptCalculator extends StaticClass {
 
 	public static final Vector2 X_SKEW = new Vector2(Math.sqrt(0.2) * 2, Math.sqrt(0.2));
 
-	public static Intercept aerialCalculate(Info bot, Car car, double gravity, OptionalDouble boost, AerialType type,
+	public static Intercept aerialCalculate(Info info, Car car, double gravity, OptionalDouble boost, AerialType type,
 			Mode mode, boolean kickoff, boolean chooseStrongest){
 		if(BallPrediction.isEmpty())
 			return null;
@@ -57,7 +57,7 @@ public class InterceptCalculator extends StaticClass {
 				}
 			}else{
 //				Vector2 goal = new Vector2(0, (mode == Mode.HOOPS ? Constants.PITCH_LENGTH_HOOPS : Constants.PITCH_WIDTH_SOCCAR) * car.sign);
-				Vector2 goal = (car.team == bot.team ? bot.enemyGoal.flatten() : bot.homeGoal.flatten());
+				Vector2 goal = (car.team == info.bot.team ? info.enemyGoal.flatten() : info.homeGoal.flatten());
 				Vector2 offset = getOffset(car, slice.position, goal);
 				if(goal.distance(slice.position.flatten()) < 3000){
 //				if(mode == Mode.HOOPS || Math.abs(slice.position.x) > Constants.GOAL_WIDTH - 200)
@@ -87,14 +87,14 @@ public class InterceptCalculator extends StaticClass {
 		return new Intercept(strongestSlice.position, car, strongestInterceptPosition, strongestSlice.time);
 	}
 
-	public static Intercept aerialCalculate(Info bot, Car car, double gravity, AerialType type, Mode mode,
+	public static Intercept aerialCalculate(Info info, Car car, double gravity, AerialType type, Mode mode,
 			boolean kickoff, boolean chooseStrongest){
-		return aerialCalculate(bot, car, gravity, OptionalDouble.empty(), type, mode, kickoff, chooseStrongest);
+		return aerialCalculate(info, car, gravity, OptionalDouble.empty(), type, mode, kickoff, chooseStrongest);
 	}
 
-	public static Intercept aerialCalculate(Info bot, Car car, double gravity, double boost, AerialType type, Mode mode,
-			boolean kickoff, boolean chooseStrongest){
-		return aerialCalculate(bot, car, gravity, OptionalDouble.of(boost), type, mode, kickoff, chooseStrongest);
+	public static Intercept aerialCalculate(Info info, Car car, double gravity, double boost, AerialType type,
+			Mode mode, boolean kickoff, boolean chooseStrongest){
+		return aerialCalculate(info, car, gravity, OptionalDouble.of(boost), type, mode, kickoff, chooseStrongest);
 	}
 
 	public static Intercept groundCalculate(Car car, double gravity, Vector2 goal, Mode mode){

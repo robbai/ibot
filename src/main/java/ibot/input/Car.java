@@ -30,7 +30,7 @@ public class Car {
 		this.boost = playerInfo.boost();
 		this.isSupersonic = playerInfo.isSupersonic();
 		this.team = playerInfo.team();
-		this.sign = (this.team == 0 ? 1 : -1);
+		this.sign = determineSign(this.team);
 		this.hasWheelContact = playerInfo.hasWheelContact();
 		this.time = time;
 		this.index = index;
@@ -40,6 +40,10 @@ public class Car {
 
 		this.onFlatGround = (this.hasWheelContact && this.orientation.up.z > 0.75);
 		this.onSuperFlatGround = (this.onFlatGround && this.orientation.up.z > 0.95);
+	}
+
+	public static double determineSign(int team){
+		return -2 * team + 1;
 	}
 
 }
