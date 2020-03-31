@@ -19,7 +19,7 @@ import ibot.vectors.Vector3;
 
 public class Aerial extends Action {
 
-	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + Constants.DT * 3),
+	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + Jump.DOUBLE_JUMP_DELAY),
 			ANGLE_THRESHOLD = 0.3;
 
 	public final Intercept intercept;
@@ -67,7 +67,7 @@ public class Aerial extends Action {
 		}
 
 		// Dodge.
-		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrike.DODGE_TIME * 2){
+		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrike.DODGE_TIME){
 			Vector3 local = MathsUtils.local(car, DriveStrike.getDodgeTarget(this.intercept));
 			double radians = Vector2.Y.correctionAngle(local.flatten());
 			return new ControlsOutput().withJump(true).withPitch(-Math.cos(radians)).withYaw(-Math.sin(radians));

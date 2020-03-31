@@ -47,11 +47,9 @@ public class Marvin {
 	}
 
 	public static double curve1(double x){
-//		if(x > 0.5){
-//			x = 1 - MathsUtils.clamp(x, -1, 1);
-//		}else if(x < -0.5){
-//			x = -1 - MathsUtils.clamp(x, -1, 1);
-//		}
+		if(Math.abs(x) > 0.5){
+			x = Math.copySign(1 - MathsUtils.clamp(x, -1, 1), x);
+		}
 		double s = 500000 * Math.pow(x, 3);
 		return MathsUtils.clamp(s, -1, 1);
 	}
@@ -59,51 +57,51 @@ public class Marvin {
 	/**
 	 * PD steer to point.
 	 *
-	 * @param ang
-	 * @param angVel
+	 * @param angle
+	 * @param angularVelocity
 	 * @return
 	 */
-	public static double steerPoint(double ang, double angVel){
-		return curve1(range180(ang - angVel * DT));
+	public static double steerPoint(double angle, double angularVelocity){
+		return curve1(range180(angle - angularVelocity * DT));
 	}
 
 	/**
 	 * PD throttle to point
 	 *
-	 * @param loc
-	 * @param vel
+	 * @param location
+	 * @param velocity
 	 * @param brakes
 	 * @return
 	 */
-	public static double throttlePoint(double loc, double vel, double brakes){
-		return Math.signum(loc - brakes * tfs(vel) * vel)
-				* MathsUtils.clamp((Math.abs(loc) + Math.abs(vel)) * DT, -1, 1);
+	public static double throttlePoint(double location, double velocity, double brakes){
+		return Math.signum(location - brakes * tfs(velocity) * velocity)
+				* MathsUtils.clamp((Math.abs(location) + Math.abs(velocity)) * DT, -1, 1);
 	}
 
 	/**
 	 * PD throttle to point
 	 *
-	 * @param loc
-	 * @param vel
+	 * @param location
+	 * @param velocity
 	 * @return
 	 */
-	public static double throttlePoint(double loc, double vel){
-		return throttlePoint(loc, vel, 1);
+	public static double throttlePoint(double location, double velocity){
+		return throttlePoint(location, velocity, 1);
 	}
 
 	/**
 	 * PD throttle to velocity.
 	 *
-	 * @param vel
-	 * @param deltaSpeed
+	 * @param velocity
+	 * @param desiredVelocity
 	 * @param lastThrottle
 	 * @return
 	 */
-	public static double throttleVelocity(double vel, double deltaSpeed, double lastThrottle){
-		vel = vel + throttleAcc(lastThrottle, vel) * DT;
-		double deltaAcc = (deltaSpeed - vel) / DT * Math.signum(deltaSpeed);
+	public static double throttleVelocity(double velocity, double desiredVelocity, double lastThrottle){
+		velocity = velocity + throttleAcc(lastThrottle, velocity) * DT;
+		double deltaAcc = (desiredVelocity - velocity) / DT * Math.signum(desiredVelocity);
 		if(deltaAcc > 0){
-			return MathsUtils.clamp(deltaAcc / (throttleAcc(1, vel) + 1e-9), -1, 1) * Math.signum(deltaSpeed);
+			return MathsUtils.clamp(deltaAcc / (throttleAcc(1, velocity) + 1e-9), -1, 1) * Math.signum(desiredVelocity);
 		}else if(-3600 < deltaAcc && deltaAcc <= 0){
 			return 0;
 		}else{
@@ -111,14 +109,14 @@ public class Marvin {
 		}
 	}
 
-	public static double throttleAcc(double throttle, double vel){
-		if(throttle * vel < 0){
-			return -3600 * Math.signum(vel);
+	public static double throttleAcc(double throttle, double velocity){
+		if(throttle * velocity < 0){
+			return -3600 * Math.signum(velocity);
 		}else if(throttle == 0){
-			return -525 * Math.signum(vel);
+			return -525 * Math.signum(velocity);
 		}else{
-			return (-THROTTLE_ACCEL / THROTTLE_MAX_SPEED * Math.min(Math.abs(vel), THROTTLE_MAX_SPEED) + THROTTLE_ACCEL)
-					* throttle;
+			return (-THROTTLE_ACCEL / THROTTLE_MAX_SPEED * Math.min(Math.abs(velocity), THROTTLE_MAX_SPEED)
+					+ THROTTLE_ACCEL) * throttle;
 		}
 	}
 
@@ -158,16 +156,16 @@ public class Marvin {
 	/**
 	 * P velocity boost control.
 	 *
-	 * @param vel
-	 * @param deltaVel
+	 * @param velocity
+	 * @param desiredVelocity
 	 * @param lastBoost
 	 * @return
 	 */
-	public static boolean boostVelocity(double vel, double deltaVel, boolean lastBoost){
-		double relVel = deltaVel - vel - (lastBoost ? 5 : 0);
+	public static boolean boostVelocity(double velocity, double desiredVelocity, boolean lastBoost){
+		double relativeVelocity = desiredVelocity - velocity - (lastBoost ? 5 : 0);
 		double threshold;
-		if(vel < THROTTLE_MAX_SPEED){
-			if(deltaVel < 0){
+		if(velocity < THROTTLE_MAX_SPEED){
+			if(desiredVelocity < 0){
 				threshold = 800;
 			}else{
 				threshold = 250;
@@ -175,18 +173,18 @@ public class Marvin {
 		}else{
 			threshold = 50;
 		}
-		return relVel > threshold;
+		return relativeVelocity > threshold;
 	}
 
 	/**
 	 * P velocity boost control.
 	 *
-	 * @param vel
-	 * @param deltaVel
+	 * @param velocity
+	 * @param desiredVelocity
 	 * @return
 	 */
-	public static boolean boostVelocity(double vel, double deltaVel){
-		return boostVelocity(vel, deltaVel, false);
+	public static boolean boostVelocity(double velocity, double desiredVelocity){
+		return boostVelocity(velocity, desiredVelocity, false);
 	}
 
 	/**

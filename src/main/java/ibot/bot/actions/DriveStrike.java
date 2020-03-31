@@ -23,7 +23,7 @@ public class DriveStrike extends Action {
 	/*
 	 * Constants.
 	 */
-	public static final double MIN_JUMP_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 5);
+	public static final double MIN_JUMP_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 6);
 
 	public final Intercept intercept;
 
@@ -39,10 +39,14 @@ public class DriveStrike extends Action {
 
 	private double lastGoTimeChange;
 
-	public DriveStrike(Bundle bundle, Intercept intercept, Vector3 enemyGoal){
+	private boolean doubleJump;
+
+	public DriveStrike(Bundle bundle, Intercept intercept, Vector3 enemyGoal, boolean doubleJump){
 		super(bundle);
 		this.intercept = intercept;
 		this.enemyGoal = enemyGoal;
+
+		this.doubleJump = doubleJump;
 
 		DataPacket packet = bundle.packet;
 		Car car = packet.car;
@@ -51,12 +55,17 @@ public class DriveStrike extends Action {
 				.angle(enemyGoal.minus(car.position).flatten());
 		this.curve = (angle > Math.toRadians(40) && car.onFlatGround);
 
-		double z = MathsUtils.local(car, intercept.intersectPosition).z;
-		double minZ = JumpPhysics.maxZ(car, packet.gravity, 0, false);
-		double maxZ = JumpPhysics.maxZ(car, packet.gravity, Constants.JUMP_MAX_HOLD, false);
-		this.holdTime = MathsUtils.clamp(
-				MathsUtils.lerp(0, Constants.JUMP_MAX_HOLD, Math.pow((z - minZ) / (maxZ - minZ), 2)), MIN_JUMP_TIME,
-				Constants.JUMP_MAX_HOLD);
+		if(this.doubleJump){
+			this.holdTime = Constants.JUMP_MAX_HOLD;
+			this.go = true;
+		}else{
+			double z = MathsUtils.local(car, intercept.intersectPosition).z;
+			double minZ = JumpPhysics.maxZ(car, packet.gravity, 0, false, doubleJump);
+			double maxZ = JumpPhysics.maxZ(car, packet.gravity, Constants.JUMP_MAX_HOLD, false, doubleJump);
+			this.holdTime = MathsUtils.clamp(
+					MathsUtils.lerp(0, Constants.JUMP_MAX_HOLD, Math.pow((z - minZ) / (maxZ - minZ), 2)), MIN_JUMP_TIME,
+					Constants.JUMP_MAX_HOLD);
+		}
 
 		this.startUpZ = car.orientation.up.z;
 	}
@@ -75,9 +84,9 @@ public class DriveStrike extends Action {
 		// Calculations.
 		double fullDistance = localIntercept.flatten().magnitude();
 		double targetSpeed = (fullDistance / timeLeft);
-		double maxZ = JumpPhysics.maxZ(packet.car, packet.gravity, this.holdTime, true);
-		double jumpTime = JumpPhysics.timeZ(packet, Math.min(localIntercept.z, maxZ), this.holdTime);
-//		double driveTime = Math.max(0, timeLeft - jumpTime);
+		double maxZ = JumpPhysics.maxZ(packet.car, packet.gravity, this.holdTime, true, this.doubleJump);
+		double jumpTime = JumpPhysics.timeZ(packet, Math.min(localIntercept.z, maxZ), this.holdTime, this.doubleJump);
+		double driveTime = Math.max(0, timeLeft - jumpTime);
 
 		this.go |= this.curve;
 		if(!this.go){
@@ -96,8 +105,8 @@ public class DriveStrike extends Action {
 		pencil.stackRenderString(MathsUtils.round(timeLeft, 3) + "s", timeLeft < 0 ? Color.RED : Color.WHITE);
 		pencil.stackRenderString(MathsUtils.round(this.holdTime, 3) + "s", this.go ? Color.GREEN : Color.RED);
 
-		this.setFinished(
-				timeLeft <= (car.hasDoubleJumped ? -0.6 : 0) || Math.abs(this.startUpZ - car.orientation.up.z) > 0.4);
+		this.setFinished(timeLeft <= (car.hasDoubleJumped && !this.doubleJump ? -0.6 : 0)
+				|| Math.abs(this.startUpZ - car.orientation.up.z) > 0.4);
 		// this.setFinished(timeLeft <= (car.hasDoubleJumped ? -0.6 : 0));
 
 		if(!this.jumpStart.isPresent()){
@@ -112,11 +121,7 @@ public class DriveStrike extends Action {
 			pencil.renderer.drawLine3d(pencil.altColour, globalCar, floor);
 
 			double accuracy = freeCar.minus(localIntercept).flatten().magnitude();
-			if(timeLeft - Constants.DT <= jumpTime)
-				System.out.println((int)accuracy + "uu");
-			// if((timeLeft - Constants.DT <= jumpTime || car.forwardVelocity < 0) &&
-			// accuracy < 50){
-			if(timeLeft - Constants.DT <= jumpTime){
+			if(timeLeft - Constants.DT <= jumpTime && (!this.doubleJump || accuracy < 80)){
 				this.jumpStart = OptionalDouble.of(time);
 			}
 		}
@@ -138,24 +143,21 @@ public class DriveStrike extends Action {
 
 			pencil.stackRenderString(MathsUtils.round(timeLeft, 3) + "s", dodgeSoon ? Color.YELLOW : Color.WHITE);
 
-			if(!dodgeSoon){
-				// Vector3 desiredForward = MathsUtils.global(car,
-				// localVelocity.normalised().withZ(localIntercept.plus(MathsUtils.local(car.orientation,
-				// Vector3.Z.scale(100))).normalised().z));
-				// Vector3 desiredRoof =
-				// car.position.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z,
-				// 0.65);
+			if(this.doubleJump && timeJumping > this.holdTime + Jump.DOUBLE_JUMP_DELAY && !car.hasDoubleJumped){
+				return new ControlsOutput().withJump(true);
+			}
 
-				Vector3 desiredForward = this.intercept.intersectPosition.plus(new Vector3(0, 0, 100))
-						.minus(car.position);
+			if(!dodgeSoon){
+				Vector3 desiredForward;
+				if(!this.doubleJump){
+					desiredForward = this.intercept.intersectPosition.plus(new Vector3(0, 0, 75)).minus(car.position);
+				}else{
+					desiredForward = this.intercept.position.minus(car.position);
+				}
 
 				pencil.renderer.drawLine3d(Color.RED, car.position,
 						car.position.plus(desiredForward.scaleToMagnitude(200)));
-				// pencil.renderer.drawLine3d(Color.GREEN, car.position,
-				// car.position.plus(desiredRoof.scaleToMagnitude(200)));
 
-				// double[] orient = AirControl.getRollPitchYaw(car, desiredForward,
-				// desiredRoof, true);
 				double[] orient = AirControl.getRollPitchYaw(car, desiredForward);
 				return new ControlsOutput().withJump(timeJumping < this.holdTime).withOrient(orient);
 			}
@@ -172,7 +174,7 @@ public class DriveStrike extends Action {
 		Vector3 target = this.intercept.intersectPosition;
 		if(this.curve){
 			double distance = car.position.distance(target);
-			distance *= MathsUtils.clamp((timeLeft - 1.5) * 0.6, 0, 0.6);
+			distance *= MathsUtils.clamp((driveTime - 0.5) * 0.6, 0, 0.6);
 			if(distance > 100){
 				target = target.plus(target.minus(this.enemyGoal).scaleToMagnitude(distance)).clamp();
 				pencil.stackRenderString((int)distance + "uu", Color.MAGENTA);

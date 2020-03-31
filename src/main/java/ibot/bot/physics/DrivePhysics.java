@@ -95,11 +95,10 @@ public class DrivePhysics extends StaticClass {
 		return 1.0 / curvature(v);
 	}
 
-	public static double maxVelForTurn(Car car, Vector3 target){
+	public static double maxSpeedForTurn(Car car, Vector3 target){
 		Vector2 local = MathsUtils.local(car, target).flatten();
 
 		double low = 100;
-//		double high = Constants.SUPERSONIC_VELOCITY;
 		double high = Constants.MAX_CAR_VELOCITY;
 
 		final int steps = 20;

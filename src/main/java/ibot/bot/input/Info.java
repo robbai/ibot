@@ -44,8 +44,8 @@ public class Info {
 	public Vector3 enemyGoal, homeGoal;
 	public CarTrajectory[] trajectories;
 	public CarSlice[][] trajectoryResults;
-	public Intercept aerialDodge, aerialDouble, groundIntercept, bounce, wallIntercept, earliestTeammateIntercept,
-			earliestEnemyIntercept;
+	public Intercept aerialDodge, aerialDouble, groundIntercept, doubleJumpIntercept, bounce, wallIntercept,
+			earliestTeammateIntercept, earliestEnemyIntercept;
 	public boolean isKickoff, commit, pickupBoost, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal;
 	private boolean lastWheelContact, lastIsKickoff, hasMatchEnded;
 	public double gravity, time, lastWheelContactTime, timeToHitGround, possession, teamPossession, carForwardComponent;
@@ -119,12 +119,15 @@ public class Info {
 				this.mode, this.isKickoff, true);
 		this.aerialDouble = InterceptCalculator.aerialCalculate(this, car, gravity, car.boost, AerialType.DOUBLE_JUMP,
 				this.mode, this.isKickoff, false);
+		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(car, packet.gravity, this.enemyGoal.flatten(),
+				this.mode, true);
 		this.groundIntercepts = new Intercept[packet.cars.length];
 		this.earliestTeammateIntercept = null;
 		this.earliestEnemyIntercept = null;
 		for(int i = 0; i < packet.cars.length; i++){
 			Vector2 goal = packet.cars[i].team == this.car.team ? this.enemyGoal.flatten() : this.homeGoal.flatten();
-			Intercept intercept = InterceptCalculator.groundCalculate(packet.cars[i], packet.gravity, goal, this.mode);
+			Intercept intercept = InterceptCalculator.groundCalculate(packet.cars[i], packet.gravity, goal, this.mode,
+					false);
 			this.groundIntercepts[i] = intercept;
 
 			if(intercept == null)
@@ -171,7 +174,7 @@ public class Info {
 			if(Math.abs(c.position.x - this.ball.position.x) > Constants.PITCH_WIDTH_SOCCAR * 1.2){
 				continue;
 			}
-			if((c.position.y - this.ball.position.y) * this.car.sign < 0){
+			if((this.ball.position.y - c.position.y) * this.car.sign > 0){
 				this.lastMan = false;
 				break;
 			}
@@ -228,12 +231,13 @@ public class Info {
 			double carInterceptValue = interceptValue(this.groundIntercept, this.car,
 					(this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time), this.enemyGoal,
 					this.time);
-			double ourBonus = (lastCommit ? 0.3 : -0.25);
+			double ourBonus = (lastCommit ? 0.5 : -0.2);
 			if(this.groundIntercept.position.y * this.car.sign < 0
-					&& (this.groundIntercept.position.y - this.car.position.y) * this.car.sign > 0){
+					&& (this.groundIntercept.position.y - this.car.position.y) * this.car.sign > 0
+					&& this.teamPossession < 0.3){
 				ourBonus += (this.car.onFlatGround && (!this.furthestBack || (this.lastMan && this.possession > -0.75))
-						? 2
-						: 0.5);
+						? 1.5
+						: 0.8);
 			}
 			for(Car c : packet.teammates){
 				if(c.isDemolished)
@@ -296,8 +300,8 @@ public class Info {
 		return car.velocity.dot(intercept.position.minus(car.position).normalised()) / 1500
 				+ Math.min(4 / (intercept.time - secondsElapsed), 1.5)
 				+ MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.4
-				+ Math.cos(goal.minus(car.position).flatten().angle(intercept.position.minus(car.position).flatten()))
-						* 1.7 * (Math.abs(intercept.position.y / Constants.PITCH_LENGTH_SOCCAR));
+				+ Math.cos(car.position.minus(goal).flatten().angle(intercept.position.minus(goal).flatten())) * 1.4
+						* Math.max(0.5, Math.abs(intercept.position.y / Constants.PITCH_LENGTH_SOCCAR));
 	}
 
 	private static double estimateTimeToHitGround(Car car, double gravity){

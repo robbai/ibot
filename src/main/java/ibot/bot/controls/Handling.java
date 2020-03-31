@@ -52,14 +52,15 @@ public class Handling {
 			radians = MathsUtils.invertAngle(radians);
 		}
 
-		double maxTurnVel = DrivePhysics.maxVelForTurn(car,
+		double maxTurnVel = DrivePhysics.maxSpeedForTurn(car,
 				target.setDistanceFrom(car.position, Math.min(3000, target.distance(car.position))));
 		double desiredVelocity = maxTurnVel;
 		if(targetTime.isPresent()){
 			double distance = target.distance(car.position);
 			desiredVelocity = Math.min(desiredVelocity, distance / (targetTime.getAsDouble() - car.time));
 		}else if(targetVelocity.isPresent()){
-			desiredVelocity = Math.min(desiredVelocity, targetVelocity.getAsDouble());
+			desiredVelocity = Math.copySign(Math.min(desiredVelocity, Math.abs(targetVelocity.getAsDouble())),
+					desiredVelocity);
 		}
 		desiredVelocity *= reverseSign;
 
@@ -107,13 +108,12 @@ public class Handling {
 		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3) || (car.onFlatGround
 				&& (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300 && velocityStraight > 0.9)
 				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800));
-//		if(car.angularVelocity.yaw * radians > 0 || car.forwardVelocity * throttle < 0){
-//			handbrake = false;
-//		}
+//		handbrake &= (car.angularVelocity.yaw * radians * car.forwardVelocity < 0 && car.forwardVelocity * throttle > 0);
 
 		return new ControlsOutput().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
 //				.withSteer(Marvin.steerPoint(-radians, car.angularVelocity.yaw))
-				.withSteer(radians * -3)
+				.withSteer(Math.pow(-radians - car.angularVelocity.yaw * Constants.DT, 3) * 10000)
+//				.withSteer(radians * -3)
 				.withOrient(car.hasWheelContact || wavedashTime
 						? new double[] { 0, wavedashTime ? -Math.signum(Math.cos(radians)) : 0, 0 }
 						: AirControl.getRollPitchYaw(car,

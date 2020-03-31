@@ -28,14 +28,13 @@ public class InterceptCalculator extends StaticClass {
 		Vector3 carPosition = car.position;
 		Vector3 interceptFrom = carPosition;
 
-		final double RADIUS = (Constants.BALL_RADIUS - 20);
+		final double RADIUS = (Constants.BALL_RADIUS - 10);
 
 		AerialCalculator strongest = null;
 		Slice strongestSlice = null;
 		Vector3 strongestInterceptPosition = null;
 
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
-//		for(int i = (type == AerialType.DODGE_STRIKE ? (int)((Constants.MAX_DODGE_DELAY + Aerial.DODGE_TIME - 0.1) * 60) : ballPrediction.slicesLength() - 1); i >= 0; i--){
 			Slice slice = BallPrediction.get(i);
 
 			if(type == AerialType.DODGE_STRIKE
@@ -71,7 +70,7 @@ public class InterceptCalculator extends StaticClass {
 
 			AerialCalculator calculation = AerialCalculator.isViable(car, interceptPosition, slice.time, gravity, type);
 			if(calculation.viable){
-				if(strongest == null || strongest.finalVelocity < calculation.finalVelocity){
+				if(strongest == null || strongest.finalVelocity < calculation.finalVelocity - i){
 					strongest = calculation;
 					strongestSlice = slice;
 					strongestInterceptPosition = interceptPosition;
@@ -97,20 +96,22 @@ public class InterceptCalculator extends StaticClass {
 		return aerialCalculate(info, car, gravity, OptionalDouble.of(boost), type, mode, kickoff, chooseStrongest);
 	}
 
-	public static Intercept groundCalculate(Car car, double gravity, Vector2 goal, Mode mode){
+	public static Intercept groundCalculate(Car car, double gravity, Vector2 goal, Mode mode, boolean doubleJump){
 		if(BallPrediction.isEmpty())
 			return null;
 
-		final double RADIUS = (Constants.BALL_RADIUS + 15);
+		final double RADIUS = (Constants.BALL_RADIUS + (doubleJump ? 15 : 25));
 
-		final double MAX_Z = JumpPhysics.maxZ(car, gravity, Constants.JUMP_MAX_HOLD, true) + 50;
+		final double MIN_Z = (doubleJump ? JumpPhysics.maxZ(car, gravity, 0, true, true) - 75 : Double.MIN_VALUE);
+		final double MAX_Z = JumpPhysics.maxZ(car, gravity, Constants.JUMP_MAX_HOLD, true, doubleJump)
+				+ (doubleJump ? 110 : 60);
 
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
 			Slice slice = BallPrediction.get(i);
 			boolean finalSlice = (i == BallPrediction.SLICE_COUNT - 1);
 
 			double z = slice.position.minus(car.position).dot(car.orientation.up);
-			if(!finalSlice && z > MAX_Z){
+			if(!finalSlice && (z < MIN_Z || z > MAX_Z)){
 				continue;
 			}
 
@@ -142,7 +143,7 @@ public class InterceptCalculator extends StaticClass {
 		if(BallPrediction.isEmpty() || bot.mode != Mode.SOCCAR || !car.onFlatGround)
 			return null;
 
-		final double RADIUS = (Constants.BALL_RADIUS + 30);
+		final double RADIUS = (Constants.BALL_RADIUS + 35);
 		final double WALL_SIZE = 260;
 		final double VIOLENCE = 2.25;
 

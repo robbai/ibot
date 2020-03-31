@@ -9,6 +9,8 @@ import ibot.output.ControlsOutput;
 
 public class Jump extends Action {
 
+	public static final double DOUBLE_JUMP_DELAY = (Constants.DT * 3);
+
 	private static final double ORIENT_DELAY = 0.1;
 
 	private final double holdTime;

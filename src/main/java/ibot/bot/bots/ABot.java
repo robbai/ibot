@@ -52,10 +52,7 @@ public abstract class ABot implements Bot {
 		}
 
 		// Just return immediately if something looks wrong with the data.
-		// System.out.println(rawPacket.gameInfo().isKickoffPause() + ", " +
-		// rawPacket.gameInfo().isMatchEnded() + ", " +
-		// rawPacket.gameInfo().isRoundActive());
-		if(rawPacket.playersLength() <= index){
+		if(rawPacket.playersLength() <= this.index){
 			return new ControlsOutput();
 		}
 

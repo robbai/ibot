@@ -20,7 +20,9 @@ import ibot.vectors.Vector2;
 
 public class FollowArcs extends Action {
 
-	private static final int N = 60, AIM_UU = 550, RENDER_STEP = 4, PRESSURE_RATE = 400;
+	private static final int N = 60, RENDER_STEP = 2, PRESSURE_RATE = 400;
+
+	private static final double TIME_REACT = 0.3, MIN_AIM_UU = 500 * TIME_REACT;
 
 	private CompositeArc compositeArc;
 	private Vector2[] points;
@@ -29,7 +31,7 @@ public class FollowArcs extends Action {
 
 	private boolean boost = true;
 
-	private double PRESSURE_UU = AIM_UU;
+	private double PRESSURE_UU = 0;
 	private double lastTime;
 
 	public FollowArcs(Bundle bundle, CompositeArc compArc){
@@ -103,8 +105,9 @@ public class FollowArcs extends Action {
 		// Target.
 		double dt = packet.time - this.lastTime;
 		this.lastTime += dt;
-		this.PRESSURE_UU = MathsUtils.clamp(this.PRESSURE_UU + PRESSURE_RATE * dt, carUu + AIM_UU,
-				this.compositeArc.getLength() + AIM_UU);
+		double aimUu = Math.max(car.forwardVelocityAbs * TIME_REACT, MIN_AIM_UU);
+		this.PRESSURE_UU = MathsUtils.clamp(this.PRESSURE_UU + PRESSURE_RATE * dt, carUu + aimUu,
+				this.compositeArc.getLength() + aimUu);
 		Vector2 target = this.aim(this.PRESSURE_UU);
 		pencil.renderer.drawRectangle3d(pencil.colour, target.withZ(Constants.CAR_HEIGHT), 10, 10, true);
 
