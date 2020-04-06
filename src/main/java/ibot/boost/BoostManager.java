@@ -7,6 +7,7 @@ import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.BoostPadState;
 import rlbot.flat.FieldInfo;
 import rlbot.flat.GameTickPacket;
+import ibot.vectors.Vector2;
 
 /**
  * Information about where boost pads are located on the field and what status
@@ -74,6 +75,22 @@ public class BoostManager {
 			pad.setActive(padState.isActive());
 			pad.setTimer(padState.timer());
 		}
+	}
+
+	public static BoostPad closestActive(Vector2 location, boolean big){
+		ArrayList<BoostPad> boosts = (big ? getFullBoosts() : getSmallBoosts());
+		BoostPad closestPad = null;
+		double closestDistance = Double.MAX_VALUE;
+		for(BoostPad pad : boosts){
+			if(!pad.isActive())
+				continue;
+			double distance = pad.getLocation().distance(location);
+			if(distance < closestDistance){
+				closestDistance = distance;
+				closestPad = pad;
+			}
+		}
+		return closestPad;
 	}
 
 }
