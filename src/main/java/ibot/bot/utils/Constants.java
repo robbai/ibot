@@ -5,6 +5,7 @@ public class Constants extends StaticClass {
 	public static final double DT = (1D / 120);
 
 	public static final double BALL_RADIUS = 92.75;
+	public static final double MAX_BALL_VELOCITY = 6000;
 
 	public static final double BOOST_GROUND_ACCELERATION = (911 + (2 / 3));
 	public static final double BOOST_AIR_ACCELERATION = 1060;
