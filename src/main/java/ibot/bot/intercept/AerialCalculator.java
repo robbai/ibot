@@ -1,6 +1,6 @@
 package ibot.bot.intercept;
 
-import ibot.bot.actions.Aerial;
+import ibot.bot.step.steps.AerialStep;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Spherical;
@@ -37,13 +37,13 @@ public class AerialCalculator {
 		Vector3 carVelocity = car.velocity.plus(gravity.scale(time));
 
 		if(car.hasWheelContact){
-			carPosition = carPosition.plus(car.orientation.up
-					.scale(Constants.JUMP_IMPULSE * ((type == AerialType.DOUBLE_JUMP ? 2 : 1) * time - Aerial.JUMP_TIME)
-							+ Constants.JUMP_ACCELERATION
-									* (time * Aerial.JUMP_TIME - 0.5 * Aerial.JUMP_TIME * Aerial.JUMP_TIME)));
+			carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE
+					* ((type == AerialType.DOUBLE_JUMP ? 2 : 1) * time - AerialStep.JUMP_TIME)
+					+ Constants.JUMP_ACCELERATION
+							* (time * AerialStep.JUMP_TIME - 0.5 * AerialStep.JUMP_TIME * AerialStep.JUMP_TIME)));
 			carVelocity = carVelocity
 					.plus(car.orientation.up.scale((type == AerialType.DOUBLE_JUMP ? 2 : 1) * Constants.JUMP_IMPULSE
-							+ Constants.JUMP_ACCELERATION * Aerial.JUMP_TIME));
+							+ Constants.JUMP_ACCELERATION * AerialStep.JUMP_TIME));
 		}
 
 		Vector3 deltaPosition = target.minus(carPosition);
@@ -54,7 +54,7 @@ public class AerialCalculator {
 		Spherical sphericalLocal = new Spherical(MathsUtils.local(car, forward));
 		double phi = Math.abs(sphericalLocal.getElevation()) + Math.abs(sphericalLocal.getPerpendicular());
 
-		double tau1 = totalTurnTime * MathsUtils.clamp(1 - Aerial.ANGLE_THRESHOLD / phi, 0, 1);
+		double tau1 = totalTurnTime * MathsUtils.clamp(1 - AerialStep.ANGLE_THRESHOLD / phi, 0, 1);
 
 		double requiredAcceleration = 2 * deltaPosition.magnitude() / ((time - tau1) * (time - tau1));
 

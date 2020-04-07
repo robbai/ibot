@@ -1,27 +1,28 @@
-package ibot.bot.actions;
+package ibot.bot.step;
 
 import java.util.ArrayList;
 
 import ibot.bot.abort.AbortCondition;
 import ibot.bot.input.Bundle;
-import ibot.output.ControlsOutput;
 import ibot.output.Output;
 
-public abstract class Action extends Output {
+public abstract class Step extends Output {
 
 	protected Bundle bundle;
 	private boolean finished;
 	private double startTime;
 	private ArrayList<AbortCondition> abortConditions;
 
-	public Action(Bundle bundle){
+	public Step(Bundle bundle){
 		this.bundle = bundle;
 		this.finished = false;
 		this.startTime = bundle.packet.time;
 		this.abortConditions = new ArrayList<AbortCondition>();
 	}
 
-	public abstract ControlsOutput getOutput();
+	public abstract Output getOutput();
+
+	public abstract int getPriority();
 
 	public boolean isFinished(){
 		if(!this.finished){
@@ -35,27 +36,21 @@ public abstract class Action extends Output {
 		return this.finished;
 	}
 
-	protected void setFinished(boolean finished){
-		if(this.finished)
+	protected void setFinished(boolean finished, boolean override){
+		if(this.finished && !override)
 			return;
 		this.finished = finished;
+	}
+
+	protected void setFinished(boolean finished){
+		this.setFinished(finished, false);
 	}
 
 	public double getStartTime(){
 		return this.startTime;
 	}
 
-	@Override
-	public boolean isControls(){
-		return false;
-	}
-
-	@Override
-	public boolean isAction(){
-		return true;
-	}
-
-	public Action withAbortCondition(AbortCondition... abortConditions){
+	public Step withAbortCondition(AbortCondition... abortConditions){
 		for(AbortCondition abort : abortConditions){
 			this.abortConditions.add(abort);
 		}

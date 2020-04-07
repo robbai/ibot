@@ -1,15 +1,18 @@
-package ibot.bot.actions;
+package ibot.bot.step.steps;
 
 import ibot.bot.controls.AirControl;
 import ibot.bot.input.Bundle;
+import ibot.bot.step.Priority;
+import ibot.bot.step.Step;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
+import ibot.output.Output;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
-public class HalfFlip extends Action {
+public class HalfFlipStep extends Step {
 
 	private static final double[] TIMING = new double[] { 0.075, 0.15, 0.3, 0.45 };
 
@@ -18,7 +21,7 @@ public class HalfFlip extends Action {
 	private Vector3 directionGlobal;
 	private double pitch, yaw;
 
-	public HalfFlip(Bundle bundle){
+	public HalfFlipStep(Bundle bundle){
 		super(bundle);
 
 		Car car = bundle.packet.car;
@@ -33,7 +36,7 @@ public class HalfFlip extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(){
+	public Output getOutput(){
 		DataPacket packet = this.bundle.packet;
 		Car car = packet.car;
 
@@ -44,10 +47,9 @@ public class HalfFlip extends Action {
 		double[] orient = AirControl.getRollPitchYaw(car, this.directionGlobal);
 
 		if(timeElapsed < TIMING[0]){
-			return new ControlsOutput().withJump(true).withPitch(this.pitch).withBoost(boost);
+			return new Controls().withJump(true).withPitch(this.pitch).withBoost(boost);
 		}else if(timeElapsed < TIMING[2]){
-			ControlsOutput controls = new ControlsOutput().withJump(timeElapsed > TIMING[1]).withBoost(boost)
-					.withPitch(this.pitch);
+			Controls controls = new Controls().withJump(timeElapsed > TIMING[1]).withBoost(boost).withPitch(this.pitch);
 			if(controls.holdJump() == this.bundle.info.lastControls.holdJump()){
 				controls.withRoll(orient[0]);
 			}
@@ -55,13 +57,18 @@ public class HalfFlip extends Action {
 				return controls.withYaw(this.yaw);
 			}
 		}else if(timeElapsed < TIMING[3]){
-//			return new ControlsOutput().withJump(false).withBoost(boost).withPitch(-this.pitch).withRoll(orient[0]); //.withYaw(orient[2]);
-			return new ControlsOutput().withJump(false).withBoost(boost).withOrient(orient);
+//			return new Controls().withJump(false).withBoost(boost).withPitch(-this.pitch).withRoll(orient[0]); //.withYaw(orient[2]);
+			return new Controls().withJump(false).withBoost(boost).withOrient(orient);
 		}
 
 		this.setFinished(car.hasWheelContact || timeElapsed > TIMING[3] + 0.4);
 
-		return new ControlsOutput().withOrient(orient).withJump(false).withBoost(boost);
+		return new Controls().withOrient(orient).withJump(false).withBoost(boost);
+	}
+
+	@Override
+	public int getPriority(){
+		return Priority.ACTION;
 	}
 
 }

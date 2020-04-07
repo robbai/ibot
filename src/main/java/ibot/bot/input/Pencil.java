@@ -39,7 +39,7 @@ public class Pencil {
 	public void postRender(){
 		for(int i = 0; i < this.renderStack.size(); i++){
 			renderer.drawString2d(this.renderStack.get(i).string, this.renderStack.get(i).colour,
-					new Point(20 + 300 * this.bot.index, 30 * (i + 1)), 2, 2);
+					new Point(20 + 500 * this.bot.index, 30 * (i + 1)), 2, 2);
 		}
 		this.renderStack.clear();
 	}

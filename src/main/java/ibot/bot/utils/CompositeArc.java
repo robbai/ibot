@@ -1,8 +1,6 @@
-package ibot.bot.actions.arcs;
+package ibot.bot.utils;
 
 import ibot.bot.physics.DrivePhysics;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.Pair;
 import ibot.input.Car;
 import ibot.vectors.Vector2;
 

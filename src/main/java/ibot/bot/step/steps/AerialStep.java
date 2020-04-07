@@ -1,4 +1,4 @@
-package ibot.bot.actions;
+package ibot.bot.step.steps;
 
 import java.awt.Color;
 
@@ -7,19 +7,22 @@ import ibot.bot.input.Bundle;
 import ibot.bot.input.Pencil;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
+import ibot.bot.step.Priority;
+import ibot.bot.step.Step;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Spherical;
 import ibot.input.Car;
 import ibot.input.CarOrientation;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
+import ibot.output.Output;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
-public class Aerial extends Action {
+public class AerialStep extends Step {
 
-	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + Jump.DOUBLE_JUMP_DELAY),
+	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + JumpStep.DOUBLE_JUMP_DELAY),
 			ANGLE_THRESHOLD = 0.3;
 
 	public final Intercept intercept;
@@ -27,7 +30,7 @@ public class Aerial extends Action {
 	private Vector3 targetUp = Vector3.Z, offset, gravity;
 	private boolean startGrounded;
 
-	public Aerial(Bundle bundle, Intercept intercept, AerialType type){
+	public AerialStep(Bundle bundle, Intercept intercept, AerialType type){
 		super(bundle);
 		this.intercept = intercept;
 		this.type = type;
@@ -43,7 +46,7 @@ public class Aerial extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(){
+	public Output getOutput(){
 		DataPacket packet = this.bundle.packet;
 		Pencil pencil = this.bundle.pencil;
 		Car car = packet.car;
@@ -55,7 +58,7 @@ public class Aerial extends Action {
 
 		if(timeLeft <= 0){
 			this.setFinished(this.type != AerialType.DODGE_STRIKE || timeLeft < -0.6 || !car.hasDoubleJumped);
-			return new ControlsOutput();
+			return new Controls();
 		}else if(timeElapsed >= DOUBLE_JUMP_TIME){
 			if(car.hasWheelContact){
 				this.setFinished(true);
@@ -67,10 +70,10 @@ public class Aerial extends Action {
 		}
 
 		// Dodge.
-		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrike.DODGE_TIME){
-			Vector3 local = MathsUtils.local(car, DriveStrike.getDodgeTarget(this.intercept));
+		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrikeStep.DODGE_TIME){
+			Vector3 local = MathsUtils.local(car, DriveStrikeStep.getDodgeTarget(this.intercept));
 			double radians = Vector2.Y.correctionAngle(local.flatten());
-			return new ControlsOutput().withJump(true).withPitch(-Math.cos(radians)).withYaw(-Math.sin(radians));
+			return new Controls().withJump(true).withPitch(-Math.cos(radians)).withYaw(-Math.sin(radians));
 		}
 
 		// Render freefall.
@@ -180,7 +183,7 @@ public class Aerial extends Action {
 		pencil.renderer.drawLine3d(Color.GREEN, car.position, car.position.plus(car.orientation.forward.scale(500)));
 
 		// Controls.
-		ControlsOutput controls = new ControlsOutput().withJump(jump).withBoost(boost).withThrottle(throttle);
+		Controls controls = new Controls().withJump(jump).withBoost(boost).withThrottle(throttle);
 		if(orient){
 			// Vector3 targetForward = (correction.magnitude() < 35 ?
 			// this.intercept.ballPosition.minus(car.position) : correction);
@@ -199,7 +202,7 @@ public class Aerial extends Action {
 		if(this.startGrounded){
 			if(timeElapsed == 0
 					|| (timeElapsed >= DOUBLE_JUMP_TIME && !hasDoubleJumped && this.type == AerialType.DOUBLE_JUMP)){
-				// Jump or double-jump.
+				// JumpStep or double-jump.
 				carVelocity = carVelocity.plus(carOrientation.up.scale(Constants.JUMP_IMPULSE));
 				hasDoubleJumped |= (timeElapsed >= DOUBLE_JUMP_TIME);
 			}
@@ -234,6 +237,11 @@ public class Aerial extends Action {
 
 	private void renderRoot(Car car, double timeLeft, double timeElapsed){
 		render(car.position, car.velocity, car.orientation, car.hasDoubleJumped, timeLeft, timeElapsed);
+	}
+
+	@Override
+	public int getPriority(){
+		return Priority.STRIKE;
 	}
 
 }

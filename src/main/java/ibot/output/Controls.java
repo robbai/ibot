@@ -2,7 +2,7 @@ package ibot.output;
 
 import rlbot.ControllerState;
 
-public class ControlsOutput extends Output implements ControllerState {
+public class Controls extends Output implements ControllerState {
 
 	// 0 is straight, -1 is hard left, 1 is hard right.
 	private float steer;
@@ -24,10 +24,10 @@ public class ControlsOutput extends Output implements ControllerState {
 	private boolean handbrake;
 	private boolean useItem;
 
-	public ControlsOutput(){
+	public Controls(){
 	}
 
-	public ControlsOutput(ControlsOutput other){
+	public Controls(Controls other){
 		this.steer = other.steer;
 		this.roll = other.roll;
 		this.pitch = other.pitch;
@@ -39,74 +39,74 @@ public class ControlsOutput extends Output implements ControllerState {
 		this.useItem = other.useItem;
 	}
 
-	public ControlsOutput withSteer(double steer){
+	public Controls withSteer(double steer){
 		this.steer = clamp(steer);
 		return this;
 	}
 
-	public ControlsOutput withPitch(double pitch){
+	public Controls withPitch(double pitch){
 		this.pitch = clamp(pitch);
 		return this;
 	}
 
-	public ControlsOutput withYaw(double yaw){
+	public Controls withYaw(double yaw){
 		this.yaw = clamp(yaw);
 		return this;
 	}
 
-	public ControlsOutput withRoll(double roll){
+	public Controls withRoll(double roll){
 		this.roll = clamp(roll);
 		return this;
 	}
 
-	public ControlsOutput withThrottle(double throttle){
+	public Controls withThrottle(double throttle){
 		this.throttle = clamp(throttle);
 		return this;
 	}
 
-	public ControlsOutput withOrient(double[] orient){
+	public Controls withOrient(double[] orient){
 		this.roll = clamp(orient[0]);
 		this.pitch = clamp(orient[1]);
 		this.yaw = clamp(orient[2]);
 		return this;
 	}
 
-	public ControlsOutput withJump(boolean jump){
+	public Controls withJump(boolean jump){
 		this.jump = jump;
 		return this;
 	}
 
-	public ControlsOutput withBoost(boolean boost){
+	public Controls withBoost(boolean boost){
 		this.boost = boost;
 		return this;
 	}
 
-	public ControlsOutput withHandbrake(boolean handbrake){
+	public Controls withHandbrake(boolean handbrake){
 		this.handbrake = handbrake;
 		return this;
 	}
 
-	public ControlsOutput withUseItem(boolean useItem){
+	public Controls withUseItem(boolean useItem){
 		this.useItem = useItem;
 		return this;
 	}
 
-	public ControlsOutput withJump(){
+	public Controls withJump(){
 		this.jump = true;
 		return this;
 	}
 
-	public ControlsOutput withBoost(){
+	public Controls withBoost(){
 		this.boost = true;
 		return this;
 	}
 
-	public ControlsOutput withHandbrake(){
+	public Controls withHandbrake(){
 		this.handbrake = true;
 		return this;
 	}
 
-	public ControlsOutput withUseItem(){
+	public Controls withUseItem(){
 		this.useItem = true;
 		return this;
 	}
@@ -158,16 +158,6 @@ public class ControlsOutput extends Output implements ControllerState {
 	@Override
 	public boolean holdUseItem(){
 		return useItem;
-	}
-
-	@Override
-	public boolean isControls(){
-		return true;
-	}
-
-	@Override
-	public boolean isAction(){
-		return false;
 	}
 
 }

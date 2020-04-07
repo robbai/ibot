@@ -1,22 +1,25 @@
-package ibot.bot.actions;
+package ibot.bot.step.steps;
 
 import ibot.bot.controls.AirControl;
 import ibot.bot.input.Bundle;
+import ibot.bot.step.Priority;
+import ibot.bot.step.Step;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
+import ibot.output.Output;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
-public class FastDodge extends Action {
+public class FastDodgeStep extends Step {
 
 	private static final double[] TIMING = new double[] { 0.11, 0.16, 0.2, 0.9, 1.3 };
 
 	private Vector3 directionGlobal;
 	private double pitch, yaw;
 
-	public FastDodge(Bundle bundle, Vector3 directionGlobal){
+	public FastDodgeStep(Bundle bundle, Vector3 directionGlobal){
 		super(bundle);
 
 		this.directionGlobal = directionGlobal.normalised();
@@ -28,7 +31,7 @@ public class FastDodge extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(){
+	public Output getOutput(){
 		DataPacket packet = this.bundle.packet;
 		Car car = this.bundle.packet.car;
 
@@ -39,20 +42,25 @@ public class FastDodge extends Action {
 		boolean boost = (dot > 0.75);
 
 		if(timeElapsed < TIMING[0]){
-			return new ControlsOutput().withJump(true).withBoost(boost);
+			return new Controls().withJump(true).withBoost(boost);
 		}else if(timeElapsed < TIMING[2]){
-			ControlsOutput controls = new ControlsOutput().withJump(timeElapsed > TIMING[1]).withBoost(boost);
+			Controls controls = new Controls().withJump(timeElapsed > TIMING[1]).withBoost(boost);
 			if(packet.car.hasDoubleJumped)
 				return controls;
 			return controls.withPitch(pitch).withYaw(yaw);
 		}else if(timeElapsed < TIMING[3]){
-			return new ControlsOutput().withJump(false).withBoost(boost);
+			return new Controls().withJump(false).withBoost(boost);
 		}
 
 		this.setFinished(car.hasWheelContact || dot > 0.925 || timeElapsed > TIMING[4]);
 
-		return new ControlsOutput().withOrient(AirControl.getRollPitchYaw(car, this.directionGlobal)).withJump(false)
+		return new Controls().withOrient(AirControl.getRollPitchYaw(car, this.directionGlobal)).withJump(false)
 				.withBoost(boost);
+	}
+
+	@Override
+	public int getPriority(){
+		return Priority.ACTION;
 	}
 
 }

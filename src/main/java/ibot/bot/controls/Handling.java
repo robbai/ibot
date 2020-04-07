@@ -2,16 +2,16 @@ package ibot.bot.controls;
 
 import java.util.OptionalDouble;
 
-import ibot.bot.actions.FastDodge;
-import ibot.bot.actions.HalfFlip;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.physics.DrivePhysics;
+import ibot.bot.step.steps.FastDodgeStep;
+import ibot.bot.step.steps.HalfFlipStep;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
@@ -87,11 +87,11 @@ public class Handling {
 					&& (dodgeDistance < flatDistance || car.forwardVelocity < 0)
 					&& (!commitKickoff || dodgeDistance > flatDistance - 300)){
 				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(30)){
-					return new HalfFlip(bundle);
+					return new HalfFlipStep(bundle);
 				}else if(commitKickoff || ((!boost || car.boost < 10) && velocityStraight > 0.9
 						&& Math.abs(radians) < Math.toRadians(30)
 						&& car.forwardVelocity + Constants.DODGE_IMPULSE < desiredVelocity)){
-					return new FastDodge(bundle, target.minus(car.position));
+					return new FastDodgeStep(bundle, target.minus(car.position));
 				}
 			}
 		}
@@ -110,7 +110,7 @@ public class Handling {
 				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800));
 //		handbrake &= (car.angularVelocity.yaw * radians * car.forwardVelocity < 0 && car.forwardVelocity * throttle > 0);
 
-		return new ControlsOutput().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
+		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
 //				.withSteer(Marvin.steerPoint(-radians, car.angularVelocity.yaw))
 				.withSteer(Math.pow(-radians - car.angularVelocity.yaw * Constants.DT, 3) * 10000)
 //				.withSteer(radians * -3)

@@ -1,24 +1,26 @@
-package ibot.bot.actions.arcs;
+package ibot.bot.step.steps;
 
 import java.awt.Color;
 
 import rlbot.flat.QuickChatSelection;
-import ibot.bot.actions.Action;
 import ibot.bot.bots.ABot;
 import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Pencil;
 import ibot.bot.physics.DrivePhysics;
+import ibot.bot.step.Priority;
+import ibot.bot.step.Step;
+import ibot.bot.utils.CompositeArc;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Pair;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
 
-public class FollowArcs extends Action {
+public class FollowArcsStep extends Step {
 
 	private static final int N = 60, RENDER_STEP = 2, PRESSURE_RATE = 400;
 
@@ -27,21 +29,22 @@ public class FollowArcs extends Action {
 	private CompositeArc compositeArc;
 	private Vector2[] points;
 
-	private Action action;
+	private Step step;
 
 	private boolean boost = true;
 
 	private double PRESSURE_UU = 0;
 	private double lastTime;
 
-	public FollowArcs(Bundle bundle, CompositeArc compArc){
+	public FollowArcsStep(Bundle bundle, CompositeArc compArc){
 		super(bundle);
 		this.compositeArc = compArc;
 		this.points = (compArc == null ? null : compArc.discretise(N));
 		this.lastTime = this.getStartTime();
 	}
 
-	public ControlsOutput getOutput(){
+	@Override
+	public Output getOutput(){
 		DataPacket packet = this.bundle.packet;
 		Pencil pencil = this.bundle.pencil;
 		ABot bot = this.bundle.bot;
@@ -53,11 +56,11 @@ public class FollowArcs extends Action {
 		pencil.renderer.drawRectangle3d(Color.BLACK, this.points[0].withZ(Constants.CAR_HEIGHT), 8, 8, true);
 		pencil.renderer.drawRectangle3d(Color.BLACK, this.points[N - 1].withZ(Constants.CAR_HEIGHT), 8, 8, true);
 
-		if(this.action != null){
-			if(!this.action.isFinished()){
-				return action.getOutput();
+		if(this.step != null){
+			if(!this.step.isFinished()){
+				return step.getOutput();
 			}else{
-				this.action = null;
+				this.step = null;
 			}
 		}
 
@@ -118,12 +121,12 @@ public class FollowArcs extends Action {
 
 		Output output = Handling.driveVelocity(bundle, target.withZ(Constants.CAR_HEIGHT), canDodge, false,
 				targetVelocity);
-		if(output instanceof Action){
-			this.action = (Action)output;
-			return this.action.getOutput();
+		if(output instanceof Step){
+			this.step = (Step)output;
+			return this.step.getOutput();
 		}
 
-		ControlsOutput controls = (ControlsOutput)output;
+		Controls controls = (Controls)output;
 		return controls.withBoost(controls.holdBoost() && this.boost);
 	}
 
@@ -198,9 +201,14 @@ public class FollowArcs extends Action {
 		return true;
 	}
 
-	public Action withBoost(boolean boost){
+	public Step withBoost(boolean boost){
 		this.boost = boost;
 		return this;
+	}
+
+	@Override
+	public int getPriority(){
+		return Priority.DRIVE;
 	}
 
 }

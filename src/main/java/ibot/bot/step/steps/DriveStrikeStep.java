@@ -1,4 +1,4 @@
-package ibot.bot.actions;
+package ibot.bot.step.steps;
 
 import java.awt.Color;
 import java.util.OptionalDouble;
@@ -10,15 +10,18 @@ import ibot.bot.input.Pencil;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.physics.DrivePhysics;
 import ibot.bot.physics.JumpPhysics;
+import ibot.bot.step.Priority;
+import ibot.bot.step.Step;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
+import ibot.output.Output;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
-public class DriveStrike extends Action {
+public class DriveStrikeStep extends Step {
 
 	/*
 	 * Constants.
@@ -41,7 +44,7 @@ public class DriveStrike extends Action {
 
 	private boolean doubleJump;
 
-	public DriveStrike(Bundle bundle, Intercept intercept, Vector3 enemyGoal, boolean doubleJump){
+	public DriveStrikeStep(Bundle bundle, Intercept intercept, Vector3 enemyGoal, boolean doubleJump){
 		super(bundle);
 		this.intercept = intercept;
 		this.enemyGoal = enemyGoal;
@@ -71,7 +74,7 @@ public class DriveStrike extends Action {
 	}
 
 	@Override
-	public ControlsOutput getOutput(){
+	public Output getOutput(){
 		DataPacket packet = this.bundle.packet;
 		Pencil pencil = this.bundle.pencil;
 		double time = packet.time;
@@ -143,8 +146,8 @@ public class DriveStrike extends Action {
 
 			pencil.stackRenderString(MathsUtils.round(timeLeft, 3) + "s", dodgeSoon ? Color.YELLOW : Color.WHITE);
 
-			if(this.doubleJump && timeJumping > this.holdTime + Jump.DOUBLE_JUMP_DELAY && !car.hasDoubleJumped){
-				return new ControlsOutput().withJump(true);
+			if(this.doubleJump && timeJumping > this.holdTime + JumpStep.DOUBLE_JUMP_DELAY && !car.hasDoubleJumped){
+				return new Controls().withJump(true);
 			}
 
 			if(!dodgeSoon){
@@ -159,14 +162,14 @@ public class DriveStrike extends Action {
 						car.position.plus(desiredForward.scaleToMagnitude(200)));
 
 				double[] orient = AirControl.getRollPitchYaw(car, desiredForward);
-				return new ControlsOutput().withJump(timeJumping < this.holdTime).withOrient(orient);
+				return new Controls().withJump(timeJumping < this.holdTime).withOrient(orient);
 			}
 
 			Vector3 localInterceptDodge = MathsUtils.local(car, getDodgeTarget(this.intercept));
 			if(!this.radians.isPresent()){
 				this.radians = OptionalDouble.of(Vector2.Y.correctionAngle(localInterceptDodge.flatten()));
 			}
-			return new ControlsOutput().withJump(dodgeNow).withPitch(-Math.cos(this.radians.getAsDouble()))
+			return new Controls().withJump(dodgeNow).withPitch(-Math.cos(this.radians.getAsDouble()))
 					.withRoll(-Math.sin(this.radians.getAsDouble()) * 2);
 		}
 
@@ -174,7 +177,7 @@ public class DriveStrike extends Action {
 		Vector3 target = this.intercept.intersectPosition;
 		if(this.curve){
 			double distance = car.position.distance(target);
-			distance *= MathsUtils.clamp((driveTime - 0.5) * 0.6, 0, 0.6);
+			distance *= MathsUtils.clamp((driveTime - 0.3) * 0.8, 0, 0.8);
 			if(distance > 100){
 				target = target.plus(target.minus(this.enemyGoal).scaleToMagnitude(distance)).clamp();
 				pencil.stackRenderString((int)distance + "uu", Color.MAGENTA);
@@ -182,8 +185,7 @@ public class DriveStrike extends Action {
 			}
 		}
 
-		ControlsOutput controls = (ControlsOutput)Handling.driveVelocity(this.bundle, target, false, false,
-				targetSpeed);
+		Controls controls = (Controls)Handling.driveVelocity(this.bundle, target, false, false, targetSpeed);
 		if(!this.go){
 			if(Math.abs(controls.getSteer()) < 0.2)
 				controls.withThrottle(10 - car.forwardVelocity);
@@ -194,6 +196,11 @@ public class DriveStrike extends Action {
 
 	public static Vector3 getDodgeTarget(Intercept intercept){
 		return intercept.intersectPosition.lerp(intercept.position, 0.3);
+	}
+
+	@Override
+	public int getPriority(){
+		return Priority.STRIKE;
 	}
 
 }

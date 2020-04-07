@@ -19,7 +19,7 @@ import ibot.bot.utils.Mode;
 import ibot.input.Ball;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.ControlsOutput;
+import ibot.output.Controls;
 import ibot.prediction.BallPrediction;
 import ibot.prediction.Slice;
 import ibot.vectors.Vector2;
@@ -39,7 +39,7 @@ public class Info {
 	 */
 	private Car car;
 	private Ball ball;
-	public ControlsOutput lastControls = new ControlsOutput();
+	public Controls lastControls = new Controls();
 	public Car enemyCar, backTeammate;
 	public Vector3 enemyGoal, homeGoal;
 	public CarTrajectory[] trajectories;
@@ -83,12 +83,12 @@ public class Info {
 		// Kickoff reset.
 		this.isKickoff = packet.isKickoffPause;
 		if(this.isKickoff != this.lastIsKickoff){
-			this.bot.action = null;
+			this.bot.clearSteps();
 			this.commit = true;
 		}
 		this.lastIsKickoff = this.isKickoff;
 
-		if(!this.pickupBoost || !isBoostValid(this.nearestBoost, this.car)){
+		if(!isBoostValid(this.nearestBoost, this.car)){
 			this.nearestBoost = findNearestBoost(this.car, BoostManager.getFullBoosts());
 			if(this.nearestBoost == null){
 				this.nearestBoost = findNearestBoost(this.car, BoostManager.getSmallBoosts());
@@ -279,8 +279,8 @@ public class Info {
 		this.determineTrajectories(packet.cars);
 	}
 
-	public void postUpdate(DataPacket packet, ControlsOutput controls){
-		this.lastControls = new ControlsOutput(controls).withBoost(controls.holdBoost() && packet.car.boost >= 1)
+	public void postUpdate(DataPacket packet, Controls controls){
+		this.lastControls = new Controls(controls).withBoost(controls.holdBoost() && packet.car.boost >= 1)
 				.withThrottle(controls.holdBoost() && packet.car.boost >= 1 ? 1 : controls.getThrottle());
 	}
 

@@ -2,10 +2,10 @@ package ibot.bot.intercept;
 
 import java.util.OptionalDouble;
 
-import ibot.bot.actions.DriveStrike;
 import ibot.bot.input.Info;
 import ibot.bot.physics.DrivePhysics;
 import ibot.bot.physics.JumpPhysics;
+import ibot.bot.step.steps.DriveStrikeStep;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Mode;
@@ -38,7 +38,7 @@ public class InterceptCalculator extends StaticClass {
 			Slice slice = BallPrediction.get(i);
 
 			if(type == AerialType.DODGE_STRIKE
-					&& slice.time - car.time > (Constants.MAX_DODGE_DELAY + DriveStrike.DODGE_TIME - 0.05)){
+					&& slice.time - car.time > (Constants.MAX_DODGE_DELAY + DriveStrikeStep.DODGE_TIME - 0.05)){
 				break;
 			}
 

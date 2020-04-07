@@ -1,6 +1,6 @@
 package ibot.bot.physics;
 
-import ibot.bot.actions.Jump;
+import ibot.bot.step.steps.JumpStep;
 import ibot.bot.utils.Constants;
 import ibot.input.Car;
 import ibot.input.DataPacket;
@@ -30,8 +30,9 @@ public class JumpPhysics {
 		}
 		double holdVelocity = (initialVelocity + (gravity + Constants.JUMP_ACCELERATION) * holdTime);
 		if(doubleJump){ // TODO
-			height += holdVelocity * Jump.DOUBLE_JUMP_DELAY + 0.5 * gravity * Math.pow(Jump.DOUBLE_JUMP_DELAY, 2);
-			holdVelocity += (gravity * Jump.DOUBLE_JUMP_DELAY) + Constants.JUMP_IMPULSE;
+			height += holdVelocity * JumpStep.DOUBLE_JUMP_DELAY
+					+ 0.5 * gravity * Math.pow(JumpStep.DOUBLE_JUMP_DELAY, 2);
+			holdVelocity += (gravity * JumpStep.DOUBLE_JUMP_DELAY) + Constants.JUMP_IMPULSE;
 		}
 		targetHeight -= height;
 		double time1 = -((Math.sqrt(2 * gravity * targetHeight + Math.pow(holdVelocity, 2)) + holdVelocity) / gravity);
@@ -49,8 +50,8 @@ public class JumpPhysics {
 		double height = (velocity * holdTime + 0.5 * acceleration * Math.pow(holdTime, 2));
 		velocity += (acceleration * holdTime);
 		if(doubleJump){
-			height += velocity * Jump.DOUBLE_JUMP_DELAY + 0.5 * gravity * Math.pow(Jump.DOUBLE_JUMP_DELAY, 2);
-			velocity += (gravity * Jump.DOUBLE_JUMP_DELAY) + Constants.JUMP_IMPULSE;
+			height += velocity * JumpStep.DOUBLE_JUMP_DELAY + 0.5 * gravity * Math.pow(JumpStep.DOUBLE_JUMP_DELAY, 2);
+			velocity += (gravity * JumpStep.DOUBLE_JUMP_DELAY) + Constants.JUMP_IMPULSE;
 		}
 		return height + (-Math.pow(velocity, 2) / (2 * gravity));
 	}

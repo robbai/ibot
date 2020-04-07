@@ -46,4 +46,8 @@ public class Car {
 		return -2 * team + 1;
 	}
 
+	public boolean correctSide(Vector3 position){
+		return (position.y - this.position.y) * this.sign > 0;
+	}
+
 }
