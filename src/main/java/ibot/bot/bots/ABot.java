@@ -2,6 +2,7 @@ package ibot.bot.bots;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import rlbot.Bot;
 import rlbot.cppinterop.RLBotDll;
@@ -32,6 +33,8 @@ public abstract class ABot implements Bot {
 	private Info info;
 
 	private ArrayList<Step> steps;
+
+	private String lastStepsString;
 
 	public ABot(int index, int team){
 		super();
@@ -80,6 +83,11 @@ public abstract class ABot implements Bot {
 
 		// Get our output.
 		Controls controls = this.getControls();
+		String stepsString = this.stepsString();
+		if(!stepsString.equals(this.lastStepsString)){
+			System.out.println(this.printPrefix() + stepsString);
+			this.lastStepsString = stepsString;
+		}
 
 		// Post-update our info.
 		this.info.postUpdate(packet, controls);
@@ -92,7 +100,8 @@ public abstract class ABot implements Bot {
 
 	private Controls getControls(){
 		for(Step step : this.steps){
-			this.bundle.pencil.stackRenderString(step.getClass().getSimpleName(), Color.WHITE);
+			this.bundle.pencil.stackRenderString(step.getClass().getSimpleName() + ": " + step.getPriority(),
+					Color.WHITE);
 		}
 
 		for(int i = 0; i < 10; i++){
@@ -189,6 +198,14 @@ public abstract class ABot implements Bot {
 		if(this.steps.size() > 0){
 			this.steps.remove(this.steps.size() - 1);
 		}
+	}
+
+	private String stepsString(){
+		ArrayList<String> strings = new ArrayList<String>(this.steps.size());
+		for(Step step : this.steps){
+			strings.add(step.getClass().getSimpleName());
+		}
+		return Arrays.toString(strings.toArray());
 	}
 
 }

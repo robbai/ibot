@@ -16,4 +16,14 @@ public class PythonInterface extends SocketServer {
 		return (botType.toLowerCase().contains("testbot") ? new TestBot(index, team) : new IBot(index, team));
 	}
 
+	@Override
+	public void shutdown(){
+		if(Main.getArguments().contains("never-shutdown")){
+			System.out.println("Preventing shut down...");
+//    		for(int i = 0; i < Main.bots.size(); i++) this.retireBot(i);
+			return;
+		}
+		super.shutdown();
+	}
+
 }

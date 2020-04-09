@@ -54,10 +54,12 @@ public class DriveStrikeStep extends Step {
 		DataPacket packet = bundle.packet;
 		Car car = packet.car;
 
-		double angle = intercept.intersectPosition.minus(car.position).flatten()
-				.angle(enemyGoal.minus(car.position).flatten());
-//		this.curve = (angle > Math.toRadians(30) && car.onFlatGround);
-		this.curve = car.onFlatGround;
+//		double angle = intercept.intersectPosition.minus(car.position).flatten()
+//				.angle(enemyGoal.minus(car.position).flatten());
+////		this.curve = (angle > Math.toRadians(30) && car.onFlatGround);
+//		this.curve = car.onFlatGround;
+//		this.curve = car.onFlatGround && !car.correctSide(intercept.position);
+		this.curve = false;
 
 		if(this.doubleJump){
 			this.holdTime = Constants.JUMP_MAX_HOLD;
@@ -178,7 +180,7 @@ public class DriveStrikeStep extends Step {
 		Vector3 target = this.intercept.intersectPosition;
 		if(this.curve){
 			double distance = car.position.distance(target);
-			distance *= MathsUtils.clamp((driveTime - 0.1) * 0.9, 0, 0.6);
+			distance *= MathsUtils.clamp((driveTime - 0.2) * 0.7, 0, 0.6);
 			if(distance > 100){
 				target = target.plus(this.intercept.getOffset().scaleToMagnitude(distance)).clamp();
 				pencil.stackRenderString((int)distance + "uu", Color.MAGENTA);
@@ -196,7 +198,7 @@ public class DriveStrikeStep extends Step {
 	}
 
 	public static Vector3 getDodgeTarget(Intercept intercept){
-		return intercept.intersectPosition.lerp(intercept.position, 0.2);
+		return intercept.intersectPosition.lerp(intercept.position, 0.3);
 	}
 
 	@Override

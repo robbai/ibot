@@ -3,10 +3,9 @@ package ibot.bot.bots;
 import ibot.bot.input.Info;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.DefenseStep;
-import ibot.bot.step.steps.GrabBoostStep;
-import ibot.bot.step.steps.KickoffStep;
 import ibot.bot.step.steps.OffenseStep;
 import ibot.bot.step.steps.SaveStep;
+import ibot.bot.step.steps.kickoff.KickoffStep;
 import ibot.bot.utils.Mode;
 
 public class IBot extends ABot {
@@ -22,16 +21,8 @@ public class IBot extends ABot {
 		Info info = this.bundle.info;
 //		Car car = packet.car;
 
-		if(info.isKickoff && info.mode != Mode.DROPSHOT){
-			if(info.commit){
-				return new KickoffStep(this.bundle);
-			}else{
-				GrabBoostStep grabBoost = GrabBoostStep.findBoost(this.bundle);
-				if(grabBoost != null){
-					return grabBoost;
-				}
-				return new DefenseStep(this.bundle);
-			}
+		if(info.isKickoff && info.mode == Mode.SOCCAR){
+			return new KickoffStep(this.bundle);
 		}
 
 		if(SaveStep.mustSave(this.bundle)){

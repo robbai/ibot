@@ -32,12 +32,17 @@ public class SaveStep extends OffenseStep {
 	public static boolean mustSave(Bundle bundle){
 		Info info = bundle.info;
 		DataPacket packet = bundle.packet;
+
 		Vector2 displacement = info.homeGoal.minus(packet.ball.position).flatten();
+
+		if(info.possession < info.teamPossessionCorrectSide && displacement.magnitude() < 1400){
+			return false;
+		}
+
 		Vector2 initialVelocity = packet.ball.velocity.flatten();
 		double time = 2;
 		Vector2 delta = displacement.scale(1 / time).minus(initialVelocity);
-		return delta.magnitude() < ((packet.car.correctSide(info.groundIntercept.position)
-				|| info.possession > info.teamPossession) ? 2000 : 1400);
+		return delta.magnitude() * Math.signum(delta.dot(displacement)) < 1700;
 	}
 
 }

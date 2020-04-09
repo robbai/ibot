@@ -1,12 +1,21 @@
 package ibot;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.swing.*;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 import rlbot.manager.BotManager;
@@ -17,8 +26,12 @@ public class Main {
 	private static final Integer DEFAULT_PORT = 56926;
 	private static final String LOGO_FILE = "icon.png", MUTATOR_FILE = "zero_gravity_mutator.py";
 	private static final boolean RUN_MUTATOR = false;
+	private static List<String> arguments;
 
 	public static void main(String[] args){
+		System.out.println("Args: " + Arrays.toString(args));
+		setArguments(args);
+
 		// Run the mutator script.
 		if(RUN_MUTATOR){
 			try{
@@ -81,6 +94,14 @@ public class Main {
 		};
 
 		new Timer(1000, myListener).start();
+	}
+
+	public static List<String> getArguments(){
+		return arguments;
+	}
+
+	public static void setArguments(String[] args){
+		arguments = Arrays.asList(args);
 	}
 
 }

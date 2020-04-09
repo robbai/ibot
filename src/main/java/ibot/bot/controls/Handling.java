@@ -116,6 +116,7 @@ public class Handling {
 				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800));
 //		handbrake &= (car.angularVelocity.yaw * radians * reverseSign < 0 && car.forwardVelocity * throttle > 0);
 //		handbrake &= (car.forwardVelocity * reverseSign > 0);
+//		handbrake &= (car.velocity.dot(car.orientation.right) * local.x > 0);
 
 		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
 //				.withSteer(Marvin.steerPoint(-radians, car.angularVelocity.yaw))

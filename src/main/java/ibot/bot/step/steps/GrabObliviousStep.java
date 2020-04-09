@@ -2,6 +2,7 @@ package ibot.bot.step.steps;
 
 import java.util.OptionalDouble;
 
+import rlbot.flat.QuickChatSelection;
 import ibot.bot.abort.BoostYoinkedAbort;
 import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
@@ -22,6 +23,7 @@ public class GrabObliviousStep extends Step {
 
 	public GrabObliviousStep(Bundle bundle){
 		super(bundle);
+		bundle.bot.sendQuickChat(QuickChatSelection.Information_NeedBoost, QuickChatSelection.Reactions_Okay);
 	}
 
 	@Override
@@ -40,8 +42,6 @@ public class GrabObliviousStep extends Step {
 		boolean wall = !car.onFlatGround;
 
 		Vector3 target = info.nearestBoost.getLocation().withZ(Constants.CAR_HEIGHT);
-
-		info.pickupBoost = true;
 
 		if(info.nearestBoost.isFullBoost() || info.mode == Mode.HOOPS){
 			if(info.isKickoff){
@@ -62,7 +62,7 @@ public class GrabObliviousStep extends Step {
 			Vector2 offset = target.minus(car.position).flatten().rotate(Math.PI / 2);
 			if(offset.dot(target.flatten()) < 0)
 				offset = offset.scale(-1);
-			target = target.plus(offset.scale(info.nearestBoost.isFullBoost() && !info.isKickoff ? 0.12 : 0.1));
+			target = target.plus(offset.scale(info.nearestBoost.isFullBoost() && !info.isKickoff ? 0.11 : 0.09));
 		}
 
 		Output output = Handling.driveTime(this.bundle, target, (!info.isKickoff || info.mode == Mode.SOCCAR && !wall),

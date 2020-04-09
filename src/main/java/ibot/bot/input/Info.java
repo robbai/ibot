@@ -45,10 +45,11 @@ public class Info {
 	public CarTrajectory[] trajectories;
 	public CarSlice[][] trajectoryResults;
 	public Intercept aerialDodge, aerialDouble, groundIntercept, doubleJumpIntercept, bounce, wallIntercept,
-			earliestTeammateIntercept, earliestEnemyIntercept;
-	public boolean isKickoff, commit, pickupBoost, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal;
+			earliestTeammateIntercept, earliestEnemyIntercept, earliestTeammateInterceptCorrectSide;
+	public boolean isKickoff, commit, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal;
 	private boolean lastWheelContact, lastIsKickoff, hasMatchEnded;
-	public double gravity, time, lastWheelContactTime, timeToHitGround, possession, teamPossession, carForwardComponent;
+	public double gravity, time, lastWheelContactTime, timeToHitGround, possession, teamPossession,
+			teamPossessionCorrectSide, carForwardComponent;
 	public Intercept[] groundIntercepts;
 	public Mode mode;
 	public BoostPad nearestBoost;
@@ -82,7 +83,7 @@ public class Info {
 
 		// Kickoff reset.
 		this.isKickoff = packet.isKickoffPause;
-		if(this.isKickoff != this.lastIsKickoff){
+		if(this.isKickoff && !this.lastIsKickoff){
 			this.bot.clearSteps();
 			this.commit = true;
 		}
@@ -94,8 +95,6 @@ public class Info {
 				this.nearestBoost = findNearestBoost(this.car, BoostManager.getSmallBoosts());
 			}
 		}
-		if(this.nearestBoost == null)
-			this.pickupBoost = false;
 
 		// Goals.
 		double ballForwards = (this.ball.position.y * this.car.sign + Constants.PITCH_LENGTH_SOCCAR)
@@ -106,7 +105,7 @@ public class Info {
 				(this.mode == Mode.HOOPS ? Constants.PITCH_LENGTH_HOOPS - 700 : Constants.PITCH_LENGTH_SOCCAR)
 						* this.car.sign,
 				0);
-		this.homeGoal = new Vector3(this.enemyGoal.x, this.enemyGoal.y * -1, this.enemyGoal.z);
+		this.homeGoal = new Vector3(this.enemyGoal.x, -this.enemyGoal.y, this.enemyGoal.z);
 		// if(this.ball.position.y * this.car.sign > Constants.PITCH_WIDTH_SOCCAR - 2000
 		// &&
 		// Math.abs(this.ball.position.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS
@@ -140,11 +139,21 @@ public class Info {
 				if(this.earliestTeammateIntercept == null || intercept.time < this.earliestTeammateIntercept.time){
 					this.earliestTeammateIntercept = intercept;
 				}
+				boolean correctSide = packet.cars[i].correctSide(intercept.position);
+				if(correctSide && (this.earliestTeammateInterceptCorrectSide == null
+						|| intercept.time < this.earliestTeammateInterceptCorrectSide.time)){
+					this.earliestTeammateInterceptCorrectSide = intercept;
+				}
 			}
 		}
 		this.teamPossession = MathsUtils
 				.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
 						- (this.earliestTeammateIntercept == null ? 10 : this.earliestTeammateIntercept.time), -10, 10);
+		this.teamPossessionCorrectSide = MathsUtils
+				.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
+						- (this.earliestTeammateInterceptCorrectSide == null ? 10
+								: this.earliestTeammateInterceptCorrectSide.time),
+						-10, 10);
 		this.possession = MathsUtils.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
 				- (this.groundIntercept == null ? 10 : this.groundIntercept.time), -10, 10);
 		this.groundIntercept = this.groundIntercepts[this.bot.index];
@@ -181,11 +190,9 @@ public class Info {
 		}
 
 		// Commit.
-		boolean lastPickupBoost = this.pickupBoost;
 		if(this.isKickoff){
 			if(this.mode == Mode.DROPSHOT){
 				this.commit = true;
-				this.pickupBoost = false;
 			}else{
 				this.commit = true;
 				for(Car c : packet.teammates){
@@ -198,7 +205,6 @@ public class Info {
 					this.bot.sendQuickChat(QuickChatSelection.Information_GoForIt,
 							QuickChatSelection.Information_AllYours);
 				}
-				this.pickupBoost = !this.commit;
 			}
 			// }else if((this.ball.position.y * this.car.sign < -3000 ||
 			// this.goingInHomeGoal) &&
@@ -208,7 +214,6 @@ public class Info {
 			// this.pickupBoost &= !this.commit;
 		}else if(!this.car.onSuperFlatGround){
 			this.commit |= this.groundIntercept.position.z > 300 || this.lastMan;
-			this.pickupBoost &= !this.commit;
 			// }else if(this.lastMan && (!this.pickupBoost || this.teamPossession < 1.2) &&
 			// packet.enemies.length > 0){
 			// this.commit = this.groundIntercept.position.y * this.car.sign <
@@ -251,11 +256,6 @@ public class Info {
 			if(this.commit && !lastCommit){
 				this.bot.sendQuickChat(QuickChatSelection.Information_IGotIt, QuickChatSelection.Information_Incoming);
 			}
-		}
-		if(this.pickupBoost)
-			this.commit = false; // TODO
-		if(!this.commit && this.pickupBoost && !lastPickupBoost){
-			this.bot.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 		}
 		// this.commit &= !this.furthestBack || this.earliestEnemyIntercept.time -
 		// this.groundIntercept.time > -0.8 || this.goingInHomeGoal ||
@@ -340,7 +340,7 @@ public class Info {
 	 * src/main/flatbuffers/rlbot.fbs#L558-L564
 	 */
 	private Mode getMode(byte gameMode){
-		System.out.println("Received mode: " + gameMode);
+		System.out.println(this.bot.printPrefix() + "Received mode: " + gameMode);
 		switch(gameMode){
 			case 0:
 				return Mode.SOCCAR;
@@ -354,7 +354,7 @@ public class Info {
 			// return Mode.RUMBLE;
 		}
 		final Mode defaultMode = Mode.SOCCAR;
-		System.err.println("Unknown mode: " + gameMode + ", defaulting to " + defaultMode);
+		System.err.println(this.bot.printPrefix() + "Unknown mode: " + gameMode + ", defaulting to " + defaultMode);
 		return defaultMode;
 	}
 

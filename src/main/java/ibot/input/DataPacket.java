@@ -21,11 +21,12 @@ public class DataPacket {
 	public DataPacket(GameTickPacket rawPacket, int playerIndex){
 		this.gravity = rawPacket.gameInfo().worldGravityZ();
 		this.time = rawPacket.gameInfo().secondsElapsed();
-		this.isKickoffPause = rawPacket.gameInfo().isKickoffPause();
+//		this.isKickoffPause = rawPacket.gameInfo().isKickoffPause();
 		this.isRoundActive = rawPacket.gameInfo().isRoundActive();
 		this.hasMatchEnded = rawPacket.gameInfo().isMatchEnded();
 
 		this.ball = new Ball(rawPacket.ball(), this.time);
+		this.isKickoffPause = ball.position.flatten().isZero() && ball.velocity.isZero();
 
 		this.team = rawPacket.players(playerIndex).team();
 

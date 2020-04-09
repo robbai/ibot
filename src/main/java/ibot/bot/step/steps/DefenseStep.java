@@ -39,16 +39,24 @@ public class DefenseStep extends Step {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
-		if((car.boost < 40 || info.isKickoff) && info.mode != Mode.DROPSHOT && info.nearestBoost != null){
-			return new PushStack(new GrabObliviousStep(this.bundle));
+		if(!car.onFlatGround && car.hasWheelContact){
+			return new JumpStep(this.bundle, Constants.JUMP_MAX_HOLD);
 		}
 
-		dontBoost = !info.lastMan;
+		if(info.nearestBoost != null){
+			double distance = info.nearestBoost.getLocation().distance(car.position.flatten());
+			if((car.boost < (distance < 1300 ? 70 : 30) || info.isKickoff) && info.mode != Mode.DROPSHOT){
+				return new PushStack(new GrabObliviousStep(this.bundle));
+			}
+		}
+
+//		this.dontBoost = !info.lastMan;
+		this.dontBoost = true;
 		Vector3 target;
 		OptionalDouble targetTime = OptionalDouble.empty();
 		boolean wall = !car.onFlatGround;
 
-		final double MIN_DEPTH = 0.3;
+		final double MIN_DEPTH = 0.4;
 		final double MAX_DEPTH = 0.8;
 		// double depthLerp = MathsUtils.clamp((info.teamPossession * 0.6) + 0.35, 0,
 		// 1);
@@ -72,27 +80,7 @@ public class DefenseStep extends Step {
 
 		double nose = (car.orientation.forward.y * car.sign);
 
-		if((!info.furthestBack || nose > 0.2) || info.teamPossession > 0.7){
-			if(info.teamPossession * info.earliestEnemyIntercept.position.y * car.sign > 0 || info.furthestBack){
-				target = target.withX(target.x * 0.6);
-			}
-
-//			if(car.boost < 45 && target.y * car.sign < -1000 && goalDistance > 3500){
-//				target = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
-//						BoostManager.getSmallBoosts()).getLocation().withZ(Constants.CAR_HEIGHT);
-//			}
-
-			if(car.boost < 70){
-				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
-						BoostManager.getSmallBoosts());
-				Vector2 boostPosition = boost.getLocation();
-				if(boostPosition.minus(car.position.flatten()).normalised()
-						.dot(target.minus(car.position).flatten().normalised()) > 0.3){
-//					target = boostPosition.withZ(Constants.CAR_HEIGHT);
-					return new PushStack(new GrabBoostStep(this.bundle, boostPosition));
-				}
-			}
-		}else{
+		if(!car.correctSide(info.groundIntercept.position) || packet.ball.position.distance(info.homeGoal) < 2500){
 			double distance = info.homeGoal.distance(car.position);
 			final double closingDistance = 1000;
 
@@ -101,6 +89,32 @@ public class DefenseStep extends Step {
 			double x = MathsUtils.clamp((closingDistance - distance) / closingDistance, -3.5, 1);
 			double y = (Constants.PITCH_LENGTH_SOCCAR - 300 - nose * 1200) / Math.abs(car.position.y);
 			target = info.homeGoal.multiply(new Vector3(x, y, 1));
+		}else{
+			if(info.teamPossession * info.earliestEnemyIntercept.position.y * car.sign > 0 || info.furthestBack){
+				target = target.withX(target.x * 0.6);
+			}
+
+			// if(car.boost < 45 && target.y * car.sign < -1000 && goalDistance > 3500){
+			// target =
+			// Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
+			// BoostManager.getSmallBoosts()).getLocation().withZ(Constants.CAR_HEIGHT);
+			// }
+
+			if(car.boost < 70){
+				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
+						BoostManager.getSmallBoosts());
+				Vector2 boostPosition = boost.getLocation();
+
+				if(boostPosition.distance(car.position.flatten()) < 2000){
+					double angle1 = boostPosition.minus(car.position.flatten())
+							.angle(target.minus(car.position).flatten());
+					double angle2 = boostPosition.minus(target.flatten()).angle(car.position.minus(target).flatten());
+					if(Math.max(angle1, angle2) < Math.toRadians(40)){
+						// target = boostPosition.withZ(Constants.CAR_HEIGHT);
+						return new PushStack(new GrabBoostStep(this.bundle, boost));
+					}
+				}
+			}
 		}
 
 		boolean arc = false;
@@ -111,15 +125,15 @@ public class DefenseStep extends Step {
 		if(arc && info.carForwardComponent > 0.975){
 			Vector2 endTarget = info.earliestEnemyIntercept.position.flatten();
 			CompositeArc compositeArc = CompositeArc.create(car, target.flatten(), endTarget, 1300, 200, 300);
-			return new FollowArcsStep(this.bundle, compositeArc).withBoost(!dontBoost)
+			return new FollowArcsStep(this.bundle, compositeArc).withBoost(!this.dontBoost)
 					.withAbortCondition(new CommitAbort(this.bundle, 0.1));
 		}
 
 		Output output = Handling.driveTime(this.bundle, target, (!info.isKickoff || info.mode == Mode.SOCCAR && !wall),
-				info.mode == Mode.DROPSHOT || dontBoost, targetTime);
+				info.mode == Mode.DROPSHOT || this.dontBoost, targetTime);
 		if(output instanceof Controls){
 			Controls controls = (Controls)output;
-			controls.withBoost(controls.holdBoost() && !dontBoost);
+			controls.withBoost(controls.holdBoost() && !this.dontBoost);
 			return controls;
 		}
 		return output;

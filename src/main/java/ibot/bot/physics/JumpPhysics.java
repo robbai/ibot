@@ -45,6 +45,8 @@ public class JumpPhysics {
 	}
 
 	public static double maxZ(Car car, double gravity, double holdTime, boolean useInitialVelocity, boolean doubleJump){
+		useInitialVelocity = false; // TODO
+
 		final double acceleration = (gravity + Constants.JUMP_ACCELERATION);
 		double velocity = ((useInitialVelocity ? car.velocity.dot(car.orientation.up) : 0) + Constants.JUMP_IMPULSE);
 		double height = (velocity * holdTime + 0.5 * acceleration * Math.pow(holdTime, 2));

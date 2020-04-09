@@ -1,13 +1,13 @@
-package ibot.bot.step.steps;
+package ibot.bot.step.steps.kickoff;
 
 import ibot.bot.input.Bundle;
-import ibot.bot.step.Priority;
+import ibot.bot.step.steps.DriveStep;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
 
-public class KickoffStep extends DriveStep {
+public class GoForKickoffStep extends DriveStep {
 
-	public KickoffStep(Bundle bundle){
+	public GoForKickoffStep(Bundle bundle){
 		super(bundle, new Vector2());
 	}
 
@@ -16,11 +16,6 @@ public class KickoffStep extends DriveStep {
 		Output output = super.getOutput();
 		this.setFinished(!this.bundle.packet.isKickoffPause, true);
 		return output;
-	}
-
-	@Override
-	public int getPriority(){
-		return Priority.KICKOFF;
 	}
 
 }
