@@ -24,7 +24,7 @@ public class DriveStep extends Step {
 
 	@Override
 	public Output getOutput(){
-		this.setFinished(this.target.distance(this.bundle.packet.car.position) < 100);
+		this.setFinished(this.target.distance(this.bundle.packet.car.position) < 75);
 		return Handling.drive(this.bundle, this.target, true, false);
 	}
 

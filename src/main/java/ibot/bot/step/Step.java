@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import ibot.bot.abort.AbortCondition;
 import ibot.bot.input.Bundle;
+import ibot.output.Controls;
 import ibot.output.Output;
 
 public abstract class Step extends Output {
@@ -55,6 +56,9 @@ public abstract class Step extends Output {
 			this.abortConditions.add(abort);
 		}
 		return this;
+	}
+
+	public void manipulateControls(Controls controls){
 	}
 
 }

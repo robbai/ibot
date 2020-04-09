@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.OptionalDouble;
 
 import ibot.boost.BoostManager;
+import ibot.boost.BoostPad;
 import ibot.bot.abort.CommitAbort;
 import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
@@ -25,6 +26,8 @@ import ibot.vectors.Vector3;
 
 public class DefenseStep extends Step {
 
+	private boolean dontBoost;
+
 	public DefenseStep(Bundle bundle){
 		super(bundle);
 	}
@@ -40,7 +43,7 @@ public class DefenseStep extends Step {
 			return new PushStack(new GrabObliviousStep(this.bundle));
 		}
 
-		boolean dontBoost = !info.lastMan;
+		dontBoost = !info.lastMan;
 		Vector3 target;
 		OptionalDouble targetTime = OptionalDouble.empty();
 		boolean wall = !car.onFlatGround;
@@ -80,12 +83,13 @@ public class DefenseStep extends Step {
 //			}
 
 			if(car.boost < 70){
-				Vector2 boostPosition = Info
-						.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(), BoostManager.getSmallBoosts())
-						.getLocation();
+				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
+						BoostManager.getSmallBoosts());
+				Vector2 boostPosition = boost.getLocation();
 				if(boostPosition.minus(car.position.flatten()).normalised()
 						.dot(target.minus(car.position).flatten().normalised()) > 0.3){
-					target = boostPosition.withZ(Constants.CAR_HEIGHT);
+//					target = boostPosition.withZ(Constants.CAR_HEIGHT);
+					return new PushStack(new GrabBoostStep(this.bundle, boostPosition));
 				}
 			}
 		}else{
@@ -107,7 +111,7 @@ public class DefenseStep extends Step {
 		if(arc && info.carForwardComponent > 0.975){
 			Vector2 endTarget = info.earliestEnemyIntercept.position.flatten();
 			CompositeArc compositeArc = CompositeArc.create(car, target.flatten(), endTarget, 1300, 200, 300);
-			return new FollowArcsStep(this.bundle, compositeArc).withBoost(dontBoost)
+			return new FollowArcsStep(this.bundle, compositeArc).withBoost(!dontBoost)
 					.withAbortCondition(new CommitAbort(this.bundle, 0.1));
 		}
 
@@ -124,6 +128,10 @@ public class DefenseStep extends Step {
 	@Override
 	public int getPriority(){
 		return Priority.DEFENSE;
+	}
+
+	public void manipulateControls(Controls controls){
+		controls.withBoost(controls.holdBoost() && !this.dontBoost);
 	}
 
 }

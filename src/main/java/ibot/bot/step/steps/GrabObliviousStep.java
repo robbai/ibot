@@ -31,13 +31,13 @@ public class GrabObliviousStep extends Step {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
-		boolean dontBoost = false;
-		OptionalDouble targetTime = OptionalDouble.empty();
-		boolean wall = !car.onFlatGround;
-
 		if(info.nearestBoost == null){
 			return new PopStack();
 		}
+
+//		boolean dontBoost = false;
+		OptionalDouble targetTime = OptionalDouble.empty();
+		boolean wall = !car.onFlatGround;
 
 		Vector3 target = info.nearestBoost.getLocation().withZ(Constants.CAR_HEIGHT);
 
@@ -55,17 +55,24 @@ public class GrabObliviousStep extends Step {
 
 			if(info.nearestBoost.isFullBoost()){
 				target = target.scale(1 - (35 / target.magnitude()));
-			}else{
-				dontBoost = true;
 			}
+//			else{
+//				dontBoost = true;
+//			}
 			Vector2 offset = target.minus(car.position).flatten().rotate(Math.PI / 2);
 			if(offset.dot(target.flatten()) < 0)
 				offset = offset.scale(-1);
 			target = target.plus(offset.scale(info.nearestBoost.isFullBoost() && !info.isKickoff ? 0.12 : 0.1));
 		}
 
-		return Handling.driveTime(this.bundle, target, (!info.isKickoff || info.mode == Mode.SOCCAR && !wall),
-				info.mode == Mode.DROPSHOT || dontBoost, targetTime);
+		Output output = Handling.driveTime(this.bundle, target, (!info.isKickoff || info.mode == Mode.SOCCAR && !wall),
+				info.mode == Mode.DROPSHOT /* || dontBoost */, targetTime);
+//		if(output instanceof Controls){
+//			Controls controls = (Controls)output;
+//			controls.withBoost(controls.holdBoost() && !dontBoost);
+//			return controls;
+//		}
+		return output;
 	}
 
 	@Override

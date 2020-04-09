@@ -46,7 +46,13 @@ public class Handling {
 
 		// Turning.
 		double radians = Vector2.Y.correctionAngle(local.flatten());
-		boolean reverse = (car.forwardVelocity < (Math.cos(radians) < 0 ? 400 : -200));
+		boolean reverse;
+		if(Math.abs(car.position.y) > Constants.PITCH_LENGTH_SOCCAR
+				&& Math.signum(car.position.y) * target.y < car.position.y){
+			reverse = (car.orientation.forward.y * car.position.y > 0);
+		}else{
+			reverse = (car.forwardVelocity < (Math.cos(radians) < 0 ? 400 : -200));
+		}
 		double reverseSign = (reverse ? -1 : 1);
 		if(reverse){
 			radians = MathsUtils.invertAngle(radians);
@@ -71,8 +77,8 @@ public class Handling {
 		// Boost.
 		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, info.lastControls.holdBoost());
 		boost &= !car.isSupersonic;
-//		boost &= (throttle > 0 && forwardDot > 0.9);
-		boost &= (throttle > 0);
+		boost &= (throttle > 0 && forwardDot > 0);
+//		boost &= (throttle > 0);
 		if(boost || car.forwardVelocity < 0){
 			if(conserveBoost){
 				boost &= ((!car.hasWheelContact && car.boost > 70)
@@ -108,7 +114,8 @@ public class Handling {
 		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3) || (car.onFlatGround
 				&& (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300 && velocityStraight > 0.9)
 				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800));
-//		handbrake &= (car.angularVelocity.yaw * radians * car.forwardVelocity < 0 && car.forwardVelocity * throttle > 0);
+//		handbrake &= (car.angularVelocity.yaw * radians * reverseSign < 0 && car.forwardVelocity * throttle > 0);
+//		handbrake &= (car.forwardVelocity * reverseSign > 0);
 
 		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
 //				.withSteer(Marvin.steerPoint(-radians, car.angularVelocity.yaw))

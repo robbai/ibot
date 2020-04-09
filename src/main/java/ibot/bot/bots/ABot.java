@@ -120,7 +120,11 @@ public abstract class ABot implements Bot {
 				if(activeStep.isFinished()){
 					this.popStep();
 				}else{
-					return (Controls)output;
+					Controls controls = (Controls)output;
+					for(int j = this.steps.size() - 2; j >= 0; j--){
+						this.steps.get(j).manipulateControls(controls);
+					}
+					return controls;
 				}
 			}
 		}

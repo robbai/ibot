@@ -11,6 +11,7 @@ import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
 import ibot.bot.intercept.InterceptCalculator;
 import ibot.bot.stack.PopStack;
+import ibot.bot.stack.PushStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
 import ibot.bot.utils.Constants;
@@ -56,6 +57,7 @@ public class OffenseStep extends Step {
 			// }
 			pencil.renderer.drawLine3d(Color.GREEN, car.position, info.wallIntercept.position);
 			wall = true;
+			return new PushStack(new DriveStep(this.bundle, target));
 		}else if(localInterceptBall.z > 180 && info.bounce != null && info.possession > 0.4){
 			target = info.bounce.position;
 			if(Math.abs(car.position.y) < Constants.PITCH_LENGTH_SOCCAR || Math.abs(target.x) < Constants.GOAL_WIDTH){

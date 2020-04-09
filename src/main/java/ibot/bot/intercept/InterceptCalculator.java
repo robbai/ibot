@@ -100,7 +100,7 @@ public class InterceptCalculator extends StaticClass {
 		if(BallPrediction.isEmpty())
 			return null;
 
-		final double RADIUS = (Constants.BALL_RADIUS + (doubleJump ? 15 : 25));
+		final double RADIUS = (Constants.BALL_RADIUS + (doubleJump ? -10 : 25));
 
 		final double MIN_Z = (doubleJump ? JumpPhysics.maxZ(car, gravity, 0, true, true) - 75 : Double.MIN_VALUE);
 		final double MAX_Z = JumpPhysics.maxZ(car, gravity, Constants.JUMP_MAX_HOLD, true, doubleJump)
@@ -172,14 +172,16 @@ public class InterceptCalculator extends StaticClass {
 //			Vector2 goal = (car.team == bot.team ? bot.enemyGoal.flatten() : bot.homeGoal.flatten());
 //			Vector3 offset = slice.position.minus(goal).withZ(0).scaledToMagnitude(RADIUS);
 
-			double distance = (local.flatten().magnitude() + local.z - RADIUS) * 1.1;
+			double distance = (local.flatten().magnitude() + local.z - RADIUS);
 			double initialVelocity = car.velocity.dot(slice.position.minus(car.position).normalised());
 
-			if(finalSlice || DrivePhysics.maxDistance(slice.time - car.time, initialVelocity, car.boost) > distance){
+			if(finalSlice
+					|| DrivePhysics.maxDistance(slice.time - car.time, initialVelocity, car.boost) > distance * 1.1){
 				Vector3 interceptPosition = slice.position.minus(car.position)
-						.multiply(new Vector3(
-								xSide || Math.abs(car.position.x) < Constants.GOAL_WIDTH + 200 ? VIOLENCE : 0,
-								ySide ? VIOLENCE : 0, 0))
+						.multiply(distance > 2500 ? new Vector3(1, 1, 1)
+								: new Vector3(
+										xSide || Math.abs(car.position.x) < Constants.GOAL_WIDTH + 200 ? VIOLENCE : 0,
+										ySide ? VIOLENCE : 0, 0))
 						.plus(car.position);
 				return new Intercept(slice.position, car, interceptPosition, slice.time);
 			}
