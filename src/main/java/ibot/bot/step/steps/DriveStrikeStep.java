@@ -180,7 +180,7 @@ public class DriveStrikeStep extends Step {
 		Vector3 target = this.intercept.intersectPosition;
 		if(this.curve){
 			double distance = car.position.distance(target);
-			distance *= MathsUtils.clamp((driveTime - 0.2) * 0.7, 0, 0.6);
+			distance *= MathsUtils.clamp((driveTime - 0.225) * 0.7, 0, 0.6);
 			if(distance > 100){
 				target = target.plus(this.intercept.getOffset().scaleToMagnitude(distance)).clamp();
 				pencil.stackRenderString((int)distance + "uu", Color.MAGENTA);

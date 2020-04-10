@@ -98,6 +98,12 @@ public class Info {
 
 		// Goals.
 		boolean oppositePost = false;
+		if(this.mode == Mode.SOCCAR){
+			Vector2 post = new Vector2(Constants.GOAL_WIDTH, this.car.sign * Constants.PITCH_LENGTH_SOCCAR);
+			double postAngle = post.minus(this.ball.position.flatten())
+					.angle(post.multiply(new Vector2(-1, 1)).minus(this.ball.position.flatten()));
+			oppositePost = (postAngle < Math.toRadians(35));
+		}
 		double ballForwards = (this.ball.position.y * this.car.sign + Constants.PITCH_LENGTH_SOCCAR)
 				/ (2 * Constants.PITCH_LENGTH_SOCCAR);
 		this.enemyGoal = new Vector3(
