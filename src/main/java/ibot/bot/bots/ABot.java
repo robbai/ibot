@@ -36,6 +36,8 @@ public abstract class ABot implements Bot {
 
 	private String lastStepsString;
 
+	protected int iteration;
+
 	public ABot(int index, int team){
 		super();
 		this.index = index;
@@ -100,11 +102,13 @@ public abstract class ABot implements Bot {
 
 	private Controls getControls(){
 		for(Step step : this.steps){
-			this.bundle.pencil.stackRenderString(step.getClass().getSimpleName() + ": " + step.getPriority(),
-					Color.WHITE);
+			this.bundle.pencil.stackRenderString(step.getClass().getSimpleName(), Color.WHITE);
 		}
 
-		for(int i = 0; i < 10; i++){
+		final int maxIterations = 10;
+		ArrayList<Step> triedSteps = new ArrayList<Step>(maxIterations);
+
+		for(iteration = 0; iteration < maxIterations; iteration++){
 			Step foundStep = this.fallbackStep();
 			if(foundStep != null && foundStep.getPriority() > this.stepsPriority()){
 				this.clearSteps();
@@ -136,11 +140,14 @@ public abstract class ABot implements Bot {
 					return controls;
 				}
 			}
+
+			triedSteps.add(activeStep);
 		}
 
 		Step activeStep = this.getActiveStep();
-		System.out.println(this.printPrefix() + "Couldn't get controls from "
-				+ (activeStep != null ? activeStep.getClass().getSimpleName() : "null"));
+		System.err.println(this.printPrefix() + "Couldn't get controls from "
+				+ (activeStep != null ? activeStep.getClass().getSimpleName() : "null") + ", tried "
+				+ stepsString(triedSteps));
 		return new Controls();
 	}
 
@@ -200,12 +207,16 @@ public abstract class ABot implements Bot {
 		}
 	}
 
-	private String stepsString(){
-		ArrayList<String> strings = new ArrayList<String>(this.steps.size());
-		for(Step step : this.steps){
+	private static String stepsString(ArrayList<Step> steps){
+		ArrayList<String> strings = new ArrayList<String>(steps.size());
+		for(Step step : steps){
 			strings.add(step.getClass().getSimpleName());
 		}
 		return Arrays.toString(strings.toArray());
+	}
+
+	private String stepsString(){
+		return stepsString(this.steps);
 	}
 
 }

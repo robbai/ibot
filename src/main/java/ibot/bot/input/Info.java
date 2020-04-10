@@ -97,15 +97,18 @@ public class Info {
 		}
 
 		// Goals.
+		boolean oppositePost = false;
 		double ballForwards = (this.ball.position.y * this.car.sign + Constants.PITCH_LENGTH_SOCCAR)
 				/ (2 * Constants.PITCH_LENGTH_SOCCAR);
-		this.enemyGoal = new Vector3((this.mode != Mode.SOCCAR ? 0
-				: ballForwards * Math.copySign(Math.min(Constants.GOAL_WIDTH - 350, Math.abs(this.ball.position.x)),
-						this.ball.position.x)),
+		this.enemyGoal = new Vector3(
+				(this.mode != Mode.SOCCAR ? 0
+						: (oppositePost ? -1 : 1) * ballForwards
+								* Math.copySign(Math.min(Constants.GOAL_WIDTH - 350, Math.abs(this.ball.position.x)),
+										this.ball.position.x)),
 				(this.mode == Mode.HOOPS ? Constants.PITCH_LENGTH_HOOPS - 700 : Constants.PITCH_LENGTH_SOCCAR)
 						* this.car.sign,
 				0);
-		this.homeGoal = new Vector3(this.enemyGoal.x, -this.enemyGoal.y, this.enemyGoal.z);
+		this.homeGoal = new Vector3((oppositePost ? -1 : 1) * this.enemyGoal.x, -this.enemyGoal.y, this.enemyGoal.z);
 		// if(this.ball.position.y * this.car.sign > Constants.PITCH_WIDTH_SOCCAR - 2000
 		// &&
 		// Math.abs(this.ball.position.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS
@@ -190,29 +193,7 @@ public class Info {
 		}
 
 		// Commit.
-		if(this.isKickoff){
-			if(this.mode == Mode.DROPSHOT){
-				this.commit = true;
-			}else{
-				this.commit = true;
-				for(Car c : packet.teammates){
-					if(this.groundIntercepts[c.index].time + 0.02 < this.groundIntercept.time){
-						this.commit = false;
-						break;
-					}
-				}
-				if(!packet.isRoundActive && !this.commit){
-					this.bot.sendQuickChat(QuickChatSelection.Information_GoForIt,
-							QuickChatSelection.Information_AllYours);
-				}
-			}
-			// }else if((this.ball.position.y * this.car.sign < -3000 ||
-			// this.goingInHomeGoal) &&
-			// this.teamPossession < 0.4 && (!this.pickupBoost || this.lastMan)){
-			// this.commit = this.commit || (this.ball.position.y - this.car.position.y) *
-			// this.car.sign > 0 && !(this.furthestBack && this.lastMan);
-			// this.pickupBoost &= !this.commit;
-		}else if(!this.car.onSuperFlatGround){
+		if(!this.car.onFlatGround){
 			this.commit |= this.groundIntercept.position.z > 300 || this.lastMan;
 			// }else if(this.lastMan && (!this.pickupBoost || this.teamPossession < 1.2) &&
 			// packet.enemies.length > 0){
@@ -237,13 +218,13 @@ public class Info {
 					(this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time), this.enemyGoal,
 					this.time);
 			double ourBonus = (lastCommit ? 0.5 : -0.2);
-			if(this.groundIntercept.position.y * this.car.sign < 0
-					&& (this.groundIntercept.position.y - this.car.position.y) * this.car.sign > 0
-					&& this.teamPossession < 0.3){
-				ourBonus += (this.car.onFlatGround && (!this.furthestBack || (this.lastMan && this.possession > -0.75))
-						? 1.5
-						: 0.8);
-			}
+//			if(this.groundIntercept.position.y * this.car.sign < 0
+//					&& (this.groundIntercept.position.y - this.car.position.y) * this.car.sign > 0
+//					&& this.teamPossession < 0.3){
+//				ourBonus += (this.car.onFlatGround && (!this.furthestBack || (this.lastMan && this.possession > -0.75))
+//						? 1.5
+//						: 0.8);
+//			}
 			for(Car c : packet.teammates){
 				if(c.isDemolished)
 					continue;
@@ -298,10 +279,10 @@ public class Info {
 	private static double interceptValue(Intercept intercept, Car car, double enemyEarliestIntercept, Vector3 goal,
 			double secondsElapsed){
 		return car.velocity.dot(intercept.position.minus(car.position).normalised()) / 1500
-				+ Math.min(4 / (intercept.time - secondsElapsed), 1.5)
-				+ MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.4
-				+ Math.cos(car.position.minus(goal).flatten().angle(intercept.position.minus(goal).flatten())) * 1.4
-						* Math.max(0.5, Math.abs(intercept.position.y / Constants.PITCH_LENGTH_SOCCAR));
+				+ Math.min(4 / (intercept.time - secondsElapsed), 1.3)
+				+ MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.5
+				+ Math.cos(car.position.minus(goal).flatten().angle(intercept.position.minus(goal).flatten())) * 1.6
+						* Math.max(0.6, Math.abs(intercept.position.y / Constants.PITCH_LENGTH_SOCCAR));
 	}
 
 	private static double estimateTimeToHitGround(Car car, double gravity){
@@ -394,13 +375,13 @@ public class Info {
 
 	private static boolean isBoostValid(BoostPad boost, Car car, double distance){
 		if(car != null){
-			return boost != null && boost.isActive() && distance / boost.getTimeLeft() < Constants.SUPERSONIC_VELOCITY
-					&& (boost.getLocation().y - car.position.y) * car.sign < 0;
+			return boost != null && (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft())
+					&& (!car.correctSide(boost.getLocation()) || distance < 3500);
 		}
-		return boost != null && boost.isActive() && distance / boost.getTimeLeft() < Constants.SUPERSONIC_VELOCITY;
+		return boost != null && (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft());
 	}
 
-	private static boolean isBoostValid(BoostPad boost, Car car){
+	public static boolean isBoostValid(BoostPad boost, Car car){
 		if(boost == null)
 			return false;
 		return isBoostValid(boost, car, boost.getLocation().distance(car.position.flatten()));

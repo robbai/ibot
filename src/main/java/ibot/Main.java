@@ -23,7 +23,7 @@ import ibot.utils.PortReader;
 
 public class Main {
 
-	private static final Integer DEFAULT_PORT = 56926;
+	private static final Integer DEFAULT_PORT = 56927;
 	private static final String LOGO_FILE = "icon.png", MUTATOR_FILE = "zero_gravity_mutator.py";
 	private static final boolean RUN_MUTATOR = false;
 	private static List<String> arguments;

@@ -67,11 +67,11 @@ public class AerialCalculator {
 		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
 
 //		final double easy = MathsUtils.lerp(0.75, 0.9, car.boost / 100);
-		final double easy = 0.95;
+		final double easy = 0.93;
 
 		double finalVelocity = velocityEstimate.magnitude();
 		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY)
-				&& (boostEstimate < MathsUtils.lerp(easy, 1, 0.5) * car.boost) && (Math.abs(ratio) < easy);
+				&& (boostEstimate < MathsUtils.lerp(easy, 1, 0.25) * car.boost) && (Math.abs(ratio) < easy);
 		return new AerialCalculator(finalVelocity, requiredAcceleration, viable);
 	}
 
@@ -83,7 +83,7 @@ public class AerialCalculator {
 		Vector3 local = MathsUtils.local(orientation, desiredForward);
 		Spherical spherical = new Spherical(local);
 		double phi = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
-		double time = 1.7 * Math.sqrt(phi / 9);
+		double time = 1.75 * Math.sqrt(phi / 9);
 		return time;
 	}
 

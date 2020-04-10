@@ -5,7 +5,7 @@ from rlbot.parsing.custom_config import ConfigHeader, ConfigObject
 
 class ibot(ExecutableWithSocketAgent):
     def get_port(self) -> int:
-        return 56926
+        return 56927
 
     def load_config(self, config_header: ConfigHeader):
         self.executable_path = config_header.getpath('java_executable_path')

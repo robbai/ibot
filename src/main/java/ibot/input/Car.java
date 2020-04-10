@@ -1,6 +1,7 @@
 package ibot.input;
 
 import rlbot.flat.Physics;
+import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
 public class Car {
@@ -46,8 +47,12 @@ public class Car {
 		return -2 * team + 1;
 	}
 
-	public boolean correctSide(Vector3 position){
+	public boolean correctSide(Vector2 position){
 		return (position.y - this.position.y) * this.sign > 0;
+	}
+
+	public boolean correctSide(Vector3 position){
+		return correctSide(position.flatten());
 	}
 
 }

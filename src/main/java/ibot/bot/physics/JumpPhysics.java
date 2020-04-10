@@ -38,9 +38,9 @@ public class JumpPhysics {
 		double time1 = -((Math.sqrt(2 * gravity * targetHeight + Math.pow(holdVelocity, 2)) + holdVelocity) / gravity);
 		double time2 = ((Math.sqrt(2 * gravity * targetHeight + Math.pow(holdVelocity, 2)) - holdVelocity) / gravity);
 		if(time1 < 0 || Double.isNaN(time1))
-			return time2;
+			return time2 + holdTime;
 		if(time2 < 0 || Double.isNaN(time2))
-			return time1;
+			return time1 + holdTime;
 		return Math.min(time1, time2);
 	}
 

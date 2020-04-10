@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.util.OptionalDouble;
 
 import ibot.bot.controls.AirControl;
-import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Pencil;
 import ibot.bot.intercept.Intercept;
@@ -26,23 +25,18 @@ public class DriveStrikeStep extends Step {
 	/*
 	 * Constants.
 	 */
-	public static final double MIN_JUMP_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 6);
-
-	public final Intercept intercept;
-
-	private final Vector3 enemyGoal;
-
-	private final boolean curve;
-
-	private final double holdTime, startUpZ;
+	public static final double MIN_JUMP_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 4);
 
 	private OptionalDouble jumpStart = OptionalDouble.empty(), radians = OptionalDouble.empty();
-
 	private boolean go = false, lastGo = go;
-
 	private double lastGoTimeChange;
-
 	private boolean doubleJump;
+
+	private final double holdTime, startUpZ;
+	public final Intercept intercept;
+	private final Vector3 enemyGoal;
+	private final DriveStep drive;
+	private final boolean curve;
 
 	public DriveStrikeStep(Bundle bundle, Intercept intercept, Vector3 enemyGoal, boolean doubleJump){
 		super(bundle);
@@ -57,9 +51,9 @@ public class DriveStrikeStep extends Step {
 //		double angle = intercept.intersectPosition.minus(car.position).flatten()
 //				.angle(enemyGoal.minus(car.position).flatten());
 ////		this.curve = (angle > Math.toRadians(30) && car.onFlatGround);
-//		this.curve = car.onFlatGround;
+		this.curve = car.onFlatGround;
 //		this.curve = car.onFlatGround && !car.correctSide(intercept.position);
-		this.curve = false;
+//		this.curve = false;
 
 		if(this.doubleJump){
 			this.holdTime = Constants.JUMP_MAX_HOLD;
@@ -74,6 +68,10 @@ public class DriveStrikeStep extends Step {
 		}
 
 		this.startUpZ = car.orientation.up.z;
+
+		this.drive = new DriveStep(bundle);
+		this.drive.reverse = false;
+		this.drive.dodge = false;
 	}
 
 	@Override
@@ -149,10 +147,12 @@ public class DriveStrikeStep extends Step {
 
 			pencil.stackRenderString(MathsUtils.round(timeLeft, 3) + "s", dodgeSoon ? Color.YELLOW : Color.WHITE);
 
+			// Double-jump.
 			if(this.doubleJump && timeJumping > this.holdTime + JumpStep.DOUBLE_JUMP_DELAY && !car.hasDoubleJumped){
 				return new Controls().withJump(true);
 			}
 
+			// Orient.
 			if(!dodgeSoon){
 				Vector3 desiredForward;
 				if(!this.doubleJump){
@@ -188,7 +188,11 @@ public class DriveStrikeStep extends Step {
 			}
 		}
 
-		Controls controls = (Controls)Handling.driveVelocity(this.bundle, target, false, false, targetSpeed);
+		// Drive.
+//		Controls controls = (Controls)Handling.driveVelocity(this.bundle, target, false, false, targetSpeed);
+		this.drive.target = target;
+		this.drive.withTargetVelocity(targetSpeed);
+		Controls controls = (Controls)this.drive.getOutput();
 		if(!this.go){
 			if(Math.abs(controls.getSteer()) < 0.2)
 				controls.withThrottle(10 - car.forwardVelocity);

@@ -4,7 +4,6 @@ import java.awt.Color;
 
 import rlbot.flat.QuickChatSelection;
 import ibot.bot.bots.ABot;
-import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Pencil;
 import ibot.bot.physics.DrivePhysics;
@@ -16,31 +15,28 @@ import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Pair;
 import ibot.input.Car;
 import ibot.input.DataPacket;
-import ibot.output.Controls;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
 
 public class FollowArcsStep extends Step {
 
+	private static final double TIME_REACT = 0.3, MIN_AIM_UU = 500 * TIME_REACT;
 	private static final int N = 60, RENDER_STEP = 2, PRESSURE_RATE = 400;
 
-	private static final double TIME_REACT = 0.3, MIN_AIM_UU = 500 * TIME_REACT;
-
 	private CompositeArc compositeArc;
+	private double PRESSURE_UU = 0;
+	private final DriveStep drive;
+	private boolean boost = true;
 	private Vector2[] points;
-
+	private double lastTime;
 	private Step step;
 
-	private boolean boost = true;
-
-	private double PRESSURE_UU = 0;
-	private double lastTime;
-
-	public FollowArcsStep(Bundle bundle, CompositeArc compArc){
+	public FollowArcsStep(Bundle bundle, CompositeArc compositeArc){
 		super(bundle);
-		this.compositeArc = compArc;
-		this.points = (compArc == null ? null : compArc.discretise(N));
+		this.compositeArc = compositeArc;
+		this.points = (compositeArc == null ? null : compositeArc.discretise(N));
 		this.lastTime = this.getStartTime();
+		this.drive = new DriveStep(bundle);
 	}
 
 	@Override
@@ -119,15 +115,11 @@ public class FollowArcsStep extends Step {
 		boolean canDodge = onStraightaway && carUu + DrivePhysics.estimateDodgeDistance(car) < this.compositeArc.getL(0)
 				+ this.compositeArc.getL(1) + this.compositeArc.getL(2) + this.compositeArc.getL(3);
 
-		Output output = Handling.driveVelocity(bundle, target.withZ(Constants.CAR_HEIGHT), canDodge, false,
-				targetVelocity);
-		if(output instanceof Step){
-			this.step = (Step)output;
-			return this.step.getOutput();
-		}
-
-		Controls controls = (Controls)output;
-		return controls.withBoost(controls.holdBoost() && this.boost);
+		this.drive.withTargetVelocity(targetVelocity);
+		this.drive.target = target.withZ(Constants.CAR_HEIGHT);
+		this.drive.dodge = canDodge;
+		this.drive.dontBoost = !this.boost;
+		return this.drive.getOutput();
 	}
 
 	public double findClosestUu(Vector2 car){

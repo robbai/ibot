@@ -1,12 +1,10 @@
 package ibot.bot.step.steps;
 
 import java.awt.Color;
-import java.util.OptionalDouble;
 
 import ibot.boost.BoostManager;
 import ibot.boost.BoostPad;
 import ibot.bot.abort.CommitAbort;
-import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
@@ -26,10 +24,12 @@ import ibot.vectors.Vector3;
 
 public class DefenseStep extends Step {
 
-	private boolean dontBoost;
+	private final DriveStep drive;
 
 	public DefenseStep(Bundle bundle){
 		super(bundle);
+		this.drive = new DriveStep(bundle);
+		this.drive.reverse = false;
 	}
 
 	@Override
@@ -43,21 +43,22 @@ public class DefenseStep extends Step {
 			return new JumpStep(this.bundle, Constants.JUMP_MAX_HOLD);
 		}
 
-		if(info.nearestBoost != null){
+		this.drive.dontBoost = true;
+
+		if(Info.isBoostValid(info.nearestBoost, car) && info.nearestBoost.isFullBoost()){
 			double distance = info.nearestBoost.getLocation().distance(car.position.flatten());
 			if((car.boost < (distance < 1300 ? 70 : 30) || info.isKickoff) && info.mode != Mode.DROPSHOT){
-				return new PushStack(new GrabObliviousStep(this.bundle));
+				this.drive.dontBoost = false;
+				return new PushStack(new GrabObliviousStep(this.bundle, info.nearestBoost));
 			}
 		}
 
-//		this.dontBoost = !info.lastMan;
-		this.dontBoost = true;
-		Vector3 target;
-		OptionalDouble targetTime = OptionalDouble.empty();
-		boolean wall = !car.onFlatGround;
+		// this.drive.dontBoost = !info.lastMan;
 
-		final double MIN_DEPTH = 0.4;
-		final double MAX_DEPTH = 0.8;
+		Vector3 target;
+
+		final double MIN_DEPTH = 0.3;
+		final double MAX_DEPTH = 0.65;
 		// double depthLerp = MathsUtils.clamp((info.teamPossession * 0.6) + 0.35, 0,
 		// 1);
 		double depthLerp = car.boost / 100;
@@ -80,14 +81,14 @@ public class DefenseStep extends Step {
 
 		double nose = (car.orientation.forward.y * car.sign);
 
-		if(!car.correctSide(info.groundIntercept.position) || packet.ball.position.distance(info.homeGoal) < 2500){
+		if(packet.ball.position.distance(info.homeGoal) < (info.furthestBack ? 4000 : 3000)){
 			double distance = info.homeGoal.distance(car.position);
 			final double closingDistance = 1000;
 
 			nose = Math.max(0, nose);
 
 			double x = MathsUtils.clamp((closingDistance - distance) / closingDistance, -3.5, 1);
-			double y = (Constants.PITCH_LENGTH_SOCCAR - 300 - nose * 1200) / Math.abs(car.position.y);
+			double y = (Constants.PITCH_LENGTH_SOCCAR - 400 - nose * 1000) / Math.abs(car.position.y);
 			target = info.homeGoal.multiply(new Vector3(x, y, 1));
 		}else{
 			if(info.teamPossession * info.earliestEnemyIntercept.position.y * car.sign > 0 || info.furthestBack){
@@ -100,7 +101,7 @@ public class DefenseStep extends Step {
 			// BoostManager.getSmallBoosts()).getLocation().withZ(Constants.CAR_HEIGHT);
 			// }
 
-			if(car.boost < 70){
+			if(car.boost < 70 && (target.y * car.sign < 0 || !car.correctSide(target))){
 				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
 						BoostManager.getSmallBoosts());
 				Vector2 boostPosition = boost.getLocation();
@@ -115,6 +116,8 @@ public class DefenseStep extends Step {
 					}
 				}
 			}
+
+			target = target.clamp();
 		}
 
 		boolean arc = false;
@@ -125,18 +128,13 @@ public class DefenseStep extends Step {
 		if(arc && info.carForwardComponent > 0.975){
 			Vector2 endTarget = info.earliestEnemyIntercept.position.flatten();
 			CompositeArc compositeArc = CompositeArc.create(car, target.flatten(), endTarget, 1300, 200, 300);
-			return new FollowArcsStep(this.bundle, compositeArc).withBoost(!this.dontBoost)
+			return new FollowArcsStep(this.bundle, compositeArc).withBoost(!this.drive.dontBoost)
 					.withAbortCondition(new CommitAbort(this.bundle, 0.1));
 		}
 
-		Output output = Handling.driveTime(this.bundle, target, (!info.isKickoff || info.mode == Mode.SOCCAR && !wall),
-				info.mode == Mode.DROPSHOT || this.dontBoost, targetTime);
-		if(output instanceof Controls){
-			Controls controls = (Controls)output;
-			controls.withBoost(controls.holdBoost() && !this.dontBoost);
-			return controls;
-		}
-		return output;
+		// Drive.
+		this.drive.target = target;
+		return this.drive.getOutput();
 	}
 
 	@Override
@@ -145,7 +143,7 @@ public class DefenseStep extends Step {
 	}
 
 	public void manipulateControls(Controls controls){
-		controls.withBoost(controls.holdBoost() && !this.dontBoost);
+		controls.withBoost(controls.holdBoost() && !this.drive.dontBoost);
 	}
 
 }

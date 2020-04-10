@@ -1,5 +1,7 @@
 package ibot.bot.step.steps;
 
+import java.util.OptionalDouble;
+
 import ibot.bot.controls.AirControl;
 import ibot.bot.input.Bundle;
 import ibot.bot.step.Priority;
@@ -17,6 +19,7 @@ public class JumpStep extends Step {
 	private static final double ORIENT_DELAY = 0.1;
 
 	private final double holdTime;
+	private OptionalDouble firstOutputTime = OptionalDouble.empty();
 
 	public JumpStep(Bundle bundle, double holdTime){
 		super(bundle);
@@ -26,7 +29,13 @@ public class JumpStep extends Step {
 	@Override
 	public Output getOutput(){
 		DataPacket packet = this.bundle.packet;
-		double timeElapsed = (packet.time - this.getStartTime());
+
+		if(!this.firstOutputTime.isPresent()){
+			this.firstOutputTime = OptionalDouble.of(packet.time);
+			return new Controls();
+		}
+
+		double timeElapsed = (packet.time - this.firstOutputTime.getAsDouble());
 		this.setFinished(timeElapsed > this.holdTime);
 		Controls controls = new Controls().withJump(timeElapsed <= this.holdTime).withThrottle(0.02);
 		if(timeElapsed > this.holdTime + ORIENT_DELAY)

@@ -5,7 +5,6 @@ import java.util.OptionalDouble;
 
 import ibot.bot.abort.BallTouchedAbort;
 import ibot.bot.abort.SliceOffPredictionAbort;
-import ibot.bot.controls.Handling;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
@@ -24,11 +23,14 @@ import ibot.vectors.Vector3;
 
 public class OffenseStep extends Step {
 
+	private final DriveStep drive;
+
 	protected boolean canPop = true;
 	protected boolean addOffset = true;
 
 	public OffenseStep(Bundle bundle){
 		super(bundle);
+		this.drive = new DriveStep(bundle);
 	}
 
 	@Override
@@ -44,7 +46,6 @@ public class OffenseStep extends Step {
 
 		Vector3 target;
 		OptionalDouble targetTime = OptionalDouble.empty();
-		boolean wall = !car.onFlatGround;
 		Vector3 localInterceptBall = MathsUtils.local(car, info.groundIntercept.position);
 		Vector3 dodgeTarget = DriveStrikeStep.getDodgeTarget(info.groundIntercept);
 
@@ -55,8 +56,7 @@ public class OffenseStep extends Step {
 			// target = target.withX(Math.copySign(target.x, info.ballPosition.x * 5));
 			// }
 			pencil.renderer.drawLine3d(Color.GREEN, car.position, info.wallIntercept.position);
-			wall = true;
-//			return new PushStack(new DriveStep(this.bundle, target));
+//			return new PushStack(new DriveStep(this.bundle, target.clamp()));
 		}else if(localInterceptBall.z > 180 && info.bounce != null && info.possession > 0.4){
 			target = info.bounce.position;
 			if(Math.abs(car.position.y) < Constants.PITCH_LENGTH_SOCCAR || Math.abs(target.x) < Constants.GOAL_WIDTH){
@@ -86,7 +86,7 @@ public class OffenseStep extends Step {
 				}
 
 				double distance = MathsUtils.local(car, target).flatten().magnitude();
-				double addedOffset = (this.addOffset ? 1 : 0) * 1500 * Math.floor(distance / 3000);
+				double addedOffset = (this.addOffset && distance > 1500 ? 1 : 0) * 1500 * Math.floor(distance / 3000);
 				if(addedOffset > 0.001){
 					target = target.plus(target.minus(info.groundIntercept.position).scaleToMagnitude(addedOffset))
 							.clamp();
@@ -99,12 +99,14 @@ public class OffenseStep extends Step {
 						if(info.possession < 0.2 && car.onFlatGround
 								&& info.doubleJumpIntercept.time < info.groundIntercept.time && doubleHeight > 300){
 							driveStrike = new DriveStrikeStep(this.bundle,
-									info.doubleJumpIntercept.withIntersectPosition(
-											DriveStrikeStep.getDodgeTarget(info.doubleJumpIntercept)),
-									info.enemyGoal, true);
+									info.doubleJumpIntercept/*
+															 * .withIntersectPosition(
+															 * DriveStrikeStep.getDodgeTarget(info.doubleJumpIntercept))
+															 */, info.enemyGoal, true);
 						}else if(height > 160){
 							driveStrike = new DriveStrikeStep(this.bundle,
-									info.groundIntercept.withIntersectPosition(dodgeTarget), info.enemyGoal, false);
+									info.groundIntercept/* .withIntersectPosition(dodgeTarget) */, info.enemyGoal,
+									false);
 						}
 						if(driveStrike != null){
 							driveStrike.withAbortCondition(
@@ -142,8 +144,9 @@ public class OffenseStep extends Step {
 			}
 		}
 
-		return Handling.driveTime(this.bundle, target, (!info.isKickoff || info.mode == Mode.SOCCAR && !wall),
-				info.mode == Mode.DROPSHOT, targetTime);
+		this.drive.target = target;
+		this.drive.withTargetTime(targetTime);
+		return this.drive.getOutput();
 	}
 
 	@Override

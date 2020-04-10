@@ -35,12 +35,13 @@ public class SaveStep extends OffenseStep {
 
 		Vector2 displacement = info.homeGoal.minus(packet.ball.position).flatten();
 
-		if(info.possession < info.teamPossessionCorrectSide && displacement.magnitude() < 1400){
-			return false;
-		}
+//		boolean correct = packet.car.correctSide(info.groundIntercept.position);
+//		if(info.possession < info.teamPossessionCorrectSide && (displacement.magnitude() > 2000 || !correct)){
+//			return info.teamPossessionCorrectSide < 0;
+//		}
 
 		Vector2 initialVelocity = packet.ball.velocity.flatten();
-		double time = 2;
+		double time = 1.5;
 		Vector2 delta = displacement.scale(1 / time).minus(initialVelocity);
 		return delta.magnitude() * Math.signum(delta.dot(displacement)) < 1700;
 	}
