@@ -1,6 +1,7 @@
 package ibot.bot.input;
 
 import java.util.ArrayList;
+import java.util.OptionalDouble;
 
 import rlbot.cppinterop.RLBotDll;
 import rlbot.cppinterop.RLBotInterfaceException;
@@ -53,6 +54,7 @@ public class Info {
 	public Intercept[] groundIntercepts;
 	public Mode mode;
 	public BoostPad nearestBoost;
+	public OptionalDouble goalTime;
 
 	public void update(DataPacket packet){
 		this.time = packet.time;
@@ -170,7 +172,12 @@ public class Info {
 				: InterceptCalculator.wallCalculate(this, this.car, this.groundIntercept.time));
 		this.bounce = findBounce(this.groundIntercept == null ? 0 : this.groundIntercept.time);
 		this.goingInHomeGoal = goingInGoal(-this.car.sign);
-		this.goingInEnemyGoal = goingInGoal(-this.car.sign);
+		this.goingInEnemyGoal = goingInGoal(this.car.sign);
+		if(this.goingInHomeGoal || this.goingInEnemyGoal){
+			this.goalTime = getGoalTime();
+		}else{
+			this.goalTime = OptionalDouble.empty();
+		}
 
 		this.backTeammate = null;
 		this.furthestBack = true;
@@ -275,11 +282,22 @@ public class Info {
 		if(BallPrediction.isEmpty())
 			return false;
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i += 20){
-			if(BallPrediction.get(i).position.y * sign > Constants.PITCH_WIDTH_SOCCAR + 2 * Constants.BALL_RADIUS){
+			if(BallPrediction.get(i).position.y * sign > Constants.PITCH_LENGTH_SOCCAR + 2 * Constants.BALL_RADIUS){
 				return true;
 			}
 		}
 		return false;
+	}
+
+	private static OptionalDouble getGoalTime(){
+		if(BallPrediction.isEmpty())
+			return OptionalDouble.empty();
+		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
+			if(Math.abs(BallPrediction.get(i).position.y) > Constants.PITCH_LENGTH_SOCCAR + 2 * Constants.BALL_RADIUS){
+				return OptionalDouble.of(BallPrediction.get(i).time);
+			}
+		}
+		return OptionalDouble.empty();
 	}
 
 	private static double interceptValue(Intercept intercept, Car car, double enemyEarliestIntercept, Vector3 goal,

@@ -8,6 +8,7 @@ import ibot.bot.intercept.Intercept;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.step.steps.DefenseStep;
+import ibot.bot.step.steps.FunStep;
 import ibot.bot.step.steps.OffenseStep;
 import ibot.bot.step.steps.SaveStep;
 import ibot.bot.step.steps.kickoff.KickoffStep;
@@ -32,8 +33,12 @@ public class IBot extends ABot {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
-		if(info.isKickoff && info.mode == Mode.SOCCAR){
-			return new KickoffStep(this.bundle);
+		if(info.isKickoff){
+			if(info.mode == Mode.SOCCAR){
+				return new KickoffStep(this.bundle);
+			}
+		}else if(FunStep.canHaveFun(this.bundle)){
+			return new FunStep(this.bundle);
 		}
 
 		if(this.iteration < 5 && info.commit

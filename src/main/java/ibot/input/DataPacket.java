@@ -9,7 +9,7 @@ public class DataPacket {
 	public final Car[] cars, teammates, enemies;
 
 	public final Ball ball;
-	public final int team;
+	public final int team, score;
 
 	/** The index of your player */
 	public final int playerIndex;
@@ -57,6 +57,8 @@ public class DataPacket {
 		this.playerIndex = playerIndex;
 		this.car = this.cars[playerIndex];
 		this.robbie = (this.cars.length == 2 ? this.cars[1 - playerIndex] : null);
+
+		this.score = (int)((rawPacket.teams(0).score() - rawPacket.teams(1).score()) * car.sign);
 	}
 
 }
