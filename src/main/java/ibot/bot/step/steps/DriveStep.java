@@ -24,7 +24,7 @@ public class DriveStep extends Step {
 
 	public Vector3 target;
 	private OptionalDouble targetTime = OptionalDouble.empty(), targetVelocity = OptionalDouble.empty();
-	public boolean conserveBoost = false, dodge = true, dontBoost = false, reverse = true;
+	public boolean conserveBoost = false, dodge = true, dontBoost = false, reverse = true, gentleSteer = false;
 
 	public DriveStep(Bundle bundle, Vector3 target){
 		super(bundle);
@@ -67,7 +67,7 @@ public class DriveStep extends Step {
 			local = MathsUtils.local(car, carTarget);
 		}
 		Vector3 localNormalised = local.normalised();
-		double forwardDot = Vector2.Y.dot(localNormalised.flatten());
+		double forwardDot = Vector2.Y.dot(localNormalised.flatten().normalised());
 		double velocityTowards = car.velocity.dot(carTarget.minus(car.position).normalised());
 		double velocityStraight = (car.forwardVelocityAbs / car.velocity.magnitude());
 
@@ -106,7 +106,7 @@ public class DriveStep extends Step {
 		// Boost.
 		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, info.lastControls.holdBoost());
 		boost &= !car.isSupersonic;
-		boost &= (throttle > 0 && forwardDot > 0);
+		boost &= (throttle > 0 && forwardDot > 0.5);
 
 		// Dodge.
 		if(boost || car.forwardVelocity < 0){
@@ -122,7 +122,7 @@ public class DriveStep extends Step {
 					&& (commitKickoff || Math.abs(velocityTowards) > (car.forwardVelocity < 0 ? 800 : 1250))
 					&& (dodgeDistance < flatDistance || car.forwardVelocity < 0)
 					&& (!commitKickoff || dodgeDistance > flatDistance - 300)){
-				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(30)){
+				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(20)){
 					return new HalfFlipStep(bundle);
 				}else if(commitKickoff || ((!boost || car.boost < 10) && velocityStraight > 0.9
 						&& Math.abs(radians) < Math.toRadians(30)
@@ -135,23 +135,28 @@ public class DriveStep extends Step {
 		boost &= !this.dontBoost;
 
 		// Wavedash.
-		boolean wavedash = (!car.hasWheelContact && !car.hasDoubleJumped && car.orientation.up.z > 0.65);
+		boolean wavedash = (!car.hasWheelContact && !car.hasDoubleJumped && car.orientation.up.z > 0.65
+				&& info.timeToHitGround < 0.275);
 		boolean wavedashTime = (wavedash && info.timeToHitGround < 0.07);
+		boost &= !wavedash;
 
 		// Boost back to ground.
-		boolean boostDown = (info.timeToHitGround > 1.15 && car.boost > 0);
+		boolean boostDown = (info.timeToHitGround > 1.2 && car.boost > 0);
 		if(boostDown){
 			boost = car.orientation.forward.z < -0.8;
 		}
 
 		// Handbrake.
-		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3) || (car.onFlatGround
-				&& (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300 && velocityStraight > 0.9)
-				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800));
+		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3)
+				|| (car.onFlatGround && (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300
+						&& velocityStraight > 0.9 && !this.gentleSteer)
+//				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800)
+				);
 //		handbrake &= (car.angularVelocity.yaw * radians * reverseSign < 0 && car.forwardVelocity * throttle > 0);
 
 		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
-				.withSteer(Math.pow(-radians - car.angularVelocity.yaw * Constants.DT * 2, 3) * 10000)
+				.withSteer(gentleSteer ? radians * -1.5
+						: Math.pow(-radians - car.angularVelocity.yaw * Constants.DT * 2, 3) * 10000)
 				.withOrient(car.hasWheelContact || wavedashTime
 						? new double[] { 0, wavedashTime ? -Math.signum(Math.cos(radians)) : 0, 0 }
 						: AirControl.getRollPitchYaw(car,

@@ -9,7 +9,7 @@ import ibot.vectors.Vector3;
 
 public class MathsUtils extends StaticClass {
 
-	public static Random random = new Random();
+	public static final Random RAND = new Random();
 
 	public static boolean between(double a, double bound1, double bound2){
 		return a >= Math.min(bound1, bound2) && a <= Math.max(bound1, bound2);
@@ -30,6 +30,8 @@ public class MathsUtils extends StaticClass {
 	}
 
 	public static double round(double value, int digits){
+		if(Double.isNaN(value))
+			return value;
 		double tens = Math.pow(10, digits);
 		return Math.round(value * tens) / tens;
 	}
@@ -43,7 +45,7 @@ public class MathsUtils extends StaticClass {
 	}
 
 	public static double random(double a, double b){
-		return lerp(a, b, random.nextDouble());
+		return lerp(a, b, RAND.nextDouble());
 	}
 
 	public static double invertAngle(double radians){
@@ -88,6 +90,20 @@ public class MathsUtils extends StaticClass {
 
 	public static double shorterAngle(double radians){
 		return Math.copySign(Math.min(Math.abs(radians), Math.PI - Math.abs(radians)), radians);
+	}
+
+	public static Vector2 traceToX(Vector2 start, Vector2 direction, double targetX){
+		if(direction.x == 0)
+			return null;
+		return start.plus(direction.scaleToMagnitude(
+				(Math.copySign(targetX, direction.x) - start.x) * Math.abs(direction.y / direction.x)));
+	}
+
+	public static Vector2 traceToY(Vector2 start, Vector2 direction, double targetY){
+		if(direction.y == 0)
+			return null;
+		return start.plus(direction.scaleToMagnitude(
+				(Math.copySign(targetY, direction.y) - start.y) * Math.abs(direction.x / direction.y)));
 	}
 
 }

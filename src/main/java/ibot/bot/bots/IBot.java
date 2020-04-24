@@ -34,7 +34,7 @@ public class IBot extends ABot {
 		Car car = packet.car;
 
 		if(info.isKickoff){
-			if(info.mode == Mode.SOCCAR){
+			if(info.arena.getMode() == Mode.SOCCAR){
 				return new KickoffStep(this.bundle);
 			}
 		}else if(FunStep.canHaveFun(this.bundle)){
@@ -64,12 +64,13 @@ public class IBot extends ABot {
 				Vector3 localIntercept = MathsUtils.local(car, aerialIntercept.position);
 				double radians = Vector2.Y.correctionAngle(localIntercept.flatten());
 				boolean theirSide = (aerialIntercept.position.y * car.sign >= 0);
-				if((Math.abs(info.possession) < 0.15 || (Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
-						* (info.goingInHomeGoal ? 1.5 : 1)
+				boolean contested = (Math.abs(info.possession) < 0.15);
+				if(Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
+						* (info.goingInHomeGoal || contested ? 1.5 : 1)
 						&& (info.groundIntercept == null
 								|| localIntercept.z > (localIntercept.magnitude() < 700 ? 90 : (theirSide ? 180 : 230))
 								|| (car.position.z > Math.max(500, aerialIntercept.position.z)
-										&& info.mode == Mode.DROPSHOT))))){
+										&& info.arena.getMode() == Mode.DROPSHOT))){
 					return new AerialStep(this.bundle, aerialIntercept, type).withAbortCondition(
 							new BallTouchedAbort(this.bundle, packet.ball.latestTouch, this.index),
 							new SliceOffPredictionAbort(this.bundle, aerialIntercept));
@@ -81,7 +82,7 @@ public class IBot extends ABot {
 			return new SaveStep(this.bundle);
 		}
 
-		if(info.commit){
+		if(info.commit && (car.correctSide(info.groundIntercept.position) || info.furthestBack)){
 			return new OffenseStep(this.bundle);
 		}
 

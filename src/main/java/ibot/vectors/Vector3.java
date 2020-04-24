@@ -1,7 +1,11 @@
 package ibot.vectors;
 
+import rlbot.gamestate.DesiredVector3;
+
 import com.google.flatbuffers.FlatBufferBuilder;
+
 import ibot.bot.utils.Constants;
+import ibot.bot.utils.Plane;
 
 public class Vector3 extends rlbot.vector.Vector3 {
 
@@ -166,6 +170,24 @@ public class Vector3 extends rlbot.vector.Vector3 {
 
 	public Vector3 clamp(){
 		return clamp(Constants.PITCH_WIDTH_SOCCAR - 250, Constants.PITCH_LENGTH_SOCCAR - 250);
+	}
+
+	/**
+	 * https://github.com/tarehart/ReliefBot/blob/9a0646d40e3ea16b431dd351177ff30dbe12f302/src/main/java/tarehart/rlbot/math/vector/Vector3.kt#L128
+	 */
+	public Vector3 projectToPlane(Vector3 normal){
+		return this.plus(normal.scale(-this.dot(normal)));
+	}
+
+	/**
+	 * https://github.com/tarehart/ReliefBot/blob/9a0646d40e3ea16b431dd351177ff30dbe12f302/src/main/java/tarehart/rlbot/math/vector/Vector3.kt#L134
+	 */
+	public Vector3 shadowOntoPlane(Plane plane){
+		return this.minus(plane.normal.scale(plane.getNormalDistance(this)));
+	}
+
+	public DesiredVector3 toDesired(){
+		return new DesiredVector3((float)this.x, (float)this.y, (float)this.z);
 	}
 
 }

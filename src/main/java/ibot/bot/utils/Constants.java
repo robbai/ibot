@@ -27,6 +27,10 @@ public class Constants extends StaticClass {
 	public static final double PITCH_WIDTH_HOOPS = 2966.67; // Half.
 	public static final double PITCH_LENGTH_SOCCAR = 5120; // Half.
 	public static final double PITCH_WIDTH_SOCCAR = 4096; // Half.
+	public static final double PITCH_CORNER_WIDTH_SOCCAR = 590;
+	/**
+	 * https://github.com/tarehart/ReliefBot/blob/4a64239aee5da8b0957fb941c536ad82c4875ce0/src/main/java/tarehart/rlbot/physics/ArenaModel.kt#L38
+	 */
 	public static final double GOAL_WIDTH = 892.755; // Half.
 	public static final double GOAL_HEIGHT = 642.775;
 

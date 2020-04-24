@@ -9,6 +9,8 @@ import rlbot.flat.QuickChatSelection;
 import ibot.boost.BoostManager;
 import ibot.boost.BoostPad;
 import ibot.bot.bots.ABot;
+import ibot.bot.input.arena.Arena;
+import ibot.bot.input.arena.SoccarArena;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.CarSlice;
 import ibot.bot.intercept.CarTrajectory;
@@ -45,26 +47,26 @@ public class Info {
 	public Vector3 enemyGoal, homeGoal;
 	public CarTrajectory[] trajectories;
 	public CarSlice[][] trajectoryResults;
-	public Intercept aerialDodge, aerialDouble, groundIntercept, doubleJumpIntercept, bounce, wallIntercept,
-			earliestTeammateIntercept, earliestEnemyIntercept, earliestTeammateInterceptCorrectSide;
+	public Intercept aerialDodge, aerialDouble, groundIntercept, doubleJumpIntercept, bounce, earliestTeammateIntercept,
+			earliestEnemyIntercept, earliestTeammateInterceptCorrectSide;
 	public boolean isKickoff, commit, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal;
 	private boolean lastWheelContact, lastIsKickoff, hasMatchEnded;
-	public double gravity, time, lastWheelContactTime, timeToHitGround, possession, teamPossession,
-			teamPossessionCorrectSide, carForwardComponent;
+	public double time, lastWheelContactTime, timeToHitGround, possession, teamPossession, teamPossessionCorrectSide,
+			carForwardComponent;
 	public Intercept[] groundIntercepts;
-	public Mode mode;
+	private Mode mode;
 	public BoostPad nearestBoost;
 	public OptionalDouble goalTime;
+	public Arena arena;
 
 	public void update(DataPacket packet){
 		this.time = packet.time;
 		this.car = packet.car;
 		this.ball = packet.ball;
 
+		Mode lastMode = this.mode;
 		try{
-			if(packet.hasMatchEnded){
-				this.mode = null;
-			}else if(this.mode == null){
+			if(this.mode == null){
 				this.mode = getMode(RLBotDll.getMatchSettings().gameMode());
 			}
 		}catch(RLBotInterfaceException e){
@@ -72,16 +74,24 @@ public class Info {
 			e.printStackTrace();
 		}
 
+		// Arena.
+		if(this.mode != lastMode){
+			switch(this.mode){
+				default: // TODO
+					this.arena = new SoccarArena();
+					break;
+			}
+		}
+		this.arena.update(packet);
+
 		if(this.car.hasWheelContact && !this.lastWheelContact){
 			this.lastWheelContactTime = this.time;
 		}
 		this.lastWheelContact = this.car.hasWheelContact;
 
-		this.timeToHitGround = estimateTimeToHitGround(this.car, this.gravity);
+		this.timeToHitGround = estimateTimeToHitGround(this.car, this.arena.getGravity());
 
 		this.carForwardComponent = this.car.velocity.normalised().dot(this.car.orientation.forward);
-
-		this.gravity = packet.gravity;
 
 		// Kickoff reset.
 		this.isKickoff = packet.isKickoffPause;
@@ -91,16 +101,14 @@ public class Info {
 		}
 		this.lastIsKickoff = this.isKickoff;
 
-		if(!isBoostValid(this.nearestBoost, this.car)){
-			this.nearestBoost = findNearestBoost(this.car, BoostManager.getFullBoosts());
-			if(this.nearestBoost == null){
-				this.nearestBoost = findNearestBoost(this.car, BoostManager.getSmallBoosts());
-			}
+		this.nearestBoost = findNearestBoost(this.car, BoostManager.getFullBoosts());
+		if(this.nearestBoost == null){
+			this.nearestBoost = findNearestBoost(this.car, BoostManager.getSmallBoosts());
 		}
 
 		// Goals.
 		boolean oppositePost = false;
-		if(this.mode == Mode.SOCCAR){
+		if(this.mode == Mode.SOCCAR && Math.abs(this.ball.position.x) > Constants.GOAL_WIDTH){
 			Vector2 post = new Vector2(Constants.GOAL_WIDTH, this.car.sign * Constants.PITCH_LENGTH_SOCCAR);
 			double postAngle = post.minus(this.ball.position.flatten())
 					.angle(post.multiply(new Vector2(-1, 1)).minus(this.ball.position.flatten()));
@@ -125,19 +133,17 @@ public class Info {
 		// }
 
 		// Intercept.
-		this.aerialDodge = InterceptCalculator.aerialCalculate(this, car, gravity, car.boost, AerialType.DODGE_STRIKE,
-				this.mode, this.isKickoff, true);
-		this.aerialDouble = InterceptCalculator.aerialCalculate(this, car, gravity, car.boost, AerialType.DOUBLE_JUMP,
-				this.mode, this.isKickoff, false);
-		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(car, packet.gravity, this.enemyGoal.flatten(),
-				this.mode, true);
+		this.aerialDodge = InterceptCalculator.aerialCalculate(this, this.car, AerialType.DODGE_STRIKE, this.mode,
+				this.isKickoff, true);
+		this.aerialDouble = InterceptCalculator.aerialCalculate(this, this.car, AerialType.DOUBLE_JUMP, this.mode,
+				this.isKickoff, false);
+		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(this, this.car, this.enemyGoal.flatten(), true);
 		this.groundIntercepts = new Intercept[packet.cars.length];
 		this.earliestTeammateIntercept = null;
 		this.earliestEnemyIntercept = null;
 		for(int i = 0; i < packet.cars.length; i++){
 			Vector2 goal = packet.cars[i].team == this.car.team ? this.enemyGoal.flatten() : this.homeGoal.flatten();
-			Intercept intercept = InterceptCalculator.groundCalculate(packet.cars[i], packet.gravity, goal, this.mode,
-					false);
+			Intercept intercept = InterceptCalculator.groundCalculate(this, packet.cars[i], goal, false);
 			this.groundIntercepts[i] = intercept;
 
 			if(intercept == null)
@@ -168,9 +174,7 @@ public class Info {
 		this.possession = MathsUtils.clamp((this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time)
 				- (this.groundIntercept == null ? 10 : this.groundIntercept.time), -10, 10);
 		this.groundIntercept = this.groundIntercepts[this.bot.index];
-		this.wallIntercept = (this.groundIntercept == null ? null
-				: InterceptCalculator.wallCalculate(this, this.car, this.groundIntercept.time));
-		this.bounce = findBounce(this.groundIntercept == null ? 0 : this.groundIntercept.time);
+		this.bounce = findBounce(this.arena, this.groundIntercept == null ? 0 : this.groundIntercept.time);
 		this.goingInHomeGoal = goingInGoal(-this.car.sign);
 		this.goingInEnemyGoal = goingInGoal(this.car.sign);
 		if(this.goingInHomeGoal || this.goingInEnemyGoal){
@@ -230,7 +234,8 @@ public class Info {
 			double carInterceptValue = interceptValue(this.groundIntercept, this.car,
 					(this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time), this.enemyGoal,
 					this.time);
-			double ourBonus = (lastCommit ? 0.5 : -0.2);
+			double ourBonus = 0;
+			ourBonus += (lastCommit ? 0.3 : -0.1);
 //			if(this.groundIntercept.position.y * this.car.sign < 0
 //					&& (this.groundIntercept.position.y - this.car.position.y) * this.car.sign > 0
 //					&& this.teamPossession < 0.3){
@@ -326,7 +331,7 @@ public class Info {
 		return time;
 	}
 
-	private static Intercept findBounce(double minTime){
+	private static Intercept findBounce(Arena arena, double minTime){
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
 			Slice slice = BallPrediction.get(i);
 
@@ -334,7 +339,7 @@ public class Info {
 				continue;
 
 			if(slice.position.z < Constants.BALL_RADIUS + 15){
-				return new Intercept(slice.position.withZ(0), null, slice.position, slice.time);
+				return new Intercept(slice.position.withZ(0), null, slice.position, arena.getFloor(), slice.time);
 			}
 		}
 		return null;
@@ -399,8 +404,9 @@ public class Info {
 
 	private static boolean isBoostValid(BoostPad boost, Car car, double distance){
 		if(car != null){
-			return boost != null && (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft())
-					&& (!car.correctSide(boost.getLocation()) || distance < 3500);
+			return boost != null && boost.getTimeLeft() >= 0
+					&& (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft())
+					&& (!car.correctSide(boost.getLocation()) || distance < 3000);
 		}
 		return boost != null && (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft());
 	}
@@ -477,7 +483,7 @@ public class Info {
 					}
 				}
 
-				Intercept intercept = InterceptCalculator.groundCalculate(slices, car);
+				Intercept intercept = InterceptCalculator.groundCalculate(this.arena, slices, car);
 				if(intercept != null)
 					return intercept;
 			}

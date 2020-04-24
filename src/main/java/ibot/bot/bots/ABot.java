@@ -36,10 +36,12 @@ public abstract class ABot implements Bot {
 
 	private String lastStepsString;
 
-	protected int iteration;
+	public int iteration;
 
 	public ABot(int index, int team){
 		super();
+		System.out.println(this.printPrefix() + "Initialising");
+
 		this.index = index;
 		this.team = team;
 
@@ -116,6 +118,8 @@ public abstract class ABot implements Bot {
 			}
 
 			Step activeStep = this.getActiveStep();
+			if(activeStep == null)
+				continue;
 
 			Output output = activeStep.getOutput();
 			if(output instanceof StackAction){
@@ -161,7 +165,7 @@ public abstract class ABot implements Bot {
 	public void sendQuickChat(boolean teamOnly, byte... quickChatSelection){
 		try{
 			RLBotDll.sendQuickChat(this.index, teamOnly,
-					quickChatSelection[MathsUtils.random.nextInt(quickChatSelection.length)]);
+					quickChatSelection[MathsUtils.RAND.nextInt(quickChatSelection.length)]);
 		}catch(Exception e){
 			System.err.println(this.printPrefix() + "Error sending quick-chat [" + quickChatSelection.toString() + "]");
 		}

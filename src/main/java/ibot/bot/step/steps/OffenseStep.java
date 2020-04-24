@@ -1,6 +1,5 @@
 package ibot.bot.step.steps;
 
-import java.awt.Color;
 import java.util.OptionalDouble;
 
 import ibot.bot.abort.BallTouchedAbort;
@@ -9,6 +8,7 @@ import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
 import ibot.bot.intercept.InterceptCalculator;
+import ibot.bot.intercept.SeamIntercept;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
@@ -48,15 +48,22 @@ public class OffenseStep extends Step {
 		OptionalDouble targetTime = OptionalDouble.empty();
 		Vector3 localInterceptBall = MathsUtils.local(car, info.groundIntercept.position);
 		Vector3 dodgeTarget = DriveStrikeStep.getDodgeTarget(info.groundIntercept);
+		boolean seam = info.groundIntercept instanceof SeamIntercept;
 
-		if(info.wallIntercept != null){
-			target = info.wallIntercept.intersectPosition;
-			// if(target.y * car.sign > 0 && Math.abs(info.ballPosition.x) >
-			// Math.abs(target.x)){
-			// target = target.withX(Math.copySign(target.x, info.ballPosition.x * 5));
-			// }
-			pencil.renderer.drawLine3d(Color.GREEN, car.position, info.wallIntercept.position);
-//			return new PushStack(new DriveStep(this.bundle, target.clamp()));
+		if(seam || info.groundIntercept.plane.differentNormal(Vector3.Z)){
+			// Wall intercept.
+//			if(car.hasWheelContact){
+//			if(!info.groundIntercept.plane.differentNormal(car)){
+//			if(info.groundIntercept.plane.differentNormal(Vector3.Z)){
+//				return new DriveStrikeStep(this.bundle, info.groundIntercept, false).withAbortCondition(
+//						new BallTouchedAbort(this.bundle, packet.ball.latestTouch, car.index),
+//						new SliceOffPredictionAbort(this.bundle, info.groundIntercept));
+//			}else
+			if(seam){
+				target = ((SeamIntercept)info.groundIntercept).seamPosition.setDistanceFrom(car.position, 800);
+			}else{
+				target = info.groundIntercept.intersectPosition;
+			}
 		}else if(localInterceptBall.z > 180 && info.bounce != null && info.possession > 0.4){
 			target = info.bounce.position;
 			if(Math.abs(car.position.y) < Constants.PITCH_LENGTH_SOCCAR || Math.abs(target.x) < Constants.GOAL_WIDTH){
@@ -66,11 +73,11 @@ public class OffenseStep extends Step {
 			targetTime = OptionalDouble.of(info.bounce.time);
 		}else{
 			target = info.groundIntercept.position;
-			if(info.mode == Mode.DROPSHOT){
+			if(info.arena.getMode() == Mode.DROPSHOT){
 				Vector3 offset = Vector3.Y;
 				target = target.plus(offset
 						.scaleToMagnitude(-car.sign * target.distance(car.position) * (info.isKickoff ? 0.05 : 0.2)));
-			}else if(info.mode == Mode.SOCCAR && !info.isKickoff){
+			}else if(info.arena.getMode() == Mode.SOCCAR && !info.isKickoff){
 				target = info.groundIntercept.intersectPosition;
 				if((info.groundIntercept.position.y - car.position.y) * car.sign < 0){
 					Vector2 toIntercept = target.minus(car.position).flatten().normalised();
@@ -98,15 +105,9 @@ public class OffenseStep extends Step {
 						Step driveStrike = null;
 						if(info.possession < 0.2 && car.onFlatGround
 								&& info.doubleJumpIntercept.time < info.groundIntercept.time && doubleHeight > 300){
-							driveStrike = new DriveStrikeStep(this.bundle,
-									info.doubleJumpIntercept/*
-															 * .withIntersectPosition(
-															 * DriveStrikeStep.getDodgeTarget(info.doubleJumpIntercept))
-															 */, info.enemyGoal, true);
-						}else if(height > 160){
-							driveStrike = new DriveStrikeStep(this.bundle,
-									info.groundIntercept/* .withIntersectPosition(dodgeTarget) */, info.enemyGoal,
-									false);
+							driveStrike = new DriveStrikeStep(this.bundle, info.doubleJumpIntercept, true);
+						}else if(height > 150){
+							driveStrike = new DriveStrikeStep(this.bundle, info.groundIntercept, false);
 						}
 						if(driveStrike != null){
 							driveStrike.withAbortCondition(

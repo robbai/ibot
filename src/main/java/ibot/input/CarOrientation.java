@@ -8,7 +8,7 @@ public class CarOrientation extends Rotator {
 	public final Vector3 forward, right, up;
 
 	public CarOrientation(double roll, double pitch, double yaw, Vector3 forward, Vector3 up){
-		super((float)roll, (float)pitch, (float)yaw);
+		super(roll, pitch, yaw);
 		this.forward = forward;
 		this.right = forward.cross(up);
 		this.up = up;

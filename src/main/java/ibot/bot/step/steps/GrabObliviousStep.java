@@ -55,7 +55,7 @@ public class GrabObliviousStep extends Step {
 								+ MathsUtils.round(this.boost.getTimeLeft(), 2) + "\n" + this.boost.isActive(),
 						Color.YELLOW, target, 2, 2);
 
-		if(this.boost.isFullBoost() || info.mode == Mode.HOOPS){
+		if(this.boost.isFullBoost() || info.arena.getMode() == Mode.HOOPS){
 			if(info.isKickoff){
 				Vector2 endTarget = target.flatten().withY(0);
 

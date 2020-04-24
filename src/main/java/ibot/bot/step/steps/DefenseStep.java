@@ -8,13 +8,13 @@ import ibot.bot.abort.CommitAbort;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
+import ibot.bot.physics.DrivePhysics;
 import ibot.bot.stack.PushStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
 import ibot.bot.utils.CompositeArc;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
-import ibot.bot.utils.Mode;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -39,17 +39,26 @@ public class DefenseStep extends Step {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
+		this.drive.gentleSteer = !info.lastMan;
+
 		if(!car.onFlatGround && car.hasWheelContact){
 			return new JumpStep(this.bundle, Constants.JUMP_MAX_HOLD);
 		}
 
 		this.drive.dontBoost = true;
 
-		if(Info.isBoostValid(info.nearestBoost, car) && info.nearestBoost.isFullBoost()){
-			double distance = info.nearestBoost.getLocation().distance(car.position.flatten());
-			if((car.boost < (distance < 1300 ? 70 : 30) || info.isKickoff) && info.mode != Mode.DROPSHOT){
+		double goalDistance = info.earliestEnemyIntercept.position.distance(info.homeGoal);
+
+		BoostPad nearestBoost = info.nearestBoost;
+		if(nearestBoost != null && nearestBoost.isFullBoost() && this.bundle.bot.iteration < 5){
+			double distance = nearestBoost.getLocation().distance(car.position.flatten());
+			boolean boostCorrectSide = (info.groundIntercept.position.y - nearestBoost.getLocation().y) * car.sign > 0;
+			if(boostCorrectSide && car.boost < 40 && goalDistance > 4500
+					&& DrivePhysics.minTravelTime(car, distance) < info.earliestEnemyIntercept.time - packet.time){
 				this.drive.dontBoost = false;
-				return new PushStack(new GrabObliviousStep(this.bundle, info.nearestBoost));
+				return new PushStack(new GrabObliviousStep(this.bundle, nearestBoost)
+//						.withAbortCondition(new CommitAbort(this.bundle, 0))
+				);
 			}
 		}
 
@@ -57,19 +66,20 @@ public class DefenseStep extends Step {
 
 		Vector3 target;
 
-		final double MIN_DEPTH = 0.3;
-		final double MAX_DEPTH = 0.65;
-		// double depthLerp = MathsUtils.clamp((info.teamPossession * 0.6) + 0.35, 0,
-		// 1);
+		final double MIN_DEPTH = 0.15;
+		final double MAX_DEPTH = 0.55;
 		double depthLerp = car.boost / 100;
+		if(info.furthestBack && info.teamPossession > 0)
+			depthLerp = Math.max(depthLerp - 0.1, 0);
 		pencil.stackRenderString("Depth: " + MathsUtils.round(depthLerp), pencil.colour);
 
-		// target = info.homeGoal.lerp(info.earliestEnemyIntercept.position,
-		// MathsUtils.lerp(MIN_DEPTH, MAX_DEPTH,
-		// depthLerp)).withZ(Constants.CAR_HEIGHT);
+		Vector2 direction;
+		if(info.furthestBack){
+			direction = info.earliestEnemyIntercept.getOffset().flatten().scaleToMagnitude(-1);
+		}else{
+			direction = info.homeGoal.minus(info.earliestEnemyIntercept.position).flatten().normalised();
+		}
 
-		double goalDistance = info.earliestEnemyIntercept.position.distance(info.homeGoal);
-		Vector2 direction = info.earliestEnemyIntercept.getOffset().flatten().scaleToMagnitude(-1);
 		target = info.earliestEnemyIntercept.position.plus(
 				direction.scaleToMagnitude(goalDistance * (1 - MathsUtils.lerp(MIN_DEPTH, MAX_DEPTH, depthLerp))));
 		if(Math.abs(target.x) > Constants.PITCH_WIDTH_SOCCAR - 400){
@@ -80,7 +90,6 @@ public class DefenseStep extends Step {
 		}
 
 		double nose = (car.orientation.forward.y * car.sign);
-
 		if(packet.ball.position.distance(info.homeGoal) < (info.furthestBack ? 4000 : 3000)){
 			double distance = info.homeGoal.distance(car.position);
 			final double closingDistance = 1000;
@@ -95,22 +104,20 @@ public class DefenseStep extends Step {
 				target = target.withX(target.x * 0.6);
 			}
 
-			// if(car.boost < 45 && target.y * car.sign < -1000 && goalDistance > 3500){
-			// target =
-			// Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
-			// BoostManager.getSmallBoosts()).getLocation().withZ(Constants.CAR_HEIGHT);
-			// }
+//			if(info.furthestBack){
+//				target = target.withX(target.x * 0.6);
+//			}
 
-			if(car.boost < 70 && (target.y * car.sign < 0 || !car.correctSide(target))){
+			if(car.boost < 60 && (target.y * car.sign < 0 || !car.correctSide(target))){
 				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
-						BoostManager.getSmallBoosts());
+						BoostManager.getAllBoosts());
 				Vector2 boostPosition = boost.getLocation();
 
 				if(boostPosition.distance(car.position.flatten()) < 2000){
 					double angle1 = boostPosition.minus(car.position.flatten())
 							.angle(target.minus(car.position).flatten());
 					double angle2 = boostPosition.minus(target.flatten()).angle(car.position.minus(target).flatten());
-					if(Math.max(angle1, angle2) < Math.toRadians(40)){
+					if(Math.max(angle1, angle2) < Math.toRadians(35)){
 						// target = boostPosition.withZ(Constants.CAR_HEIGHT);
 						return new PushStack(new GrabBoostStep(this.bundle, boost));
 					}

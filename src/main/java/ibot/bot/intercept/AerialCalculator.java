@@ -67,7 +67,7 @@ public class AerialCalculator {
 		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
 
 //		final double easy = MathsUtils.lerp(0.75, 0.9, car.boost / 100);
-		final double easy = 0.93;
+		final double easy = 0.91;
 
 		double finalVelocity = velocityEstimate.magnitude();
 		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY)

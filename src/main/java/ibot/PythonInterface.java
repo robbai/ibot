@@ -11,9 +11,8 @@ public class PythonInterface extends SocketServer {
 		super(port, botManager);
 	}
 
-	protected Bot initBot(int index, String botType, int team){
-		System.out.println("Receiving: " + botType);
-		return (botType.toLowerCase().contains("testbot") ? new TestBot(index, team) : new IBot(index, team));
+	protected Bot initBot(int index, String name, int team){
+		return (name.toLowerCase().contains("testbot") ? new TestBot(index, team) : new IBot(index, team));
 	}
 
 	@Override

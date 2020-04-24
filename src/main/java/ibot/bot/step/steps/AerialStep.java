@@ -241,7 +241,7 @@ public class AerialStep extends Step {
 
 	@Override
 	public int getPriority(){
-		return Priority.AIRSTRIKE;
+		return Priority.STRIKE;
 	}
 
 }

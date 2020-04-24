@@ -2,60 +2,53 @@ package ibot.bot.physics;
 
 import ibot.bot.step.steps.JumpStep;
 import ibot.bot.utils.Constants;
-import ibot.input.Car;
-import ibot.input.DataPacket;
+import ibot.bot.utils.StaticClass;
 
-public class JumpPhysics {
+public class JumpPhysics extends StaticClass {
 
 	// https://wikimedia.org/api/rest_v1/media/math/render/svg/8876516f71a06f98f87c759f9df9f4100b1e7072
 
-	public static double timeZ(DataPacket packet, double targetHeight, double holdTime, boolean doubleJump){
-		Car car = packet.car;
-		double gravity = packet.gravity;
-		double initialVelocity = (car.velocity.dot(car.orientation.up) + Constants.JUMP_IMPULSE);
-		double height = (initialVelocity * holdTime
-				+ 0.5 * (gravity + Constants.JUMP_ACCELERATION) * Math.pow(holdTime, 2));
-		if(targetHeight > 0 && targetHeight < height){
+	public static double timeZ(double targetZ, double gravity, double holdTime, boolean doubleJump){
+		double initialVelocity = Constants.JUMP_IMPULSE;
+		double z = (initialVelocity * holdTime + 0.5 * (gravity + Constants.JUMP_ACCELERATION) * Math.pow(holdTime, 2));
+		if(targetZ > 0 && targetZ < z){
 			double time1 = -((Math
-					.sqrt(2 * (gravity + Constants.JUMP_ACCELERATION) * targetHeight + Math.pow(initialVelocity, 2))
+					.sqrt(2 * (gravity + Constants.JUMP_ACCELERATION) * targetZ + Math.pow(initialVelocity, 2))
 					+ initialVelocity) / (gravity + Constants.JUMP_ACCELERATION));
 			double time2 = ((Math
-					.sqrt(2 * (gravity + Constants.JUMP_ACCELERATION) * targetHeight + Math.pow(initialVelocity, 2))
+					.sqrt(2 * (gravity + Constants.JUMP_ACCELERATION) * targetZ + Math.pow(initialVelocity, 2))
 					- initialVelocity) / (gravity + Constants.JUMP_ACCELERATION));
-			if(time1 < 0 || Double.isNaN(time1))
-				return time2;
-			if(time2 < 0 || Double.isNaN(time2))
-				return time1;
-			return Math.min(time1, time2);
+			return solutionT(time1, time2);
 		}
 		double holdVelocity = (initialVelocity + (gravity + Constants.JUMP_ACCELERATION) * holdTime);
 		if(doubleJump){ // TODO
-			height += holdVelocity * JumpStep.DOUBLE_JUMP_DELAY
-					+ 0.5 * gravity * Math.pow(JumpStep.DOUBLE_JUMP_DELAY, 2);
+			z += holdVelocity * JumpStep.DOUBLE_JUMP_DELAY + 0.5 * gravity * Math.pow(JumpStep.DOUBLE_JUMP_DELAY, 2);
 			holdVelocity += (gravity * JumpStep.DOUBLE_JUMP_DELAY) + Constants.JUMP_IMPULSE;
 		}
-		targetHeight -= height;
-		double time1 = -((Math.sqrt(2 * gravity * targetHeight + Math.pow(holdVelocity, 2)) + holdVelocity) / gravity);
-		double time2 = ((Math.sqrt(2 * gravity * targetHeight + Math.pow(holdVelocity, 2)) - holdVelocity) / gravity);
-		if(time1 < 0 || Double.isNaN(time1))
-			return time2 + holdTime;
-		if(time2 < 0 || Double.isNaN(time2))
-			return time1 + holdTime;
-		return Math.min(time1, time2);
+		targetZ -= z;
+		double time1 = -((Math.sqrt(2 * gravity * targetZ + Math.pow(holdVelocity, 2)) + holdVelocity) / gravity);
+		double time2 = ((Math.sqrt(2 * gravity * targetZ + Math.pow(holdVelocity, 2)) - holdVelocity) / gravity);
+		return solutionT(time1, time2) + holdTime;
 	}
 
-	public static double maxZ(Car car, double gravity, double holdTime, boolean useInitialVelocity, boolean doubleJump){
-		useInitialVelocity = false; // TODO
-
+	public static double maxZ(double gravity, double holdTime, boolean doubleJump){
 		final double acceleration = (gravity + Constants.JUMP_ACCELERATION);
-		double velocity = ((useInitialVelocity ? car.velocity.dot(car.orientation.up) : 0) + Constants.JUMP_IMPULSE);
+		double velocity = Constants.JUMP_IMPULSE;
 		double height = (velocity * holdTime + 0.5 * acceleration * Math.pow(holdTime, 2));
 		velocity += (acceleration * holdTime);
 		if(doubleJump){
-			height += velocity * JumpStep.DOUBLE_JUMP_DELAY + 0.5 * gravity * Math.pow(JumpStep.DOUBLE_JUMP_DELAY, 2);
+			height += (velocity * JumpStep.DOUBLE_JUMP_DELAY + 0.5 * gravity * Math.pow(JumpStep.DOUBLE_JUMP_DELAY, 2));
 			velocity += (gravity * JumpStep.DOUBLE_JUMP_DELAY) + Constants.JUMP_IMPULSE;
 		}
-		return height + (-Math.pow(velocity, 2) / (2 * gravity));
+		return height - Math.pow(velocity, 2) / (2 * gravity);
+	}
+
+	private static double solutionT(double time1, double time2){
+		if(time1 < 0 || Double.isNaN(time1))
+			return time2;
+		if(time2 < 0 || Double.isNaN(time2))
+			return time1;
+		return Math.min(time1, time2);
 	}
 
 }
