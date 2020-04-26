@@ -212,27 +212,4 @@ public class InterceptCalculator extends StaticClass {
 		return carSide.rotate(MathsUtils.clamp(carSide.correctionAngle(offset), -maxAngle, maxAngle)).normalised();
 	}
 
-	public static Intercept groundCalculate(Arena arena, CarSlice[] slices, Car car){
-		if(slices == null)
-			return null;
-
-		final double RADIUS = 60;
-
-		for(int i = 0; i < slices.length; i++){
-			Slice slice = slices[i];
-
-			double distance = slice.position.distance(car.position) - RADIUS;
-			double initialVelocity = car.velocity.dot(slice.position.minus(car.position).normalised());
-
-			if(DrivePhysics.maxDistance(slice.time - car.time, initialVelocity, car.boost) > distance){
-				Vector3 interceptPosition = slice.position
-						.plus(car.position.minus(slice.position).scaleToMagnitude(RADIUS));
-				return new Intercept(slice.position, car, interceptPosition, arena.getClosestPlane(interceptPosition),
-						slice.time);
-			}
-		}
-
-		return null; // Uh oh.
-	}
-
 }

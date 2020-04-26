@@ -12,8 +12,6 @@ import ibot.bot.bots.ABot;
 import ibot.bot.input.arena.Arena;
 import ibot.bot.input.arena.SoccarArena;
 import ibot.bot.intercept.AerialType;
-import ibot.bot.intercept.CarSlice;
-import ibot.bot.intercept.CarTrajectory;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.intercept.InterceptCalculator;
 import ibot.bot.utils.Constants;
@@ -43,10 +41,8 @@ public class Info {
 	private Car car;
 	private Ball ball;
 	public Controls lastControls = new Controls();
-	public Car enemyCar, backTeammate;
+	public Car backTeammate;
 	public Vector3 enemyGoal, homeGoal;
-	public CarTrajectory[] trajectories;
-	public CarSlice[][] trajectoryResults;
 	public Intercept aerialDodge, aerialDouble, groundIntercept, doubleJumpIntercept, bounce, earliestTeammateIntercept,
 			earliestEnemyIntercept, earliestTeammateInterceptCorrectSide;
 	public boolean isKickoff, commit, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal;
@@ -272,10 +268,6 @@ public class Info {
 					QuickChatSelection.PostGame_ThatWasFun, QuickChatSelection.PostGame_WellPlayed);
 		}
 		this.hasMatchEnded = packet.hasMatchEnded;
-
-		this.enemyCar = getEnemyCar(packet.cars);
-
-		this.determineTrajectories(packet.cars);
 	}
 
 	public void postUpdate(DataPacket packet, Controls controls){
@@ -415,80 +407,6 @@ public class Info {
 		if(boost == null)
 			return false;
 		return isBoostValid(boost, car, boost.getLocation().distance(car.position.flatten()));
-	}
-
-	private CarTrajectory[] determineTrajectories(Car[] cars){
-		if(trajectories == null || trajectories.length != cars.length){
-			trajectories = new CarTrajectory[cars.length];
-			trajectoryResults = new CarSlice[cars.length][];
-			for(int i = 0; i < cars.length; i++){
-				Car car = cars[i];
-				if(car == null)
-					continue;
-				trajectories[i] = new CarTrajectory(i, car);
-			}
-		}else{
-			for(int i = 0; i < cars.length; i++){
-				CarTrajectory trajectory = trajectories[i];
-				if(trajectory == null)
-					continue;
-				Car car = cars[i];
-				trajectoryResults[i] = trajectory.estimateTrajectory(car);
-			}
-		}
-		return trajectories;
-	}
-
-	private Car getEnemyCar(Car[] cars){
-		int best = -1;
-		double lowestScore = 0;
-		for(int i = 0; i < cars.length; i++){
-			Car otherCar = cars[i];
-			if(otherCar == null || otherCar.team == this.car.team || otherCar.isDemolished)
-				continue;
-
-			// double score = this.car.position.distance(car.position);
-			// double score = this.ball.position.distance(car.position);
-			// double score = (this.car.position.distance(car.position) +
-			// this.ball.position.distance(car.position));
-
-			double u = this.car.velocity.dot(otherCar.position.minus(this.car.position).normalised());
-			double a = Constants.BOOST_GROUND_ACCELERATION;
-			double score = ((-u + Math.sqrt(Math.pow(u, 2) + 2 * a * this.car.position.distance(otherCar.position)))
-					/ a);
-			if(score < 0)
-				score = ((-u - Math.sqrt(Math.pow(u, 2) + 2 * a * this.car.position.distance(otherCar.position))) / a);
-
-			if(best == -1 || score < lowestScore){
-				lowestScore = score;
-				best = i;
-			}
-		}
-		return (best == -1 ? null : cars[best]);
-	}
-
-	public Intercept enemyIntersect(){
-		if(this.enemyCar != null && this.trajectoryResults != null){
-			int enemyIndex = enemyCar.index;
-			CarSlice[] slices = this.trajectoryResults[enemyIndex];
-
-			if(slices != null){
-				for(int i = 0; i < slices.length - 1; i++){
-//					renderer.drawLine3d(Color.GRAY, slices[i].position, slices[i + 1].position);
-
-					if(Math.abs(slices[i + 1].position.x) > Constants.PITCH_WIDTH_SOCCAR
-							|| Math.abs(slices[i + 1].position.y) > Constants.PITCH_LENGTH_SOCCAR
-							|| !MathsUtils.between(slices[i + 1].position.z, 0, Constants.CEILING)){
-						return null;
-					}
-				}
-
-				Intercept intercept = InterceptCalculator.groundCalculate(this.arena, slices, car);
-				if(intercept != null)
-					return intercept;
-			}
-		}
-		return null;
 	}
 
 	public double getTimeOnGround(){
