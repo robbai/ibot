@@ -3,7 +3,7 @@ package ibot.bot.step.steps;
 import java.util.OptionalDouble;
 
 import ibot.bot.abort.BallTouchedAbort;
-import ibot.bot.abort.SliceOffPredictionAbort;
+import ibot.bot.abort.NotMyPredictionAbort;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
@@ -93,11 +93,14 @@ public class OffenseStep extends Step {
 				}
 
 				double distance = MathsUtils.local(car, target).flatten().magnitude();
-				double addedOffset = (this.addOffset && distance > 1500 ? 1 : 0) * 1500 * Math.floor(distance / 3000);
+				double addedOffset = (this.addOffset && distance > 1400 ? 1 : 0) * distance * 0.325;
 				if(addedOffset > 0.001){
-					target = target.plus(target.minus(info.groundIntercept.position).scaleToMagnitude(addedOffset))
-							.clamp();
-				}else if(car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975){
+					target = target.plus(info.groundIntercept.getOffset().scaleToMagnitude(addedOffset)).clamp();
+				}
+				boolean goodAngle = target.minus(car.position).normalised()
+						.dot(info.enemyGoal.minus(car.position).normalised()) > 0.3;
+				if(car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.95
+						&& (goodAngle || info.possession < 0.4)){
 					double height = MathsUtils.local(car, info.groundIntercept.position).z;
 					double doubleHeight = MathsUtils.local(car, info.doubleJumpIntercept.position).z;
 					double radians = MathsUtils.shorterAngle(Vector2.Y.angle(localInterceptBall.flatten()));
@@ -112,7 +115,8 @@ public class OffenseStep extends Step {
 						if(driveStrike != null){
 							driveStrike.withAbortCondition(
 									new BallTouchedAbort(this.bundle, packet.ball.latestTouch, car.index),
-									new SliceOffPredictionAbort(this.bundle, info.groundIntercept));
+//									new SliceOffPredictionAbort(this.bundle, info.groundIntercept));
+									new NotMyPredictionAbort(this.bundle, info.groundIntercept));
 							return driveStrike;
 						}
 					}

@@ -15,7 +15,7 @@ public class BallPrediction {
 	/*
 	 * Prediction.
 	 */
-	private static final Slice[] prediction = new Slice[SLICE_COUNT];
+	private static final BallSlice[] prediction = new BallSlice[SLICE_COUNT];
 	private static boolean empty;
 
 	public static void update(){
@@ -26,16 +26,17 @@ public class BallPrediction {
 			for(int i = 0; i < SLICE_COUNT; i++){
 				rlbot.flat.PredictionSlice slice = ballPrediction.slices(i);
 				Vector3 position = new Vector3(slice.physics().location());
+				Vector3 velocity = new Vector3(slice.physics().velocity());
 				double time = slice.gameSeconds();
-				prediction[i] = new Slice(position, time);
+				prediction[i] = new BallSlice(position, velocity, time);
 			}
 		}catch(RLBotInterfaceException e){
 			empty = true;
-			prediction[0] = new Slice(new Vector3(), 0);
+			prediction[0] = new BallSlice(new Vector3(), new Vector3(), 0);
 		}
 	}
 
-	public static Slice get(int i){
+	public static BallSlice get(int i){
 		return prediction[empty ? 0 : i];
 	}
 

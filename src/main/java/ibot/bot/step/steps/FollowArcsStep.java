@@ -24,12 +24,10 @@ public class FollowArcsStep extends Step {
 	private static final int N = 60, RENDER_STEP = 2, PRESSURE_RATE = 400;
 
 	private CompositeArc compositeArc;
-	private double PRESSURE_UU = 0;
+	private Vector2[] points;
+	private double pressureUu, lastTime;
 	private final DriveStep drive;
 	private boolean boost = true;
-	private Vector2[] points;
-	private double lastTime;
-	private Step step;
 
 	public FollowArcsStep(Bundle bundle, CompositeArc compositeArc){
 		super(bundle);
@@ -44,6 +42,7 @@ public class FollowArcsStep extends Step {
 		DataPacket packet = this.bundle.packet;
 		Pencil pencil = this.bundle.pencil;
 		ABot bot = this.bundle.bot;
+		Car car = packet.car;
 
 		for(int i = 0; i < N - 1; i += RENDER_STEP){
 			pencil.renderer.drawLine3d(pencil.altColour, this.points[i].withZ(Constants.CAR_HEIGHT),
@@ -52,32 +51,11 @@ public class FollowArcsStep extends Step {
 		pencil.renderer.drawRectangle3d(Color.BLACK, this.points[0].withZ(Constants.CAR_HEIGHT), 8, 8, true);
 		pencil.renderer.drawRectangle3d(Color.BLACK, this.points[N - 1].withZ(Constants.CAR_HEIGHT), 8, 8, true);
 
-		if(this.step != null){
-			if(!this.step.isFinished()){
-				return step.getOutput();
-			}else{
-				this.step = null;
-			}
-		}
-
-		Car car = packet.car;
-
 		double carUu = findClosestUu(car.position.flatten());
 
 		this.setFinished(carUu >= this.compositeArc.getLength() - 10 || !this.onPath(car, carUu));
 
 		double progress = (carUu / this.compositeArc.getLength());
-
-		// double targetVelocity =
-		// Math.max(DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1())),
-		// DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR2())));
-
-//		double targetVelocity = (progress < 0.5 ?
-//				MathsUtils.lerp(DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1())), Constants.MAX_CAR_VELOCITY, progress * 2)
-//				: MathsUtils.lerp(Constants.MAX_CAR_VELOCITY, DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR1())), (progress - 0.5) * 2)
-//				);
-
-//		double targetVelocity = Constants.SUPERSONIC_VELOCITY;
 
 		double targetVelocity;
 		if(carUu < this.compositeArc.getL(0)){
@@ -88,7 +66,6 @@ public class FollowArcsStep extends Step {
 					(carUu - this.compositeArc.getL(0)) / this.compositeArc.getL(1));
 		}else{
 			targetVelocity = DrivePhysics.getSpeedFromRadius(Math.abs(this.compositeArc.getR2()));
-//			targetVelocity = Constants.SUPERSONIC_VELOCITY;
 		}
 
 		// Quick-chat.
@@ -105,16 +82,16 @@ public class FollowArcsStep extends Step {
 		double dt = packet.time - this.lastTime;
 		this.lastTime += dt;
 		double aimUu = Math.max(car.forwardVelocityAbs * TIME_REACT, MIN_AIM_UU);
-		this.PRESSURE_UU = MathsUtils.clamp(this.PRESSURE_UU + PRESSURE_RATE * dt, carUu + aimUu,
+		this.pressureUu = MathsUtils.clamp(this.pressureUu + PRESSURE_RATE * dt, carUu + aimUu,
 				this.compositeArc.getLength() + aimUu);
-		Vector2 target = this.aim(this.PRESSURE_UU);
+		Vector2 target = this.aim(this.pressureUu);
 		pencil.renderer.drawRectangle3d(pencil.colour, target.withZ(Constants.CAR_HEIGHT), 10, 10, true);
 
+		// Drive.
 		boolean onStraightaway = (carUu >= this.compositeArc.getL(0) + this.compositeArc.getL(1)
 				&& carUu <= this.compositeArc.getL(0) + this.compositeArc.getL(1) + this.compositeArc.getL(2));
-		boolean canDodge = onStraightaway && carUu + DrivePhysics.estimateDodgeDistance(car) < this.compositeArc.getL(0)
-				+ this.compositeArc.getL(1) + this.compositeArc.getL(2) + this.compositeArc.getL(3);
-
+		boolean canDodge = onStraightaway && carUu
+				+ DrivePhysics.estimateDodgeDistance(car) < this.compositeArc.getLength() - this.compositeArc.getL(4);
 		this.drive.withTargetVelocity(targetVelocity);
 		this.drive.target = target.withZ(Constants.CAR_HEIGHT);
 		this.drive.dodge = canDodge;

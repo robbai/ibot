@@ -8,6 +8,7 @@ import ibot.bot.intercept.Intercept;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.step.steps.DefenseStep;
+import ibot.bot.step.steps.DriveStrikeStep;
 import ibot.bot.step.steps.FunStep;
 import ibot.bot.step.steps.OffenseStep;
 import ibot.bot.step.steps.SaveStep;
@@ -60,13 +61,23 @@ public class IBot extends ABot {
 			}
 			AerialType type = (doubleJump ? AerialType.DOUBLE_JUMP : AerialType.DODGE_STRIKE);
 			Intercept aerialIntercept = (doubleJump ? info.aerialDouble : info.aerialDodge);
+
 			if(aerialIntercept != null){
+				DriveStrikeStep driveStrike = (DriveStrikeStep)this.findStep(DriveStrikeStep.class.getName());
+				boolean slower = false;
+				if(driveStrike != null){
+					if(!car.hasWheelContact || driveStrike.intercept.time < aerialIntercept.time){
+						slower = true;
+					}
+				}
+
 				Vector3 localIntercept = MathsUtils.local(car, aerialIntercept.position);
 				double radians = Vector2.Y.correctionAngle(localIntercept.flatten());
 				boolean theirSide = (aerialIntercept.position.y * car.sign >= 0);
 				boolean contested = (Math.abs(info.possession) < 0.15);
-				if(Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
-						* (info.goingInHomeGoal || contested ? 1.5 : 1)
+				if(!slower
+						&& Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
+								* (info.goingInHomeGoal || contested ? 1.5 : 1)
 						&& (info.groundIntercept == null
 								|| localIntercept.z > (localIntercept.magnitude() < 700 ? 90 : (theirSide ? 180 : 230))
 								|| (car.position.z > Math.max(500, aerialIntercept.position.z)

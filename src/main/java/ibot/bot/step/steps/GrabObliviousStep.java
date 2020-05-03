@@ -5,14 +5,12 @@ import java.util.OptionalDouble;
 
 import rlbot.flat.QuickChatSelection;
 import ibot.boost.BoostPad;
-import ibot.bot.abort.BoostYoinkedAbort;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.CompositeArc;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Mode;
@@ -56,15 +54,6 @@ public class GrabObliviousStep extends Step {
 						Color.YELLOW, target, 2, 2);
 
 		if(this.boost.isFullBoost() || info.arena.getMode() == Mode.HOOPS){
-			if(info.isKickoff){
-				Vector2 endTarget = target.flatten().withY(0);
-
-				CompositeArc compositeArc = CompositeArc.create(car, target.flatten(), endTarget, 1000, 200, 300);
-
-				return new FollowArcsStep(this.bundle, compositeArc)
-						.withAbortCondition(new BoostYoinkedAbort(this.bundle, this.boost));
-			}
-
 			if(this.boost.isFullBoost()){
 				target = target.scale(1 - (35 / target.magnitude()));
 				this.drive.dontBoost = false;

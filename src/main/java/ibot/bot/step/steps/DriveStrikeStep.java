@@ -81,6 +81,7 @@ public class DriveStrikeStep extends Step {
 		Car car = packet.car;
 		Plane carPlane = this.bundle.info.arena.getClosestPlane(car.position);
 		Vector3 localIntercept = MathsUtils.local(car, this.intercept.intersectPosition);
+		Vector3 localVelocity = MathsUtils.local(car.orientation, car.velocity);
 
 		// Calculations.
 		double fullDistance;
@@ -96,6 +97,10 @@ public class DriveStrikeStep extends Step {
 		double jumpTime = JumpPhysics.timeZ(Math.min(this.jumpZ, maxZ), packet.gravity * this.gravityScale,
 				this.holdTime, this.doubleJump);
 		double driveTime = Math.max(0, timeLeft - jumpTime);
+
+		if(driveTime > 0.6 && targetSpeed > Constants.MAX_CAR_VELOCITY){
+			this.setFinished(true);
+		}
 
 		this.go |= this.curve;
 		if(!this.go){
@@ -120,7 +125,6 @@ public class DriveStrikeStep extends Step {
 			pencil.stackRenderString("Jump: " + MathsUtils.round(jumpTime, 3) + "s", Color.WHITE);
 			pencil.stackRenderString((int)targetSpeed + "uu/s", Color.WHITE);
 
-			Vector3 localVelocity = MathsUtils.local(car.orientation, car.velocity);
 			Vector3 localDisplacement = localVelocity.scale(jumpTime);
 			Vector3 globalDisplaced = MathsUtils.global(car, localDisplacement);
 			Vector3 floor = this.intercept.intersectPosition.shadowOntoPlane(this.intercept.plane);
@@ -128,8 +132,8 @@ public class DriveStrikeStep extends Step {
 			pencil.renderer.drawLine3d(pencil.colour, this.intercept.intersectPosition, floor);
 			pencil.renderer.drawLine3d(pencil.altColour, globalDisplaced, floor);
 
-			double accuracy = localDisplacement.minus(localIntercept).flatten().magnitude();
-			if(timeLeft <= jumpTime && (!this.doubleJump || accuracy < 140 || this.gravityScale < 0.8)){
+			boolean nowJump = localDisplacement.minus(localIntercept).dot(localIntercept) >= 0;
+			if(nowJump){
 				this.jumpStart = OptionalDouble.of(time);
 			}
 		}
@@ -158,17 +162,24 @@ public class DriveStrikeStep extends Step {
 
 			// Orient.
 			if(!dodgeSoon){
-				Vector3 desiredForward;
+				Vector3 desiredForward, desiredRoof = Vector3.Z;
 				if(!this.doubleJump){
 					desiredForward = this.intercept.intersectPosition.plus(new Vector3(0, 0, 75)).minus(car.position);
+
+//					desiredForward = MathsUtils.global(car, localVelocity.normalised().withZ(localIntercept
+//							.plus(MathsUtils.local(car.orientation, Vector3.Z.scale(100))).normalised().z)).minus(car.position);
+					desiredRoof = car.position.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z,
+							0.65);
 				}else{
 					desiredForward = this.intercept.position.minus(car.position);
 				}
 
 				pencil.renderer.drawLine3d(Color.RED, car.position,
 						car.position.plus(desiredForward.scaleToMagnitude(200)));
+				pencil.renderer.drawLine3d(Color.GREEN, car.position,
+						car.position.plus(desiredRoof.scaleToMagnitude(200)));
 
-				double[] orient = AirControl.getRollPitchYaw(car, desiredForward);
+				double[] orient = AirControl.getRollPitchYaw(car, desiredForward, desiredRoof);
 				return new Controls().withJump(timeJumping < this.holdTime).withOrient(orient);
 			}
 
@@ -201,7 +212,7 @@ public class DriveStrikeStep extends Step {
 			}
 		}else if(this.curve){
 			double distance = car.position.distance(target);
-			distance *= MathsUtils.clamp((driveTime - 0.215) * 0.8, 0, 0.7);
+			distance *= MathsUtils.clamp((driveTime - 0.265) * 0.55, 0, 0.55);
 			if(distance > 100){
 				target = target.plus(this.intercept.getOffset().scaleToMagnitude(distance)).clamp();
 				pencil.stackRenderString((int)distance + "uu", Color.MAGENTA);

@@ -2,6 +2,7 @@ package ibot.bot.step.steps;
 
 import java.awt.Color;
 
+import rlbot.flat.QuickChatSelection;
 import ibot.bot.controls.AirControl;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
@@ -33,8 +34,10 @@ public class FunStep extends Step {
 		if(!canHaveFun(this.bundle))
 			return new PopStack();
 
-		if(car.hasWheelContact)
+		if(car.hasWheelContact){
+			this.bundle.bot.sendQuickChat(QuickChatSelection.PostGame_EverybodyDance);
 			return new Controls().withJump(time % 0.4 < 0.2);
+		}
 
 		Vector3 forward = car.velocity.flatten().withAngleZ(Math.toRadians(60));
 		double sign = ((car.index % 2) * 2 - 1);

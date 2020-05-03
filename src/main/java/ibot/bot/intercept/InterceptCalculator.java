@@ -12,6 +12,7 @@ import ibot.bot.utils.Plane;
 import ibot.bot.utils.StaticClass;
 import ibot.input.Car;
 import ibot.prediction.BallPrediction;
+import ibot.prediction.BallSlice;
 import ibot.prediction.Slice;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
@@ -36,7 +37,7 @@ public class InterceptCalculator extends StaticClass {
 		Vector3 strongestInterceptPosition = null;
 
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
-			Slice slice = BallPrediction.get(i);
+			BallSlice slice = BallPrediction.get(i);
 
 			if(type == AerialType.DODGE_STRIKE
 					&& slice.time - car.time > (Constants.MAX_DODGE_DELAY + DriveStrikeStep.DODGE_TIME - 0.05)){
@@ -60,14 +61,14 @@ public class InterceptCalculator extends StaticClass {
 				Vector2 xTrace = MathsUtils.traceToX(car.position.flatten(), direction, arena.getWidth());
 				if(xTrace == null || xTrace.y * car.sign > -2000){
 					Vector2 goal = (car.team == info.bot.team ? info.enemyGoal.flatten() : info.homeGoal.flatten());
-					Vector2 offset = getOffset(car, slice.position, goal);
+					Vector2 offset = getOffset(car, slice, goal);
 					if(goal.distance(slice.position.flatten()) < 3000){
 						offset = offset.multiply(X_SKEW);
 					}
 					interceptPosition = slice.position.plus(offset.withZ(0).scale(RADIUS));
 				}else{
 					Vector2 corner = xTrace.withY(Math.max(xTrace.y * car.sign, -arena.getLength()) * car.sign);
-					Vector2 offset = getOffset(car, slice.position, corner);
+					Vector2 offset = getOffset(car, slice, corner);
 					interceptPosition = slice.position.plus(offset.withZ(0).scale(RADIUS + 5));
 				}
 			}
@@ -110,7 +111,7 @@ public class InterceptCalculator extends StaticClass {
 				+ (doubleJump ? 100 : 55) + (!ourSide && doubleJump ? -50 : 0);
 
 		for(int i = 0; i < BallPrediction.SLICE_COUNT; i++){
-			Slice slice = BallPrediction.get(i);
+			BallSlice slice = BallPrediction.get(i);
 			boolean finalSlice = (i == BallPrediction.SLICE_COUNT - 1);
 
 			// Slice plane.
@@ -144,14 +145,22 @@ public class InterceptCalculator extends StaticClass {
 			Vector3 offset;
 			if(differentPlane){
 				if(slicePlane.differentNormal(Vector3.Y)){
-					offset = Vector3.Y.scaleToMagnitude((RADIUS + 10) * -car.sign);
+					offset = Vector3.Y
+							.scaleToMagnitude((car.correctSide(slice.position) ? RADIUS + 15 : RADIUS + 5) * -car.sign);
 				}else{
 					offset = Vector3.X.scaleToMagnitude((RADIUS + 10) * -Math.signum(slice.position.x));
 				}
 			}else if(mode == Mode.DROPSHOT){
 				offset = car.position.minus(slice.position).scaleToMagnitude(RADIUS);
 			}else{
-				offset = getOffset(car, slice.position, goal).withZ(0).scale(RADIUS);
+				Vector2 direction = slice.position.minus(car.position).flatten().normalised();
+				Vector2 xTrace = MathsUtils.traceToX(car.position.flatten(), direction, arena.getWidth());
+				if(xTrace == null || xTrace.y * car.sign > -2000){
+					offset = getOffset(car, slice, goal).withZ(0).scale(RADIUS);
+				}else{
+					Vector2 corner = xTrace.withY(Math.max(xTrace.y * car.sign + 800, -arena.getLength()) * car.sign);
+					offset = getOffset(car, slice, corner).withZ(0).scale(RADIUS + 5);
+				}
 			}
 
 			Vector3 interceptPosition = slice.position.plus(offset);
@@ -205,11 +214,26 @@ public class InterceptCalculator extends StaticClass {
 		return radians * 0.3;
 	}
 
-	private static Vector2 getOffset(Car car, Vector3 slicePosition, Vector2 goal){
+	private static Vector2 getOffset(Car car, BallSlice slice, Vector2 goal){
 		final double maxAngle = (Math.PI * 0.475);
-		Vector2 offset = slicePosition.flatten().minus(goal);
-		Vector2 carSide = car.position.minus(slicePosition).flatten();
+		Vector2 offset = slice.position.flatten().minus(goal);
+//		Vector2 offset = optimalIntercept(slice, goal.withZ(MathsUtils.clamp(slice.position.z, Constants.BALL_RADIUS,
+//				Constants.GOAL_HEIGHT - Constants.BALL_RADIUS))).flatten().scale(-1);
+		Vector2 carSide = car.position.minus(slice.position).flatten();
 		return carSide.rotate(MathsUtils.clamp(carSide.correctionAngle(offset), -maxAngle, maxAngle)).normalised();
+	}
+
+	/**
+	 * https://github.com/LHolten/DisasterBot/blob/74350bda635062d689334a1d4d7bebf021677c08/util/linear_algebra.py#L37-L43
+	 * Provides vector for correcting an object's velocity vector towards the target
+	 * vector
+	 */
+	private static Vector3 optimalIntercept(BallSlice slice, Vector3 goal){
+		Vector3 targetDirection = goal.minus(slice.position).normalised();
+		Vector3 correctVelocity = targetDirection.scale(slice.velocity.dot(targetDirection));
+		Vector3 incorrectVelocity = slice.velocity.minus(correctVelocity);
+		double extraVelocity = Math.sqrt(Math.pow(6000, 2) - Math.pow(incorrectVelocity.magnitude(), 2));
+		return targetDirection.scale(extraVelocity).minus(incorrectVelocity);
 	}
 
 }

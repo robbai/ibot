@@ -123,11 +123,11 @@ public class DriveStep extends Step {
 					&& (dodgeDistance < flatDistance || car.forwardVelocity < 0)
 					&& (!commitKickoff || dodgeDistance > flatDistance - 300)){
 				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(20)){
-					return new HalfFlipStep(bundle);
-				}else if(commitKickoff || ((!boost || car.boost < 10) && velocityStraight > 0.9
+					return new HalfFlipStep(this.bundle);
+				}else if(commitKickoff || ((!boost || car.boost < 10 || !this.dontBoost) && velocityStraight > 0.9
 						&& Math.abs(radians) < Math.toRadians(30)
 						&& car.forwardVelocity + Constants.DODGE_IMPULSE < desiredVelocity)){
-					return new FastDodgeStep(bundle, carTarget.minus(car.position));
+					return new FastDodgeStep(this.bundle, carTarget.minus(car.position));
 				}
 			}
 		}

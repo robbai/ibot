@@ -110,7 +110,7 @@ public abstract class ABot implements Bot {
 		final int maxIterations = 10;
 		ArrayList<Step> triedSteps = new ArrayList<Step>(maxIterations);
 
-		for(iteration = 0; iteration < maxIterations; iteration++){
+		for(this.iteration = 0; this.iteration < maxIterations; this.iteration++){
 			Step foundStep = this.fallbackStep();
 			if(foundStep != null && foundStep.getPriority() > this.stepsPriority()){
 				this.clearSteps();
@@ -221,6 +221,18 @@ public abstract class ABot implements Bot {
 
 	private String stepsString(){
 		return stepsString(this.steps);
+	}
+
+	/*
+	 * step.getClass().getName()
+	 */
+	protected Step findStep(String stepClassName){
+		for(Step step : this.steps){
+			if(step.getClass().getName().equals(stepClassName)){
+				return step;
+			}
+		}
+		return null;
 	}
 
 }
