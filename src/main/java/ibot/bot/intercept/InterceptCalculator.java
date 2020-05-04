@@ -60,7 +60,7 @@ public class InterceptCalculator extends StaticClass {
 				Vector2 direction = slice.position.minus(car.position).flatten().normalised();
 				Vector2 xTrace = MathsUtils.traceToX(car.position.flatten(), direction, arena.getWidth());
 				if(xTrace == null || xTrace.y * car.sign > -2000){
-					Vector2 goal = (car.team == info.bot.team ? info.enemyGoal.flatten() : info.homeGoal.flatten());
+					Vector2 goal = chooseGoal(arena, car, slice.position);
 					Vector2 offset = getOffset(car, slice, goal);
 					if(goal.distance(slice.position.flatten()) < 3000){
 						offset = offset.multiply(X_SKEW);
@@ -92,7 +92,7 @@ public class InterceptCalculator extends StaticClass {
 		return new Intercept(strongestSlice.position, car, strongestInterceptPosition, null, strongestSlice.time);
 	}
 
-	public static Intercept groundCalculate(Info info, Car car, Vector2 goal, boolean doubleJump){
+	public static Intercept groundCalculate(Info info, Car car, boolean doubleJump){
 		if(BallPrediction.isEmpty())
 			return null;
 
@@ -154,8 +154,10 @@ public class InterceptCalculator extends StaticClass {
 				offset = car.position.minus(slice.position).scaleToMagnitude(RADIUS);
 			}else{
 				Vector2 direction = slice.position.minus(car.position).flatten().normalised();
-				Vector2 xTrace = MathsUtils.traceToX(car.position.flatten(), direction, arena.getWidth());
+				Vector2 xTrace = MathsUtils.traceToX(car.position.flatten(), direction,
+						arena.getWidth() * Math.signum(direction.x));
 				if(xTrace == null || xTrace.y * car.sign > -2000){
+					Vector2 goal = chooseGoal(arena, car, slice.position);
 					offset = getOffset(car, slice, goal).withZ(0).scale(RADIUS);
 				}else{
 					Vector2 corner = xTrace.withY(Math.max(xTrace.y * car.sign + 800, -arena.getLength()) * car.sign);
@@ -217,9 +219,9 @@ public class InterceptCalculator extends StaticClass {
 
 	private static Vector2 getOffset(Car car, BallSlice slice, Vector2 goal){
 		final double maxAngle = (Math.PI * 0.475);
-		Vector2 offset = slice.position.flatten().minus(goal);
-//		Vector2 offset = optimalIntercept(slice, goal.withZ(MathsUtils.clamp(slice.position.z, Constants.BALL_RADIUS,
-//				Constants.GOAL_HEIGHT - Constants.BALL_RADIUS))).flatten().scale(-1);
+//		Vector2 offset = slice.position.flatten().minus(goal);
+		Vector2 offset = optimalIntercept(slice, goal.withZ(MathsUtils.clamp(slice.position.z, Constants.BALL_RADIUS,
+				Constants.GOAL_HEIGHT - Constants.BALL_RADIUS))).flatten().scale(-1);
 		Vector2 carSide = car.position.minus(slice.position).flatten();
 		return carSide.rotate(MathsUtils.clamp(carSide.correctionAngle(offset), -maxAngle, maxAngle)).normalised();
 	}
@@ -235,6 +237,16 @@ public class InterceptCalculator extends StaticClass {
 		Vector3 incorrectVelocity = slice.velocity.minus(correctVelocity);
 		double extraVelocity = Math.sqrt(Math.pow(6000, 2) - Math.pow(incorrectVelocity.magnitude(), 2));
 		return targetDirection.scale(extraVelocity).minus(incorrectVelocity);
+	}
+
+	public static Vector2 chooseGoal(Arena arena, Car car, Vector3 interceptPosition){
+		double y = arena.getLength() * car.sign;
+		Vector2 trace = MathsUtils.traceToY(car.position.flatten(),
+				interceptPosition.minus(car.position).flatten().normalised(), y);
+		if(trace == null)
+			return new Vector2(0, y);
+		double maxX = Constants.GOAL_WIDTH - Constants.BALL_RADIUS * 2.2;
+		return new Vector2(MathsUtils.clamp(trace.x, -maxX, maxX), y);
 	}
 
 }

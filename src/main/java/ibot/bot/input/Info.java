@@ -102,44 +102,17 @@ public class Info {
 			this.nearestBoost = findNearestBoost(this.car, BoostManager.getSmallBoosts());
 		}
 
-		// Goals.
-		boolean oppositePost = false;
-		if(this.mode == Mode.SOCCAR && Math.abs(this.ball.position.x) > Constants.GOAL_WIDTH){
-			Vector2 post = new Vector2(Constants.GOAL_WIDTH, this.car.sign * Constants.PITCH_LENGTH_SOCCAR);
-			double postAngle = post.minus(this.ball.position.flatten())
-					.angle(post.multiply(new Vector2(-1, 1)).minus(this.ball.position.flatten()));
-			oppositePost = (postAngle < Math.toRadians(35));
-		}
-		double ballForwards = (this.ball.position.y * this.car.sign + Constants.PITCH_LENGTH_SOCCAR)
-				/ (2 * Constants.PITCH_LENGTH_SOCCAR);
-		this.enemyGoal = new Vector3(
-				(this.mode != Mode.SOCCAR ? 0
-						: (oppositePost ? -1 : 1) * ballForwards
-								* Math.copySign(Math.min(Constants.GOAL_WIDTH - 350, Math.abs(this.ball.position.x)),
-										this.ball.position.x)),
-				(this.mode == Mode.HOOPS ? Constants.PITCH_LENGTH_HOOPS - 700 : Constants.PITCH_LENGTH_SOCCAR)
-						* this.car.sign,
-				0);
-		this.homeGoal = new Vector3((oppositePost ? -1 : 1) * this.enemyGoal.x, -this.enemyGoal.y, this.enemyGoal.z);
-		// if(this.ball.position.y * this.car.sign > Constants.PITCH_WIDTH_SOCCAR - 2000
-		// &&
-		// Math.abs(this.ball.position.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS
-		// * 2){
-		// this.enemyGoal = this.enemyGoal.withX(-this.enemyGoal.x);
-		// }
-
 		// Intercept.
 		this.aerialDodge = InterceptCalculator.aerialCalculate(this, this.car, AerialType.DODGE_STRIKE, this.mode,
 				this.isKickoff, true);
 		this.aerialDouble = InterceptCalculator.aerialCalculate(this, this.car, AerialType.DOUBLE_JUMP, this.mode,
 				this.isKickoff, false);
-		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(this, this.car, this.enemyGoal.flatten(), true);
+		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(this, this.car, true);
 		this.groundIntercepts = new Intercept[packet.cars.length];
 		this.earliestTeammateIntercept = null;
 		this.earliestEnemyIntercept = null;
 		for(int i = 0; i < packet.cars.length; i++){
-			Vector2 goal = packet.cars[i].team == this.car.team ? this.enemyGoal.flatten() : this.homeGoal.flatten();
-			Intercept intercept = InterceptCalculator.groundCalculate(this, packet.cars[i], goal, false);
+			Intercept intercept = InterceptCalculator.groundCalculate(this, packet.cars[i], false);
 			this.groundIntercepts[i] = intercept;
 
 			if(intercept == null)
@@ -178,6 +151,13 @@ public class Info {
 		}else{
 			this.goalTime = OptionalDouble.empty();
 		}
+
+		// Goals.
+		this.enemyGoal = InterceptCalculator.chooseGoal(this.arena, this.car, this.groundIntercept.position)
+				.withZ(Constants.BALL_RADIUS);
+		this.homeGoal = InterceptCalculator
+				.chooseGoal(this.arena, this.earliestEnemyIntercept.car, this.earliestEnemyIntercept.position)
+				.withZ(Constants.BALL_RADIUS);
 
 		this.backTeammate = null;
 		this.furthestBack = true;

@@ -93,17 +93,17 @@ public class MathsUtils extends StaticClass {
 	}
 
 	public static Vector2 traceToX(Vector2 start, Vector2 direction, double targetX){
-		if(direction.x == 0)
+		if(direction.x * (targetX - start.x) <= 0)
 			return null;
-		return start.plus(direction.scaleToMagnitude(
-				(Math.copySign(targetX, direction.x) - start.x) * Math.abs(direction.y / direction.x)));
+		direction = direction.normalised();
+		return start.plus(direction.scale(Math.abs(targetX - start.x) / Math.abs(direction.x)));
 	}
 
 	public static Vector2 traceToY(Vector2 start, Vector2 direction, double targetY){
-		if(direction.y == 0)
+		if(direction.y * (targetY - start.y) <= 0)
 			return null;
-		return start.plus(direction.scaleToMagnitude(
-				(Math.copySign(targetY, direction.y) - start.y) * Math.abs(direction.x / direction.y)));
+		direction = direction.normalised();
+		return start.plus(direction.scale(Math.abs(targetY - start.y) / Math.abs(direction.y)));
 	}
 
 }
