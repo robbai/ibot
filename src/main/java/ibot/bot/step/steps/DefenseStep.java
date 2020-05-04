@@ -41,7 +41,7 @@ public class DefenseStep extends Step {
 
 		this.drive.gentleSteer = !info.lastMan;
 
-		if(!car.onFlatGround && car.hasWheelContact){
+		if(!car.onFlatGround && car.hasWheelContact && car.velocity.z < 0){
 			return new JumpStep(this.bundle, Constants.JUMP_MAX_HOLD);
 		}
 

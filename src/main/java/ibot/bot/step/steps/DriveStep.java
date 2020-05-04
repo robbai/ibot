@@ -85,11 +85,16 @@ public class DriveStep extends Step {
 		if(reverse){
 			radians = MathsUtils.invertAngle(radians);
 		}
+		double steer;
+		if(this.gentleSteer){
+			steer = radians * -2;
+		}else{
+			steer = Math.pow(-radians - car.angularVelocity.yaw * Constants.DT * 2, 3) * 10000;
+		}
 
 		// Velocity.
-		double maxTurnVel = DrivePhysics.maxSpeedForTurn(car, carTarget.setDistanceFrom(car.position,
-				Math.min(car.onFlatGround ? 3000 : Double.MAX_VALUE, carTarget.distance(car.position))));
-		double desiredVelocity = maxTurnVel;
+		double maxSpeedTurn = DrivePhysics.maxSpeedForTurn(car, carTarget);
+		double desiredVelocity = maxSpeedTurn;
 		if(this.targetTime.isPresent()){
 			double distance = carTarget.distance(car.position);
 			desiredVelocity = Math.min(desiredVelocity, distance / (this.targetTime.getAsDouble() - car.time));
@@ -105,8 +110,7 @@ public class DriveStep extends Step {
 
 		// Boost.
 		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, info.lastControls.holdBoost());
-		boost &= !car.isSupersonic;
-		boost &= (throttle > 0 && forwardDot > 0.5);
+		boost &= !car.isSupersonic && forwardDot > 0;
 
 		// Dodge.
 		if(boost || car.forwardVelocity < 0){
@@ -150,13 +154,10 @@ public class DriveStep extends Step {
 		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3)
 				|| (car.onFlatGround && (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300
 						&& velocityStraight > 0.9 && !this.gentleSteer)
-//				|| (maxTurnVel < 600 && car.forwardVelocityAbs < 800)
-				);
-//		handbrake &= (car.angularVelocity.yaw * radians * reverseSign < 0 && car.forwardVelocity * throttle > 0);
+						|| (maxSpeedTurn < 600 && car.forwardVelocityAbs < 800));
+		handbrake &= (car.angularVelocity.yaw * radians * reverseSign < 0 && car.forwardVelocity * throttle > 0);
 
-		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake)
-				.withSteer(gentleSteer ? radians * -1.5
-						: Math.pow(-radians - car.angularVelocity.yaw * Constants.DT * 2, 3) * 10000)
+		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake).withSteer(steer)
 				.withOrient(car.hasWheelContact || wavedashTime
 						? new double[] { 0, wavedashTime ? -Math.signum(Math.cos(radians)) : 0, 0 }
 						: AirControl.getRollPitchYaw(car,

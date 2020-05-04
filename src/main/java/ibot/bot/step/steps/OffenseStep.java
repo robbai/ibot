@@ -99,7 +99,7 @@ public class OffenseStep extends Step {
 				}
 				boolean goodAngle = target.minus(car.position).normalised()
 						.dot(info.enemyGoal.minus(car.position).normalised()) > 0.3;
-				if(car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.95
+				if(car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975 && info.getTimeOnGround() > 0.1
 						&& (goodAngle || info.possession < 0.4)){
 					double height = MathsUtils.local(car, info.groundIntercept.position).z;
 					double doubleHeight = MathsUtils.local(car, info.doubleJumpIntercept.position).z;
