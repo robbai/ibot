@@ -163,16 +163,13 @@ public class DriveStrikeStep extends Step {
 
 			// Orient.
 			if(!dodgeSoon){
-				Vector3 desiredForward, desiredRoof = Vector3.Z;
-				if(!this.doubleJump){
-					desiredForward = this.intercept.intersectPosition.plus(new Vector3(0, 0, 75)).minus(car.position);
-
-//					desiredForward = MathsUtils.global(car, localVelocity.normalised().withZ(localIntercept
-//							.plus(MathsUtils.local(car.orientation, Vector3.Z.scale(100))).normalised().z)).minus(car.position);
-					desiredRoof = car.position.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z,
-							0.65);
+				Vector3 end = car.position.plus(car.velocity.scale(timeLeft)
+						.plus(Vector3.Z.scale(0.5 * packet.gravity * Math.pow(timeLeft, 2))));
+				Vector3 desiredForward = this.intercept.position.minus(end), desiredRoof;
+				if(this.doubleJump){
+					desiredRoof = Vector3.Z;
 				}else{
-					desiredForward = this.intercept.position.minus(car.position);
+					desiredRoof = end.minus(this.intercept.intersectPosition).normalised().lerp(Vector3.Z, 0.85);
 				}
 
 				pencil.renderer.drawLine3d(Color.RED, car.position,
