@@ -1,5 +1,6 @@
 package ibot.bot.utils;
 
+import ibot.bot.physics.Car1D;
 import ibot.bot.physics.DrivePhysics;
 import ibot.input.Car;
 import ibot.vectors.Vector2;
@@ -134,7 +135,7 @@ public class CompositeArc {
 	}
 
 	public static CompositeArc create(Car car, Vector2 ball, Vector2 goal, double L0, double L4){
-		return create(car, ball, goal, DrivePhysics.maxVelocity(car.forwardVelocityAbs, car.boost), L0, L4);
+		return create(car, ball, goal, new Car1D(car).stepMaxVelocity(1, true).getVelocity(), L0, L4);
 	}
 
 	public Vector2[] discretise(int n){
@@ -233,10 +234,9 @@ public class CompositeArc {
 		double velocity = car.forwardVelocity, boost = reverse ? 0 : car.boost;
 
 		double firstArcFinalVel = DrivePhysics.getSpeedFromRadius(this.getR1()) * sign,
-				firstArcAccTime = DrivePhysics.timeToReachVel(velocity, boost, firstArcFinalVel);
+				firstArcAccTime = new Car1D(car).withTime(0).stepVelocity(sign, !reverse, firstArcFinalVel).getTime();
 
-		double traversed = (reverse ? DrivePhysics.maxDistanceReverse(firstArcAccTime, velocity)
-				: DrivePhysics.maxDistance(firstArcAccTime, velocity, boost));
+		double traversed = new Car1D(car).stepTime(sign, !reverse, firstArcAccTime + car.time).getDisplacement();
 		velocity = firstArcFinalVel;
 		boost -= (Constants.BOOST_USAGE * firstArcAccTime);
 		double time = firstArcAccTime;
@@ -251,8 +251,8 @@ public class CompositeArc {
 
 		double distanceToTravel = (this.getLength() - (includeL0 ? 0 : this.getL(0)) - (includeL4 ? 0 : this.getL(4)));
 		double straightawayTime = (includeL4
-				? (reverse ? DrivePhysics.minTravelTimeReverse(velocity, distanceToTravel - traversed, secondArcMaxVel)
-						: DrivePhysics.minTravelTime(velocity, boost, distanceToTravel - traversed, secondArcMaxVel))
+				? new Car1D(car).withTime(0).withVelocity(velocity).withBoost(boost).withMaximumSpeed(secondArcMaxVel)
+						.stepDisplacement(sign, !reverse, distanceToTravel - traversed).getTime()
 				: 0);
 
 		return time + straightawayTime;

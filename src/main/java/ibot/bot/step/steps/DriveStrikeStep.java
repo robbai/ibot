@@ -8,7 +8,7 @@ import ibot.bot.input.Bundle;
 import ibot.bot.input.Pencil;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.intercept.SeamIntercept;
-import ibot.bot.physics.DrivePhysics;
+import ibot.bot.physics.Car1D;
 import ibot.bot.physics.JumpPhysics;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
@@ -105,8 +105,9 @@ public class DriveStrikeStep extends Step {
 		this.go |= this.curve;
 		if(!this.go){
 			double goNecessaryTime = (car.forwardVelocityAbs / Constants.BRAKE_ACCELERATION);
-			boolean nowGo = targetSpeed >= DrivePhysics.maxVelocity(car.forwardVelocity, car.boost,
-					timeLeft - jumpTime - goNecessaryTime - Constants.DT * 2);
+			boolean nowGo = targetSpeed >= new Car1D(car)
+					.stepTime(1, true, this.intercept.time - jumpTime - goNecessaryTime - Constants.DT * 2)
+					.getVelocity();
 			if(nowGo != this.lastGo){
 				this.lastGoTimeChange = time;
 				this.lastGo = nowGo;

@@ -8,7 +8,7 @@ import ibot.bot.abort.CommitAbort;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
-import ibot.bot.physics.DrivePhysics;
+import ibot.bot.physics.Car1D;
 import ibot.bot.stack.PushStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
@@ -54,7 +54,7 @@ public class DefenseStep extends Step {
 			double distance = nearestBoost.getLocation().distance(car.position.flatten());
 			boolean boostCorrectSide = (info.groundIntercept.position.y - nearestBoost.getLocation().y) * car.sign > 0;
 			if(boostCorrectSide && car.boost < 40 && goalDistance > 4500
-					&& DrivePhysics.minTravelTime(car, distance) < info.earliestEnemyIntercept.time - packet.time){
+					&& new Car1D(car).stepDisplacement(1, true, distance).getTime() < info.earliestEnemyIntercept.time){
 				this.drive.dontBoost = false;
 				return new PushStack(new GrabObliviousStep(this.bundle, nearestBoost)
 //						.withAbortCondition(new CommitAbort(this.bundle, 0))

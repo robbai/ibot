@@ -2,7 +2,7 @@ package ibot.bot.intercept;
 
 import ibot.bot.input.Info;
 import ibot.bot.input.arena.Arena;
-import ibot.bot.physics.DrivePhysics;
+import ibot.bot.physics.Car1D;
 import ibot.bot.physics.JumpPhysics;
 import ibot.bot.step.steps.DriveStrikeStep;
 import ibot.bot.utils.Constants;
@@ -169,8 +169,8 @@ public class InterceptCalculator extends StaticClass {
 			}else if(!differentPlane){
 				double distance = MathsUtils.local(car, interceptPosition).flatten().magnitude();
 				double initialVelocity = car.velocity.dot(interceptPosition.minus(car.position).normalised());
-				if(DrivePhysics.maxDistance(slice.time - car.time - turnTime(car, interceptPosition), initialVelocity,
-						car.boost) > distance){
+				if(new Car1D(car).withVelocity(initialVelocity).stepDisplacement(1, true, distance)
+						.getTime() < slice.time - turnTime(car, interceptPosition)){
 					return new Intercept(slice.position, car, interceptPosition, slicePlane, slice.time);
 				}
 			}else{
@@ -190,13 +190,14 @@ public class InterceptCalculator extends StaticClass {
 				double angle = MathsUtils.local(car.orientation, slicePlane.normal).flatten()
 						.angle(MathsUtils.local(car, seamPosition).flatten());
 				double initialVelocity = car.velocity.dot(seamPosition.minus(car.position).normalised());
-				double time = DrivePhysics.minTravelTime(initialVelocity, car.boost, distanceFromTargetPlane);
-				initialVelocity = DrivePhysics.maxVelocityDist(initialVelocity, car.boost, distanceFromTargetPlane);
+				Car1D sim = new Car1D(car).withVelocity(initialVelocity).stepDisplacement(1, true,
+						distanceFromTargetPlane);
+				initialVelocity = sim.getVelocity();
 				initialVelocity -= initialVelocity * (Math.abs(slicePlane.normal.dot(Vector3.Y)) > 0.9 ? 0.45 : 0.3)
 						* (1 - Math.sin(angle));
-				time += DrivePhysics.minTravelTime(initialVelocity, car.boost, targetDistanceFromCarPlane);
-				time += turnTime(car, seamPosition);
-				if(time < slice.time - car.time){
+				sim.withVelocity(initialVelocity).stepDisplacement(1, true,
+						distanceFromTargetPlane + targetDistanceFromCarPlane);
+				if(sim.getTime() < slice.time - turnTime(car, seamPosition)){
 					return new SeamIntercept(slice.position, car, interceptPosition, slicePlane, seamPosition,
 							slice.time);
 				}
