@@ -113,8 +113,8 @@ public class CompositeArc extends Curve {
 			for(double ballTurn : SIGNS){
 				CompositeArc compositeArc;
 				try{
-					compositeArc = new CompositeArc(L0, carPosition, goalDirection, playerTurn * playerTurnRadius, L4,
-							ballPosition, carDirection, ballTurn * ballTurnRadius);
+					compositeArc = new CompositeArc(L0, carPosition, carDirection, playerTurn * playerTurnRadius, L4,
+							ballPosition, goalDirection, ballTurn * ballTurnRadius);
 				}catch(Exception e){
 					compositeArc = null;
 					e.printStackTrace();

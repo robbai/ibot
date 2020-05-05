@@ -19,7 +19,7 @@ import ibot.vectors.Vector2;
 
 public class FollowPathStep extends Step {
 
-	public final static double STEER_LOOKAHEAD = 0.3, SPEED_LOOKAHEAD = Constants.DT * 2;
+	public final static double STEER_LOOKAHEAD = 0.285, SPEED_LOOKAHEAD = 0.05;
 	private final static boolean VERBOSE_RENDER = true;
 
 	private Path path;
@@ -84,12 +84,13 @@ public class FollowPathStep extends Step {
 		if(updatedTimeLeft > guessedTimeLeft + 0.4)
 			return new PopStack();
 
-		double targetAcceleration = (targetVelocity - initialVelocity) / 0.05;
+		double targetAcceleration = (targetVelocity - initialVelocity) / SPEED_LOOKAHEAD;
 		if(this.targetTime.isPresent()){
 			double targetTimeLeft = (this.targetTime.getAsDouble() - packet.time);
 
 			if(this.linearTarget){
-				targetAcceleration = ((this.path.getDistance() - carS) / targetTimeLeft - initialVelocity) / 0.05; // Enforce!
+				targetAcceleration = ((this.path.getDistance() - carS) / targetTimeLeft - initialVelocity)
+						/ SPEED_LOOKAHEAD; // Enforce!
 			}else{
 				double arrivalAcceleration = ((2 * (this.path.getDistance() - carS - targetTimeLeft * initialVelocity))
 						/ Math.pow(targetTimeLeft, 2));
@@ -129,7 +130,7 @@ public class FollowPathStep extends Step {
 
 		// Handling.
 		this.drive.target = target.withZ(0);
-		this.drive.withTargetVelocity(packet.car.forwardVelocity + targetAcceleration * 0.05);
+		this.drive.withTargetVelocity(packet.car.forwardVelocity + targetAcceleration * SPEED_LOOKAHEAD);
 		return ((Controls)this.drive.getOutput()).withHandbrake(false);
 	}
 

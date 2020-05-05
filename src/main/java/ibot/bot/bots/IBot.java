@@ -1,14 +1,20 @@
 package ibot.bot.bots;
 
+import java.util.ArrayList;
+
 import ibot.bot.abort.BallTouchedAbort;
 import ibot.bot.abort.SliceOffPredictionAbort;
 import ibot.bot.input.Info;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
+import ibot.bot.path.Curve;
+import ibot.bot.path.Path;
+import ibot.bot.path.curves.Biarc;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.step.steps.DefenseStep;
 import ibot.bot.step.steps.DriveStrikeStep;
+import ibot.bot.step.steps.FollowPathStep;
 import ibot.bot.step.steps.FunStep;
 import ibot.bot.step.steps.OffenseStep;
 import ibot.bot.step.steps.SaveStep;
@@ -18,6 +24,9 @@ import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Mode;
 import ibot.input.Car;
 import ibot.input.DataPacket;
+import ibot.prediction.BallPrediction;
+import ibot.prediction.BallSlice;
+import ibot.prediction.Slice;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
@@ -40,6 +49,40 @@ public class IBot extends ABot {
 			}
 		}else if(FunStep.canHaveFun(this.bundle)){
 			return new FunStep(this.bundle);
+		}
+
+		if(car.onFlatGround && this.iteration < 5){
+			Vector2 carPosition = this.bundle.packet.car.position.flatten();
+			Vector2 enemyGoal = new Vector2(0, Constants.PITCH_LENGTH_SOCCAR * car.sign);
+
+			ArrayList<BallSlice> bounces = new ArrayList<BallSlice>();
+			for(int i = 1; i < BallPrediction.SLICE_COUNT; i++){
+				Slice slice = BallPrediction.get(i);
+				if(slice.time > info.earliestEnemyIntercept.time - 0.1)
+					break;
+				if(slice.position.z < 130){
+					bounces.add(BallPrediction.get(i));
+				}
+			}
+
+			for(int i = 0; i < bounces.size(); i++){
+				Slice slice = bounces.get(i);
+				double time = slice.time - car.time;
+				Vector2 ballPosition = slice.position.flatten();
+				ballPosition = ballPosition
+						.plus(ballPosition.minus(enemyGoal).scaleToMagnitude(Constants.BALL_RADIUS + 100));
+				if(ballPosition.distance(carPosition) < 400)
+					break;
+				Curve curve = new Biarc(carPosition, car.orientation.forward.flatten(), ballPosition,
+						enemyGoal.minus(ballPosition));
+				Path path = new Path(car.forwardVelocityAbs, car.boost, curve, time);
+				if(path.getTime() < time){
+					FollowPathStep follow = new FollowPathStep(this.bundle, path, time + car.time);
+					follow.dodge = true;
+					follow.linearTarget = true;
+					return follow.withAbortCondition(new SliceOffPredictionAbort(this.bundle, slice));
+				}
+			}
 		}
 
 		if(this.iteration < 5 && info.commit

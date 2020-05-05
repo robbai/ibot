@@ -15,8 +15,8 @@ import ibot.vectors.Vector2;
  */
 public class Path {
 
-	private static final int ANALYSE_POINTS = 60, COARSE_RENDER = 1;
-	private static final double CURVE_STEP = (1D / 45);
+	private static final int ANALYSE_POINTS = 50, COARSE_RENDER = 3;
+	private static final double CURVE_STEP = Constants.DT * 4;
 	private static final double[] BRAKE_CURVE = formAccCurve(false);
 
 	private final Vector2[] points;
@@ -33,7 +33,7 @@ public class Path {
 		this.initialVelocity = Math.abs(initialVelocity);
 		this.unlimitedBoost = (boost <= -1);
 		this.boost = MathsUtils.clamp(boost, 0, 100);
-		this.distance = distance(this.points);
+		this.distance = calculateDistance(this.points);
 		this.turningRadii = (this.valid ? this.calculateTurningRadii() : null); // For each point.
 		Pair<double[][], Double> result = (this.valid ? this.calculateSpeed() : null);
 		this.speeds = (this.valid ? result.getOne()[0] : null); // Interpolated.
@@ -73,8 +73,8 @@ public class Path {
 
 			// Slide the braking curve.
 			boolean brake = false;
-			int brakeIncrement = 20;
-			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= brakeIncrement){
+			final int BRAKE_DECREMENT = 30;
+			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= BRAKE_DECREMENT){
 				double brakeDistance = (s + BRAKE_CURVE[brakeVelocity]);
 				if(brakeDistance > this.distance)
 					break;
@@ -101,9 +101,9 @@ public class Path {
 						&& (optimalSpeed - v) > Constants.BOOST_GROUND_ACCELERATION * Math.pow(CURVE_STEP, 2));
 				a = DrivePhysics.determineAcceleration(v, 1, useBoost);
 				if(useBoost)
-					boost -= (100D / 3) * CURVE_STEP; // Consume boost.
-				if(!useBoost && v + a * CURVE_STEP > optimalSpeed)
-					a = (optimalSpeed - v);
+					boost -= Constants.BOOST_USAGE * CURVE_STEP; // Consume boost.
+//				if(!useBoost && v + a * CURVE_STEP > optimalSpeed)
+//					a = (optimalSpeed - v);
 			}
 
 			v = MathsUtils.clamp(v + a * CURVE_STEP, 1, Constants.MAX_CAR_VELOCITY);
@@ -125,22 +125,21 @@ public class Path {
 		if(this.invalidCurve())
 			return null;
 
+		final double MAX_RADIUS = DrivePhysics.getTurnRadius(Constants.MAX_CAR_VELOCITY);
+
 		double[] k = new double[this.points.length];
 		for(int i = 1; i < k.length - 1; i++){
 			Vector2 A = this.points[i - 1], B = this.points[i], C = this.points[i + 1];
 
-			if(B.minus(A).normalised().dot(C.minus(B).normalised()) > 1 - MathsUtils.EPSILON){
-				k[i] = DrivePhysics.getTurnRadius(Constants.MAX_CAR_VELOCITY);
+			if(B.minus(A).angle(C.minus(A)) < MathsUtils.EPSILON){
+				k[i] = MAX_RADIUS;
 				continue;
 			}
 
 			double a = A.distance(B), b = B.distance(C), c = C.distance(A);
-
-			double p = (a + b + c) / 2D;
-			double areaSquared = (p * (p - a) * (p - b) * (p - c));
-
-			double area = Math.sqrt(areaSquared);
-			double radius = (a * b * c) / (4D * area);
+			double p = (a + b + c) / 2;
+			double area = Math.sqrt(p * (p - a) * (p - b) * (p - c));
+			double radius = (a * b * c) / (4 * area);
 			k[i] = radius;
 		}
 		k[0] = k[1];
@@ -157,7 +156,7 @@ public class Path {
 		return this.points;
 	}
 
-	private static double distance(Vector2[] points){
+	private static double calculateDistance(Vector2[] points){
 		if(invalid(points))
 			return 0;
 
