@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -25,27 +24,13 @@ import ibot.utils.PortReader;
 public class Main {
 
 	private static final Integer DEFAULT_PORT = 56927;
-	private static final String LOGO_FILE = "icon.png", MUTATOR_FILE = "zero_gravity_mutator.py";
-	private static final boolean RUN_MUTATOR = false;
+	private static final String LOGO_FILE = "icon.png";
+
 	private static List<String> arguments;
 
 	public static void main(String[] args){
 		System.out.println("Args: " + Arrays.toString(args));
 		setArguments(args);
-
-		// Run the mutator script.
-		if(RUN_MUTATOR){
-			try{
-				String command = Main.class.getClassLoader().getResource(MUTATOR_FILE).getFile();
-				if(command.startsWith("\\") || command.startsWith("/"))
-					command = command.substring(1);
-				command = "python " + command;
-				Runtime.getRuntime().exec(command);
-				System.out.println("Ran: " + command);
-			}catch(IOException e){
-				e.printStackTrace();
-			}
-		}
 
 		BotManager botManager = new BotManager();
 		botManager.setRefreshRate(120);
