@@ -18,15 +18,15 @@ public class Plane {
 	}
 
 	public boolean differentNormal(Vector3 normal){
-		return this.normal.dot(normal) < 0.95;
+		return this.normal.dot(normal) < 0.925;
 	}
 
 	public boolean differentNormal(Plane plane){
 		return this.differentNormal(plane.normal);
 	}
 
-	public boolean differentNormal(Car car){
-		return this.normal.dot(car.orientation.up) < 0.6;
+	public static Plane asCar(Car car){
+		return new Plane(car.orientation.up, new Vector3(car.position));
 	}
 
 }

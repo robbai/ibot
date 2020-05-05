@@ -79,7 +79,7 @@ public class DriveStrikeStep extends Step {
 		double timeLeft = (this.intercept.time - time);
 
 		Car car = packet.car;
-		Plane carPlane = this.bundle.info.arena.getClosestPlane(car.position);
+		Plane carPlane = Plane.asCar(car);
 		Vector3 localIntercept = MathsUtils.local(car, this.intercept.intersectPosition);
 		Vector3 localVelocity = MathsUtils.local(car.orientation, car.velocity);
 
@@ -122,7 +122,7 @@ public class DriveStrikeStep extends Step {
 
 		this.setFinished(timeLeft <= (car.hasDoubleJumped && !this.doubleJump ? -0.6 : 0));
 
-		if(!this.jumpStart.isPresent() && !this.intercept.plane.differentNormal(car)){
+		if(!this.jumpStart.isPresent() && !this.intercept.plane.differentNormal(carPlane)){
 			pencil.stackRenderString("Jump: " + MathsUtils.round(jumpTime, 3) + "s", Color.WHITE);
 			pencil.stackRenderString((int)targetSpeed + "uu/s", Color.WHITE);
 
@@ -193,7 +193,7 @@ public class DriveStrikeStep extends Step {
 		Vector3 target = this.intercept.intersectPosition;
 		if(this.wall){
 			pencil.stackRenderString("Wall", Color.GREEN);
-			if(this.intercept.plane.differentNormal(car)){
+			if(this.intercept.plane.differentNormal(carPlane)){
 				target = ((SeamIntercept)this.intercept).seamPosition.setDistanceFrom(car.position, 800);
 				pencil.stackRenderString("Seam", Color.GREEN);
 			}else{

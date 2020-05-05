@@ -102,7 +102,7 @@ public class InterceptCalculator extends StaticClass {
 		Mode mode = arena.getMode();
 
 		// Car.
-		Plane carPlane = arena.getClosestPlane(car.position);
+		Plane carPlane = Plane.asCar(car);
 		boolean ourSide = (car.position.y * car.sign < 0);
 
 		// Jumping.
@@ -135,7 +135,7 @@ public class InterceptCalculator extends StaticClass {
 					continue;
 				slicePlane = carPlane;
 			}
-			boolean differentPlane = slicePlane.differentNormal(car);
+			boolean differentPlane = slicePlane.differentNormal(carPlane);
 
 			double z = (slicePlane.getNormalDistance(slice.position) - Constants.CAR_HEIGHT);
 			if(!finalSlice && (z < MIN_Z || z > (differentPlane ? MAX_Z - 10 : MAX_Z))){
