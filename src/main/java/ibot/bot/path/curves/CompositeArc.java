@@ -1,14 +1,17 @@
-package ibot.bot.utils;
+package ibot.bot.path.curves;
 
+import ibot.bot.path.Curve;
 import ibot.bot.physics.Car1D;
 import ibot.bot.physics.DrivePhysics;
+import ibot.bot.utils.Constants;
+import ibot.bot.utils.Pair;
 import ibot.input.Car;
 import ibot.vectors.Vector2;
 
 /**
  * https://github.com/samuelpmish/RLUtilities/blob/7c645db1c7450ee793510c3acbb8bc61f8825b74/src/simulation/composite_arc.cc
  */
-public class CompositeArc {
+public class CompositeArc extends Curve {
 
 	private static final boolean RESCALE = false;
 
@@ -102,30 +105,25 @@ public class CompositeArc {
 		double playerTurnRadius = DrivePhysics
 				.getTurnRadius(Math.max(Constants.MAX_CAR_THROTTLE_VELOCITY, car.forwardVelocityAbs)),
 				ballTurnRadius = DrivePhysics.getTurnRadius(finalVelocity);
-		// double playerTurnRadius = 1000, ballTurnRadius = 1000;
 
-		// Find the shortest composite-arc based on a rough guess of the travel time.
+		// Find the shortest composite-arc based on its length.
 		CompositeArc shortestCompositeArc = null;
-		double shortestTime = Double.MAX_VALUE;
-		for(double direction : SIGNS){
-			for(double playerTurn : SIGNS){
-				for(double ballTurn : SIGNS){
-					CompositeArc compositeArc;
-					try{
-						compositeArc = new CompositeArc(L0, carPosition, carDirection.scale(direction),
-								playerTurn * playerTurnRadius, L4, ballPosition, goalDirection,
-								ballTurn * ballTurnRadius);
-					}catch(Exception e){
-						compositeArc = null;
-						e.printStackTrace();
-					}
+		double shortestLength = Double.MAX_VALUE;
+		for(double playerTurn : SIGNS){
+			for(double ballTurn : SIGNS){
+				CompositeArc compositeArc;
+				try{
+					compositeArc = new CompositeArc(L0, carPosition, goalDirection, playerTurn * playerTurnRadius, L4,
+							ballPosition, carDirection, ballTurn * ballTurnRadius);
+				}catch(Exception e){
+					compositeArc = null;
+					e.printStackTrace();
+				}
 
-					if(compositeArc != null && Double.isFinite(compositeArc.length)){
-						double time = compositeArc.minTravelTime(car, true, true, direction < 0);
-						if(time < shortestTime){
-							shortestCompositeArc = compositeArc;
-							shortestTime = time;
-						}
+				if(compositeArc != null && Double.isFinite(compositeArc.length)){
+					if(compositeArc.length < shortestLength){
+						shortestCompositeArc = compositeArc;
+						shortestLength = compositeArc.length;
 					}
 				}
 			}
@@ -228,34 +226,10 @@ public class CompositeArc {
 		return r2;
 	}
 
-	public double minTravelTime(Car car, boolean includeL0, boolean includeL4, boolean reverse){
-		double sign = (reverse ? -1 : 1);
-
-		double velocity = car.forwardVelocity, boost = reverse ? 0 : car.boost;
-
-		double firstArcFinalVel = DrivePhysics.getSpeedFromRadius(this.getR1()) * sign,
-				firstArcAccTime = new Car1D(car).withTime(0).stepVelocity(sign, !reverse, firstArcFinalVel).getTime();
-
-		double traversed = new Car1D(car).stepTime(sign, !reverse, firstArcAccTime + car.time).getDisplacement();
-		velocity = firstArcFinalVel;
-		boost -= (Constants.BOOST_USAGE * firstArcAccTime);
-		double time = firstArcAccTime;
-
-		double lengthL0 = (includeL0 ? this.getL(0) : 0);
-		if(traversed < lengthL0 + this.getL(1)){
-			time += (lengthL0 + this.getL(1) - traversed) / velocity;
-			traversed = (lengthL0 + this.getL(1));
-		}
-
-		double secondArcMaxVel = DrivePhysics.getSpeedFromRadius(this.getR2()) * sign;
-
-		double distanceToTravel = (this.getLength() - (includeL0 ? 0 : this.getL(0)) - (includeL4 ? 0 : this.getL(4)));
-		double straightawayTime = (includeL4
-				? new Car1D(car).withTime(0).withVelocity(velocity).withBoost(boost).withMaximumSpeed(secondArcMaxVel)
-						.stepDisplacement(sign, !reverse, distanceToTravel - traversed).getTime()
-				: 0);
-
-		return time + straightawayTime;
+	@Override
+	public Vector2 T(double t){
+		// TODO
+		return null;
 	}
 
 }

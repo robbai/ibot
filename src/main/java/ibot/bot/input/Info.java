@@ -155,9 +155,13 @@ public class Info {
 		// Goals.
 		this.enemyGoal = InterceptCalculator.chooseGoal(this.arena, this.car, this.groundIntercept.position)
 				.withZ(Constants.BALL_RADIUS);
-		this.homeGoal = InterceptCalculator
-				.chooseGoal(this.arena, this.earliestEnemyIntercept.car, this.earliestEnemyIntercept.position)
-				.withZ(Constants.BALL_RADIUS);
+		if(this.earliestEnemyIntercept != null){
+			this.homeGoal = InterceptCalculator
+					.chooseGoal(this.arena, this.earliestEnemyIntercept.car, this.earliestEnemyIntercept.position)
+					.withZ(Constants.BALL_RADIUS);
+		}else{
+			this.homeGoal = this.enemyGoal.withY(-this.enemyGoal.y);
+		}
 
 		this.backTeammate = null;
 		this.furthestBack = true;

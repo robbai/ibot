@@ -9,6 +9,8 @@ import ibot.vectors.Vector3;
 
 public class MathsUtils extends StaticClass {
 
+	public static final double EPSILON = 0.000001;
+
 	public static final Random RAND = new Random();
 
 	public static boolean between(double a, double bound1, double bound2){

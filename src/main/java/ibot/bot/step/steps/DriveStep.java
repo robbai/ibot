@@ -24,7 +24,8 @@ public class DriveStep extends Step {
 
 	public Vector3 target;
 	private OptionalDouble targetTime = OptionalDouble.empty(), targetVelocity = OptionalDouble.empty();
-	public boolean conserveBoost = false, dodge = true, dontBoost = false, reverse = true, gentleSteer = false;
+	public boolean conserveBoost = false, dodge = true, dontBoost = false, reverse = true, gentleSteer = false,
+			ignoreRadius = false;
 
 	public DriveStep(Bundle bundle, Vector3 target){
 		super(bundle);
@@ -93,7 +94,8 @@ public class DriveStep extends Step {
 		}
 
 		// Velocity.
-		double maxSpeedTurn = DrivePhysics.maxSpeedForTurn(car, carTarget);
+		double maxSpeedTurn = (this.ignoreRadius ? Constants.MAX_CAR_VELOCITY
+				: DrivePhysics.maxSpeedForTurn(car, carTarget));
 		double desiredVelocity = maxSpeedTurn;
 		if(this.targetTime.isPresent()){
 			double distance = carTarget.distance(car.position);

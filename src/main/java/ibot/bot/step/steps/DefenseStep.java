@@ -4,7 +4,6 @@ import java.awt.Color;
 
 import ibot.boost.BoostManager;
 import ibot.boost.BoostPad;
-import ibot.bot.abort.CommitAbort;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
@@ -12,7 +11,6 @@ import ibot.bot.physics.Car1D;
 import ibot.bot.stack.PushStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.CompositeArc;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
 import ibot.input.Car;
@@ -127,17 +125,8 @@ public class DefenseStep extends Step {
 			target = target.clamp();
 		}
 
-		boolean arc = false;
-
 		pencil.renderer.drawLine3d(Color.BLACK, car.position, target);
 		pencil.renderer.drawLine3d(pencil.altColour, info.earliestEnemyIntercept.position, target);
-
-		if(arc && info.carForwardComponent > 0.975){
-			Vector2 endTarget = info.earliestEnemyIntercept.position.flatten();
-			CompositeArc compositeArc = CompositeArc.create(car, target.flatten(), endTarget, 1300, 200, 300);
-			return new FollowArcsStep(this.bundle, compositeArc).withBoost(!this.drive.dontBoost)
-					.withAbortCondition(new CommitAbort(this.bundle, 0.1));
-		}
 
 		// Drive.
 		this.drive.target = target;
