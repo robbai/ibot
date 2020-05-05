@@ -17,12 +17,12 @@ import ibot.input.DataPacket;
 import ibot.input.Rotator;
 import ibot.vectors.Vector3;
 
-public class TestBot extends ABot {
+public class TBot extends ABot {
 
 	private double setTime;
 	private boolean wall = true;
 
-	public TestBot(int index, int team){
+	public TBot(int index, int team){
 		super(index, team);
 	}
 

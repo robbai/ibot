@@ -12,7 +12,7 @@ public class PythonInterface extends SocketServer {
 	}
 
 	protected Bot initBot(int index, String name, int team){
-		return (name.toLowerCase().contains("testbot") ? new TestBot(index, team) : new IBot(index, team));
+		return (name.toLowerCase().contains("tbot") ? new TBot(index, team) : new IBot(index, team));
 	}
 
 	@Override
