@@ -47,9 +47,9 @@ public class DriveStrikeStep extends Step {
 		this.doubleJump = doubleJump;
 
 		DataPacket packet = bundle.packet;
-		Car car = packet.car;
 
-		this.curve = car.onFlatGround && !this.wall;
+		this.curve = packet.car.onFlatGround && !this.wall;
+//		this.curve = false;
 
 		this.jumpZ = (intercept.plane.getNormalDistance(intercept.position) - Constants.CAR_HEIGHT);
 		this.gravityScale = Math.max(Math.abs(intercept.plane.normal.z), 0.01);

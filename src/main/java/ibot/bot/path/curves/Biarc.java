@@ -124,4 +124,10 @@ public class Biarc extends Curve {
 		return new Pair<Double, Double>(this.circleOne.getRadius(), this.circleTwo.getRadius());
 	}
 
+	public double getRadius(int circle){
+		if(circle < 2)
+			return this.circleOne.getRadius();
+		return this.circleTwo.getRadius();
+	}
+
 }

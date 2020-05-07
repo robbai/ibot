@@ -15,15 +15,15 @@ import ibot.vectors.Vector2;
  */
 public class Path {
 
-	private static final int ANALYSE_POINTS = 50, COARSE_RENDER = 3;
+	public static final int ANALYSE_POINTS = 50, COARSE_RENDER = 3;
 	private static final double CURVE_STEP = Constants.DT * 4;
 	private static final double[] BRAKE_CURVE = formAccCurve(false);
 
 	private final Vector2[] points;
-	private final double initialVelocity, distance, boost, time;
+	private final double initialVelocity, boost, time;
 	private final OptionalDouble timeRestriction;
 	private final boolean valid, unlimitedBoost;
-	private final double[] turningRadii, speeds, accelerations;
+	private final double[] distances, turningRadii, speeds, accelerations;
 
 	public Path(double initialVelocity, double boost, Vector2[] points, OptionalDouble timeRestriction){
 		super();
@@ -33,7 +33,7 @@ public class Path {
 		this.initialVelocity = Math.abs(initialVelocity);
 		this.unlimitedBoost = (boost <= -1);
 		this.boost = MathsUtils.clamp(boost, 0, 100);
-		this.distance = calculateDistance(this.points);
+		this.distances = calculateDistances(this.points);
 		this.turningRadii = (this.valid ? this.calculateTurningRadii() : null); // For each point.
 		Pair<double[][], Double> result = (this.valid ? this.calculateSpeed() : null);
 		this.speeds = (this.valid ? result.getOne()[0] : null); // Interpolated.
@@ -53,6 +53,10 @@ public class Path {
 		this(initialVelocity, boost, curve.discretise(ANALYSE_POINTS), OptionalDouble.of(timeRestriction));
 	}
 
+	public Path(double initialVelocity, double boost, Vector2[] points, double timeRestriction){
+		this(initialVelocity, boost, points, OptionalDouble.of(timeRestriction));
+	}
+
 	private Pair<double[][], Double> calculateSpeed(){
 		if(this.turningRadii == null)
 			return null;
@@ -68,7 +72,7 @@ public class Path {
 		double[] speeds = new double[ANALYSE_POINTS], accelerations = new double[ANALYSE_POINTS];
 		double s = 0, time = 0, v = this.initialVelocity, boost = this.boost;
 		speeds[0] = v;
-		while(s < this.distance){
+		while(s < this.getDistance()){
 			double index = this.indexS(s);
 
 			// Slide the braking curve.
@@ -76,7 +80,7 @@ public class Path {
 			final int BRAKE_DECREMENT = 30;
 			for(int brakeVelocity = (int)Math.floor(v); brakeVelocity >= 0; brakeVelocity -= BRAKE_DECREMENT){
 				double brakeDistance = (s + BRAKE_CURVE[brakeVelocity]);
-				if(brakeDistance > this.distance)
+				if(brakeDistance > this.getDistance())
 					break;
 
 				double brakeIndex = this.indexS(brakeDistance);
@@ -109,7 +113,7 @@ public class Path {
 			v = MathsUtils.clamp(v + a * CURVE_STEP, 1, Constants.MAX_CAR_VELOCITY);
 			s += v * CURVE_STEP;
 
-			int i = (int)MathsUtils.clamp((double)(ANALYSE_POINTS - 1) * s / this.distance, 1, ANALYSE_POINTS - 1);
+			int i = (int)MathsUtils.clamp((double)(ANALYSE_POINTS - 1) * s / this.getDistance(), 1, ANALYSE_POINTS - 1);
 			speeds[i] = v;
 			accelerations[i - 1] = a;
 
@@ -148,71 +152,63 @@ public class Path {
 		return k;
 	}
 
-	public double getDistance(){
-		return this.distance;
-	}
-
 	public Vector2[] getPoints(){
 		return this.points;
 	}
 
-	private static double calculateDistance(Vector2[] points){
+	private static double[] calculateDistances(Vector2[] points){
+		double[] distances = new double[points.length];
 		if(invalid(points))
-			return 0;
-
+			return distances;
 		double distance = 0;
 		for(int i = 1; i < points.length; i++){
 			Vector2 a = points[i - 1], b = points[i];
 			distance += a.distance(b);
+			distances[i] = distance;
 		}
-		return distance;
+		return distances;
+	}
+
+	public double getDistance(){
+		return this.distances[this.points.length - 1];
 	}
 
 	public Vector2 T(double t){
 		if(t < 0 || t > 1)
 			return null;
-		return S(t * this.distance);
-	}
-
-	public Vector2 S(double s){
-		if(this.invalid())
-			return null;
-		s = MathsUtils.clamp(s, 0, this.distance);
-
-		Vector2 a = null, b = null;
-		double segment = 0, totalS = 0;
-		for(int i = 1; i < points.length; i++){
-			a = points[i - 1];
-			b = points[i];
-
-			segment = a.distance(b);
-			totalS += segment;
-			if(totalS > s)
-				break;
-		}
-
-		return b.plus(a.minus(b).scaleToMagnitude(totalS - s));
+		return S(t * this.getDistance());
 	}
 
 	public double indexS(double s){
 		if(this.invalid())
 			return -1;
-		if(s > this.distance || s < 0)
+		if(s > this.getDistance() || s < 0)
 			return -1;
 
-		Vector2 a = null, b = null;
-		double segment = 0, totalS = 0;
-		for(int i = 1; i < points.length; i++){
-			a = points[i - 1];
-			b = points[i];
-
-			segment = a.distance(b);
-			totalS += segment;
-			if(totalS > s)
-				return i - (totalS - s) / segment;
+		int low = 0, high = this.points.length - 1;
+		while(low < high){
+			int mid = Math.floorDiv(low + high, 2);
+			if(this.distances[mid] < s){
+				low = mid + 1;
+			}else{
+				high = mid;
+			}
 		}
 
-		return -1;
+		if(low == 0)
+			return 0;
+		low -= 1;
+		return low + (s - distances[low]) / (distances[low + 1] - distances[low]);
+	}
+
+	public Vector2 S(double s){
+		double index = this.indexS(s);
+		if(index == -1)
+			return null;
+
+		Vector2 a = this.points[(int)Math.floor(index)];
+		Vector2 b = this.points[(int)Math.ceil(index)];
+		return a.plus(b.minus(a).scale(index - Math.floor(index)));
 	}
 
 	private boolean invalid(){

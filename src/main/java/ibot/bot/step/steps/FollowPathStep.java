@@ -66,8 +66,8 @@ public class FollowPathStep extends Step {
 		DataPacket packet = this.bundle.packet;
 		Pencil pencil = this.bundle.pencil;
 
-//		if(this.expire())
-//			return new PopStack();
+		if(!this.targetTime.isPresent() && this.expire())
+			return new PopStack();
 
 		// Target and acceleration.
 		double carS = this.path.findClosestS(packet.car.position.flatten(), false);
@@ -155,12 +155,14 @@ public class FollowPathStep extends Step {
 			return (carS + Math.abs(car.forwardVelocity) * STEER_LOOKAHEAD / 8) / this.path.getDistance() >= 1;
 		}
 
-		return getTarget(carS, car.forwardVelocityAbs) == null;
+//		return getTarget(carS, car.forwardVelocityAbs) == null;
+
+		return carS > this.path.getDistance() - 100;
 	}
 
 	@Override
 	public int getPriority(){
-		return Priority.DRIVE;
+		return this.dodge ? Priority.STRIKE : Priority.DRIVE;
 	}
 
 }
