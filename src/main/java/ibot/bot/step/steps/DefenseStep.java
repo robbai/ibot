@@ -65,7 +65,7 @@ public class DefenseStep extends Step {
 		Vector3 target;
 
 		final double MIN_DEPTH = 0.15;
-		final double MAX_DEPTH = 0.55;
+		final double MAX_DEPTH = 0.6;
 		double depthLerp = car.boost / 100;
 		if(info.furthestBack && info.teamPossession > 0)
 			depthLerp = Math.max(depthLerp - 0.1, 0);

@@ -98,7 +98,7 @@ public class DriveStrikeStep extends Step {
 				this.holdTime, this.doubleJump);
 		double driveTime = Math.max(0, timeLeft - jumpTime);
 
-		if(driveTime > 0.6 && targetSpeed > Constants.MAX_CAR_VELOCITY){
+		if(driveTime > 0.6 && targetSpeed > Constants.MAX_CAR_VELOCITY + 100 && car.hasWheelContact){
 			this.setFinished(true);
 		}
 
@@ -133,7 +133,7 @@ public class DriveStrikeStep extends Step {
 			pencil.renderer.drawLine3d(pencil.colour, this.intercept.intersectPosition, floor);
 			pencil.renderer.drawLine3d(pencil.altColour, globalDisplaced, floor);
 
-			boolean nowJump = localDisplacement.minus(localIntercept).dot(localIntercept) >= 0;
+			boolean nowJump = localDisplacement.minus(localIntercept).dot(localIntercept) >= 0 && driveTime < 0.2;
 			if(nowJump){
 				this.jumpStart = OptionalDouble.of(time);
 			}

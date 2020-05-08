@@ -160,7 +160,7 @@ public class InterceptCalculator extends StaticClass {
 					Vector2 goal = chooseGoal(arena, car, slice.position);
 					offset = getOffset(car, slice, goal).withZ(0).scale(RADIUS);
 				}else{
-					Vector2 corner = xTrace.withY(Math.max(xTrace.y * car.sign + 800, -arena.getLength()) * car.sign);
+					Vector2 corner = xTrace.withY(Math.max(xTrace.y * car.sign + 900, -arena.getLength()) * car.sign);
 					offset = getOffset(car, slice, corner).withZ(0).scale(RADIUS + 5);
 				}
 			}

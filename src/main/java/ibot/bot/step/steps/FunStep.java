@@ -35,7 +35,8 @@ public class FunStep extends Step {
 			return new PopStack();
 
 		if(car.hasWheelContact){
-			this.bundle.bot.sendQuickChat(QuickChatSelection.PostGame_EverybodyDance);
+			this.bundle.bot.sendQuickChat(QuickChatSelection.PostGame_EverybodyDance,
+					QuickChatSelection.Apologies_NoProblem);
 			return new Controls().withJump(time % 0.4 < 0.2);
 		}
 

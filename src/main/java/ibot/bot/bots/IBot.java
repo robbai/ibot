@@ -9,6 +9,7 @@ import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.path.Path;
 import ibot.bot.path.curves.Biarc;
+import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.step.steps.DefenseStep;
@@ -50,35 +51,30 @@ public class IBot extends ABot {
 			return new FunStep(this.bundle);
 		}
 
-		if(car.onFlatGround && this.iteration < 10 && info.possession > 0){
+		if(car.onFlatGround && this.iteration < 10 && info.possession > 0.1 && info.commit
+				&& this.stepsPriority() < Priority.STRIKE && !info.furthestBack){
 			Vector2 carPosition = this.bundle.packet.car.position.flatten();
 			Vector2 enemyGoalCentre = new Vector2(0, Constants.PITCH_LENGTH_SOCCAR * car.sign);
 
 			ArrayList<BallSlice> bounces = new ArrayList<BallSlice>();
 			for(int i = 1; i < BallPrediction.SLICE_COUNT; i++){
 				Slice slice = BallPrediction.get(i);
-				if(slice.time > info.earliestEnemyIntercept.time - 0.05
+				if(slice.time > info.earliestEnemyIntercept.time - 0.2
 						|| Math.abs(slice.position.y) > Constants.PITCH_LENGTH_SOCCAR)
 					break;
-				if(slice.position.z < 130){
+				if(slice.position.z < 130 && slice.time > info.groundIntercept.time){
 					bounces.add(BallPrediction.get(i));
 				}
 			}
 
-			final double BORDER = 50;
-//			final double MIN_RADIUS = DrivePhysics.getTurnRadius(650);
+			final double BORDER = 60;
 
 			for(int i = 0; i < bounces.size(); i++){
 				BallSlice slice = bounces.get(i);
 				double time = slice.time - car.time;
 				Vector2 ballPosition = slice.position.flatten();
 
-//				if(ballPosition.distance(enemyGoalCentre) > 6000)
-//					continue;
-
 				Vector2 goalDirection = enemyGoalCentre.minus(ballPosition).normalised();
-//				if(goalDirection.dot(ballPosition.minus(carPosition).normalised()) < 0.1)
-//					continue;
 				Vector2 incorrectVelocity = goalDirection.cross();
 				incorrectVelocity = incorrectVelocity.scale(incorrectVelocity.dot(slice.velocity.flatten()));
 				Vector2 enemyGoal = enemyGoalCentre.minus(incorrectVelocity.withY(0).scale(0.5));
@@ -88,10 +84,11 @@ public class IBot extends ABot {
 				if(ballPosition.distance(carPosition) < 400)
 					continue;
 
+				if(enemyGoal.minus(ballPosition).normalised().dot(ballPosition.minus(carPosition).normalised()) < 0.2)
+					continue;
+
 				Biarc curve = new Biarc(carPosition, car.orientation.forward.flatten(), ballPosition,
 						enemyGoal.minus(ballPosition));
-//				if(curve.getRadius(2) < MIN_RADIUS)
-//					continue;
 				Vector2[] points = curve.discretise(Path.ANALYSE_POINTS);
 				boolean outside = false;
 				for(int j = 0; j < points.length; j += 5){
@@ -105,7 +102,7 @@ public class IBot extends ABot {
 					continue;
 
 				Path path = new Path(car.forwardVelocityAbs, car.boost, points, time);
-				if(path.getSpeed(1) < Math.max(1000, car.forwardVelocityAbs * 0.8))
+				if(path.getSpeed(1) < Math.max(1200, car.forwardVelocityAbs * 0.8))
 					continue;
 				if(path.getTime() < time){
 					FollowPathStep follow = new FollowPathStep(this.bundle, path, time + car.time);
@@ -167,7 +164,9 @@ public class IBot extends ABot {
 			return new SaveStep(this.bundle);
 		}
 
-		if(info.commit && (car.correctSide(info.groundIntercept.position) || info.furthestBack)){
+		if(info.commit && (info.teamPossessionCorrectSide < 0
+				|| Math.abs(info.groundIntercept.position.x) < Constants.PITCH_WIDTH_SOCCAR - 900
+				|| car.correctSide(info.groundIntercept.position))){
 			return new OffenseStep(this.bundle);
 		}
 
