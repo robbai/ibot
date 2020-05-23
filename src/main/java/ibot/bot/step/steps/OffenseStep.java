@@ -7,7 +7,6 @@ import ibot.bot.abort.NotMyPredictionAbort;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.input.Pencil;
-import ibot.bot.intercept.InterceptCalculator;
 import ibot.bot.intercept.SeamIntercept;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
@@ -79,37 +78,37 @@ public class OffenseStep extends Step {
 						.scaleToMagnitude(-car.sign * target.distance(car.position) * (info.isKickoff ? 0.05 : 0.2)));
 			}else if(info.arena.getMode() == Mode.SOCCAR && !info.isKickoff){
 				target = info.groundIntercept.intersectPosition;
-				if((info.groundIntercept.position.y - car.position.y) * car.sign < 0){
-					Vector2 toIntercept = target.minus(car.position).flatten().normalised();
-					Vector2 trace = car.position.flatten()
-							.plus(toIntercept.scale((-car.sign * Constants.PITCH_LENGTH_SOCCAR) / toIntercept.y));
-					// if(Math.abs(trace.x) < Constants.GOAL_WIDTH + 250){
-					Vector3 xSkew = InterceptCalculator.X_SKEW.withZ(1);
-					if(xSkew.x * trace.x > 0){
-						xSkew = xSkew.withX(-xSkew.x);
-					}
-					target = info.groundIntercept.position.plus(info.groundIntercept.getOffset().multiply(xSkew));
-					// }
-				}
+//				if((info.groundIntercept.position.y - car.position.y) * car.sign < 0){
+//					Vector2 toIntercept = target.minus(car.position).flatten().normalised();
+//					Vector2 trace = car.position.flatten()
+//							.plus(toIntercept.scale((-car.sign * Constants.PITCH_LENGTH_SOCCAR) / toIntercept.y));
+//					// if(Math.abs(trace.x) < Constants.GOAL_WIDTH + 250){
+//					Vector3 xSkew = InterceptCalculator.X_SKEW.withZ(1);
+//					if(xSkew.x * trace.x > 0){
+//						xSkew = xSkew.withX(-xSkew.x);
+//					}
+//					target = info.groundIntercept.position.plus(info.groundIntercept.getOffset().multiply(xSkew));
+//					// }
+//				}
 
 				double distance = MathsUtils.local(car, target).flatten().magnitude();
-				double addedOffset = (this.addOffset && distance > 1400 ? 1 : 0) * distance * 0.325;
+				double addedOffset = (this.addOffset && distance > 3000 ? 1 : 0) * distance * 0.1;
 				if(addedOffset > 0.001){
 					target = target.plus(info.groundIntercept.getOffset().scaleToMagnitude(addedOffset)).clamp();
 				}
 				boolean goodAngle = target.minus(car.position).normalised()
 						.dot(info.enemyGoal.minus(car.position).normalised()) > 0.3;
-				if(car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975 && info.getTimeOnGround() > 0.1
-						&& (goodAngle || info.possession < 0.4)){
+				if(addedOffset < 1000 && car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975
+						&& info.getTimeOnGround() > 0.1 && (goodAngle || info.possession < 0.4)){
 					double height = MathsUtils.local(car, info.groundIntercept.position).z;
 					double doubleHeight = MathsUtils.local(car, info.doubleJumpIntercept.position).z;
-					double radians = MathsUtils.shorterAngle(Vector2.Y.angle(localInterceptBall.flatten()));
+					double radians = Vector2.Y.angle(localInterceptBall.flatten());
 					if(radians < Math.toRadians(40)){
 						Step driveStrike = null;
 						if(info.possession < 0.2 && car.onFlatGround
 								&& info.doubleJumpIntercept.time < info.groundIntercept.time && doubleHeight > 300){
 							driveStrike = new DriveStrikeStep(this.bundle, info.doubleJumpIntercept, true);
-						}else if(height > 150){
+						}else if(height > 160){
 							driveStrike = new DriveStrikeStep(this.bundle, info.groundIntercept, false);
 						}
 						if(driveStrike != null){
@@ -126,19 +125,13 @@ public class OffenseStep extends Step {
 			}
 			pencil.renderer.drawLine3d(pencil.altColour, info.groundIntercept.intersectPosition,
 					info.groundIntercept.position);
-			boolean challenge = (Math.abs(info.possession) < 0.2);
+			boolean challenge = (Math.abs(info.possession) < 0.18);
+			boolean nail = (info.groundIntercept.getOffset().normalised()
+					.dot(info.groundIntercept.position.minus(car.position).normalised()) < -0.8);
 			pencil.renderer.drawRectangle3d(pencil.colour, info.groundIntercept.intersectPosition, 8, 8, true);
-			if(car.hasWheelContact && info.getTimeOnGround() > 0.2 && (info.groundIntercept.time - info.time) < 0.3
-					&& Math.abs(info.lastControls.getSteer()) < (info.goingInHomeGoal || challenge ? 0.4 : 0.2)){
-				// boolean opponentBlocking = false;
-				// for(Car car : packet.enemies){
-				// if(info.groundIntercept.position.minus(car.position).angle(car.position.minus(car.position))
-				// < Math.toRadians(30)){
-				// opponentBlocking = true;
-				// break;
-				// }
-				// }
-				if(Math.abs(localInterceptBall.z) > 105 || challenge
+			if(car.hasWheelContact && info.getTimeOnGround() > 0.2 && (info.groundIntercept.time - info.time) < 0.4
+					&& Math.abs(info.lastControls.getSteer()) < (info.goingInHomeGoal || challenge ? 0.8 : 0.4)){
+				if(Math.abs(localInterceptBall.z) > 110 || challenge || !nail
 						|| car.velocity.magnitude() < (car.onFlatGround ? 1100 : 1550)){
 					if((info.groundIntercept.time - info.time) < 0.255){
 						return new FastDodgeStep(this.bundle, dodgeTarget.minus(car.position));

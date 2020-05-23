@@ -12,7 +12,9 @@ public abstract class Arena {
 
 	protected final List<Plane> planes;
 
-	protected double gravity, width, length, height;
+	protected double width, length, height;
+
+	protected Vector3 gravity;
 
 	private Mode mode;
 
@@ -35,15 +37,20 @@ public abstract class Arena {
 	}
 
 	public void update(DataPacket packet){
-		this.gravity = packet.gravity;
+		if(this.gravity == null || this.gravity.z != packet.gravity)
+			this.gravity = Vector3.Z.scale(packet.gravity);
 	}
 
 	public Mode getMode(){
 		return this.mode;
 	}
 
-	public double getGravity(){
+	public Vector3 getGravity(){
 		return this.gravity;
+	}
+
+	public double getGravityAcc(){
+		return this.gravity.z;
 	}
 
 	public double getWidth(){

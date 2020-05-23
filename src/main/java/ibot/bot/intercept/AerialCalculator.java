@@ -27,11 +27,9 @@ public class AerialCalculator {
 	 * https://raw.githubusercontent.com/samuelpmish/RLUtilities/master/src/
 	 * mechanics/aerial.cc
 	 */
-	public static AerialCalculator isViable(Car car, Vector3 target, double globalTime, double gravityAcceleration,
+	public static AerialCalculator isViable(Car car, Vector3 target, double globalTime, Vector3 gravity,
 			AerialType type){
 		double time = (globalTime - car.time);
-
-		Vector3 gravity = Vector3.Z.scale(gravityAcceleration);
 
 		Vector3 carPosition = car.position.plus(car.velocity.scale(time).plus(gravity.scale(0.5 * Math.pow(time, 2))));
 		Vector3 carVelocity = car.velocity.plus(gravity.scale(time));
@@ -67,7 +65,7 @@ public class AerialCalculator {
 		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
 
 //		final double easy = MathsUtils.lerp(0.75, 0.9, car.boost / 100);
-		final double easy = 0.91;
+		final double easy = 0.9;
 
 		double finalVelocity = velocityEstimate.magnitude();
 		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY)
@@ -75,21 +73,21 @@ public class AerialCalculator {
 		return new AerialCalculator(finalVelocity, requiredAcceleration, viable);
 	}
 
-	public static AerialCalculator isViable(Car car, Slice slice, double gravity, AerialType type){
+	public static AerialCalculator isViable(Car car, Slice slice, Vector3 gravity, AerialType type){
 		return isViable(car, slice.position, slice.time, gravity, type);
 	}
 
-	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
-		Vector3 local = MathsUtils.local(orientation, desiredForward);
-		Spherical spherical = new Spherical(local);
-		double phi = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
-		double time = 1.75 * Math.sqrt(phi / 9);
-		return time;
-	}
-
 //	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
-//		double dot = orientation.forward.dot(desiredForward.normalised());
-//		return Math.pow((dot - 1) / 0.9, 2);
+//		Vector3 local = MathsUtils.local(orientation, desiredForward);
+//		Spherical spherical = new Spherical(local);
+//		double phi = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
+//		double time = 1.8 * Math.sqrt(phi / 9);
+//		return time;
 //	}
+
+	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
+		double dot = orientation.forward.dot(desiredForward.normalised());
+		return Math.pow((dot - 1) / 0.5, 2);
+	}
 
 }

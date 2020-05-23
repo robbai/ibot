@@ -13,7 +13,7 @@ public class CheatKickoffStep extends DriveStep {
 
 	@Override
 	public Output getOutput(){
-		this.withTargetVelocity(this.bundle.packet.time + 0.5);
+		this.withTargetVelocity(this.bundle.packet.time + 0.1);
 		Output output = super.getOutput();
 		this.setFinished(!this.bundle.packet.isKickoffPause, true);
 		return output;

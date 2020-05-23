@@ -110,46 +110,43 @@ public class AerialStep extends Step {
 		boolean boost;
 		double throttle;
 
-		if(deltaPosition.magnitude() > 50){
-			turnTarget = direction;
-		}else{
-			turnTarget = this.intercept.position.minus(car.position);
-		}
+//		if(deltaPosition.magnitude() > 50){
+//			turnTarget = direction;
+//		}else{
+//			turnTarget = this.intercept.position.minus(car.position);
+//		}
+//		Spherical spherical = new Spherical(MathsUtils.local(car.orientation, direction));
+//		double angle = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
+//		if(angle < ANGLE_THRESHOLD){
+//			if(deltaPosition.magnitude() > 50){
+//				boost = true;
+//				throttle = 0;
+//			}else{
+//				boost = false;
+//				throttle = MathsUtils.clamp(0.5 * Constants.THROTTLE_AIR_ACCELERATION * Math.pow(timeLeft, 2), 0, 1);
+//			}
+//		}else{
+//			boost = false;
+//			throttle = 0;
+//		}
+//		pencil.stackRenderString((int)deltaPosition.magnitude() + "uu", Color.WHITE);
+
+		Vector3 deltaVelocity = deltaPosition.scale(1 / timeLeft);
 		Spherical spherical = new Spherical(MathsUtils.local(car.orientation, direction));
 		double angle = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
-		if(angle < ANGLE_THRESHOLD){
-			if(deltaPosition.magnitude() > 50){
-				boost = true;
-				throttle = 0;
-			}else{
-				boost = false;
-				throttle = MathsUtils.clamp(0.5 * Constants.THROTTLE_AIR_ACCELERATION * Math.pow(timeLeft, 2), 0, 1);
-			}
-		}else{
+		double minVelocity = (Constants.BOOST_AIR_ACCELERATION * 3 * Constants.DT);
+		if(car.orientation.forward.dot(deltaVelocity) < minVelocity){
+			turnTarget = this.intercept.intersectPosition.minus(car.position);
 			boost = false;
 			throttle = 0;
+		}else{
+			turnTarget = direction;
+			if(!this.bundle.info.lastControls.holdBoost())
+				minVelocity = (Constants.BOOST_AIR_ACCELERATION * 0.1);
+			boost = (car.orientation.forward.dot(deltaVelocity) > minVelocity && angle < ANGLE_THRESHOLD);
+			throttle = 0;
 		}
-		pencil.stackRenderString((int)deltaPosition.magnitude() + "uu", Color.WHITE);
-
-		// Vector3 deltaVelocity = deltaPosition.scale(1 / timeLeft);
-		// Spherical spherical = new Spherical(MathsUtils.local(car.orientation,
-		// direction));
-		// double angle = Math.abs(spherical.getElevation()) +
-		// Math.abs(spherical.getPerpendicular());
-		// double minVelocity = (Constants.BOOST_AIR_ACCELERATION * 3 * Constants.DT);
-		// if(car.orientation.forward.dot(deltaVelocity) < minVelocity){
-		// turnTarget = this.intercept.interceptPosition.minus(car.position);
-		// boost = false;
-		// throttle = 0;
-		// }else{
-		// turnTarget = direction;
-		// if(!bot.lastControls.holdBoost()) minVelocity =
-		// (Constants.BOOST_AIR_ACCELERATION * 0.1);
-		// boost = (car.orientation.forward.dot(deltaVelocity) > minVelocity && angle <
-		// ANGLE_THRESHOLD);
-		// throttle = 0;
-		// }
-		// bot.stackRenderString((int)deltaVelocity.magnitude() + "uu/s", Color.WHITE);
+		pencil.stackRenderString((int)deltaVelocity.magnitude() + "uu/s", Color.WHITE);
 
 		// if(true){
 		// double B = ((2 * deltaPosition.magnitude()) /

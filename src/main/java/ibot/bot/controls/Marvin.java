@@ -4,7 +4,7 @@ import ibot.bot.utils.MathsUtils;
 
 public class Marvin {
 
-	private static double THROTTLE_ACCEL = 1600, BREAK_ACCEL = 3500, THROTTLE_MAX_SPEED = 1400, DT = 1 / 60;
+	private static final double THROTTLE_ACCEL = 1600, BREAK_ACCEL = 3500, THROTTLE_MAX_SPEED = 1400, DT = 1 / 60;
 
 	/**
 	 * Time until throttle full stop.

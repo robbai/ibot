@@ -1,24 +1,26 @@
 package ibot.bot.bots;
 
-import java.util.ArrayList;
-
-import ibot.bot.abort.SliceOffPredictionAbort;
-import ibot.bot.path.Curve;
-import ibot.bot.path.Path;
-import ibot.bot.path.curves.Biarc;
-import ibot.bot.step.Priority;
+import rlbot.cppinterop.RLBotDll;
+import rlbot.gamestate.BallState;
+import rlbot.gamestate.CarState;
+import rlbot.gamestate.GameState;
+import rlbot.gamestate.PhysicsState;
+import ibot.bot.input.Info;
+import ibot.bot.intercept.SeamIntercept;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.AtbaStep;
-import ibot.bot.step.steps.FollowPathStep;
-import ibot.bot.step.steps.JumpStep;
+import ibot.bot.step.steps.DriveStrikeStep;
+import ibot.bot.step.steps.IdleStep;
 import ibot.bot.utils.Constants;
-import ibot.input.Car;
-import ibot.prediction.BallPrediction;
-import ibot.prediction.BallSlice;
-import ibot.prediction.Slice;
-import ibot.vectors.Vector2;
+import ibot.bot.utils.MathsUtils;
+import ibot.input.DataPacket;
+import ibot.input.Rotator;
+import ibot.vectors.Vector3;
 
 public class TBot extends ABot {
+
+	private double setTime;
+	private boolean wall = false;
 
 	public TBot(int index, int team){
 		super(index, team);
@@ -26,50 +28,46 @@ public class TBot extends ABot {
 
 	@Override
 	protected Step fallbackStep(){
-		Car car = this.bundle.packet.car;
+		DataPacket packet = this.bundle.packet;
+		Info info = this.bundle.info;
 
-		if(this.stepsPriority() > Priority.IDLE || !this.bundle.packet.isRoundActive)
-			return null;
-
-		if(car.onFlatGround){
-			Vector2 carPosition = this.bundle.packet.car.position.flatten();
-
-//			if(this.bundle.info.teamPossessionCorrectSide > this.bundle.info.possession){
-//				Vector2 homeGoal = new Vector2(0, (Constants.PITCH_LENGTH_SOCCAR - 300) * -car.sign);
-//				Vector2 enemyIntercept = this.bundle.info.earliestEnemyIntercept.position.flatten();
-//				Curve curve = CompositeArc.create(car, homeGoal, enemyIntercept, 250, 250);
-//				Path path = new Path(car.forwardVelocityAbs, car.boost, curve);
-//				FollowPathStep follow = new FollowPathStep(this.bundle, path);
-//				return follow.withAbortCondition(new BallTouchedAbort(this.bundle, this.bundle.packet.ball.latestTouch));
-//			}
-
-			Vector2 enemyGoal = new Vector2(0, Constants.PITCH_LENGTH_SOCCAR * car.sign);
-
-			ArrayList<BallSlice> bounces = new ArrayList<BallSlice>();
-			for(int i = 1; i < BallPrediction.SLICE_COUNT; i++){
-				if(BallPrediction.get(i).position.z < 120){
-					bounces.add(BallPrediction.get(i));
-				}
+		boolean idle = (this.getActiveStep() instanceof IdleStep);
+		if(!idle || (packet.time - this.setTime) % 10 > 5){
+			if(idle || !MathsUtils.between(packet.ball.position.y * this.sign, -2000, 1000)
+					|| packet.ball.position.x > 1000){
+//				this.wall = !this.wall;
+				GameState gameState = new GameState();
+				gameState.withBallState(new BallState().withPhysics(
+						new PhysicsState().withLocation(new Vector3(1000, 0, Constants.BALL_RADIUS).toDesired())
+								.withVelocity(new Vector3(MathsUtils.random(1500, 2500) / (this.wall ? 1 : 100),
+										-MathsUtils.random(100, 500) * this.sign,
+										MathsUtils.random(100, 350) * (this.wall ? 1 : 4)).toDesired())));
+				gameState
+						.withCarState(this.index,
+								new CarState().withBoostAmount(100F)
+										.withPhysics(new PhysicsState()
+												.withLocation(new Vector3(MathsUtils.random(2000, 3500),
+														-MathsUtils.random(2500, 4500) * this.sign
+																* (this.wall ? 1 : 0.5),
+														Constants.CAR_HEIGHT).toDesired())
+												.withVelocity(new Vector3().toDesired())
+												.withRotation(new Rotator(0, 0, Math.PI * (this.wall ? 1 : 3) / 4)
+														.toDesired())));
+				RLBotDll.setGameState(gameState.buildPacket());
+				this.setTime = packet.time;
 			}
+		}
 
-			for(int i = 0; i < bounces.size(); i++){
-				Slice slice = bounces.get(i);
-				double time = slice.time - car.time;
-				Vector2 ballPosition = slice.position.flatten();
-				ballPosition = ballPosition
-						.plus(ballPosition.minus(enemyGoal).scaleToMagnitude(Constants.BALL_RADIUS + 100));
-				Curve curve = new Biarc(carPosition, car.orientation.forward.flatten(), ballPosition,
-						enemyGoal.minus(ballPosition));
-				Path path = new Path(car.forwardVelocityAbs, car.boost, curve, time);
-				if(path.getTime() < time){
-					FollowPathStep follow = new FollowPathStep(this.bundle, path, time + car.time);
-					follow.dodge = true;
-					follow.linearTarget = true;
-					return follow.withAbortCondition(new SliceOffPredictionAbort(this.bundle, slice));
-				}
+		if(packet.time - this.setTime < 0.1){
+			if(idle){
+				return null;
 			}
-		}else if(car.hasWheelContact){
-			return new JumpStep(this.bundle, Constants.JUMP_MAX_HOLD);
+			this.clearSteps();
+			return new IdleStep(this.bundle);
+		}
+
+		if((info.groundIntercept instanceof SeamIntercept || !this.wall) && packet.car.hasWheelContact){
+			return new DriveStrikeStep(this.bundle, info.groundIntercept, false);
 		}
 
 		return new AtbaStep(this.bundle);

@@ -37,7 +37,7 @@ public class DefenseStep extends Step {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
-		this.drive.gentleSteer = !info.lastMan;
+//		this.drive.gentleSteer = !info.lastMan;
 
 		if(!car.onFlatGround && car.hasWheelContact && car.velocity.z < 0){
 			return new JumpStep(this.bundle, Constants.JUMP_MAX_HOLD);
@@ -53,7 +53,7 @@ public class DefenseStep extends Step {
 			boolean boostCorrectSide = (info.groundIntercept.position.y - nearestBoost.getLocation().y) * car.sign > 0;
 			if(boostCorrectSide && car.boost < 40 && goalDistance > 4500
 					&& new Car1D(car).stepDisplacement(1, true, distance).getTime() < info.earliestEnemyIntercept.time){
-				this.drive.dontBoost = false;
+				this.drive.dontBoost = nearestBoost.isFullBoost();
 				return new PushStack(new GrabObliviousStep(this.bundle, nearestBoost)
 //						.withAbortCondition(new CommitAbort(this.bundle, 0))
 				);
@@ -64,18 +64,20 @@ public class DefenseStep extends Step {
 
 		Vector3 target;
 
-		final double MIN_DEPTH = 0.15;
-		final double MAX_DEPTH = 0.6;
+		final double MIN_DEPTH = 0.1;
+		final double MAX_DEPTH = 0.5;
 		double depthLerp = car.boost / 100;
-		if(info.furthestBack && info.teamPossession > 0)
-			depthLerp = Math.max(depthLerp - 0.1, 0);
+//		double depthLerp = MathsUtils.clamp((info.teamPossessionCorrectSide + 0.5) * 0.8, 0, 1);
+		if(info.slowestTeammate && info.teamPossession > 0)
+			depthLerp = Math.max(depthLerp - 0.4, 0);
 		pencil.stackRenderString("Depth: " + MathsUtils.round(depthLerp), pencil.colour);
 
 		Vector2 direction;
-		if(info.furthestBack){
-			direction = info.earliestEnemyIntercept.getOffset().flatten().scaleToMagnitude(-1);
-		}else{
+		if(info.slowestTeammate){
 			direction = info.homeGoal.minus(info.earliestEnemyIntercept.position).flatten().normalised();
+		}else{
+			direction = info.earliestEnemyIntercept.position.minus(info.earliestEnemyIntercept.car.position).flatten()
+					.normalised();
 		}
 
 		target = info.earliestEnemyIntercept.position.plus(
@@ -88,34 +90,34 @@ public class DefenseStep extends Step {
 		}
 
 		double nose = (car.orientation.forward.y * car.sign);
-		if(packet.ball.position.distance(info.homeGoal) < (info.furthestBack ? 4000 : 3000)){
-			double distance = info.homeGoal.distance(car.position);
+		if(packet.ball.position.distance(info.homeGoal) < (info.slowestTeammate ? 4000 : 3000)){
+			double goalCarDistance = info.homeGoal.distance(car.position);
 			final double closingDistance = 1000;
 
 			nose = Math.max(0, nose);
 
-			double x = MathsUtils.clamp((closingDistance - distance) / closingDistance, -3.5, 1);
+			double x = MathsUtils.clamp((closingDistance - goalCarDistance) / closingDistance, -3, 1);
 			double y = (Constants.PITCH_LENGTH_SOCCAR - 400 - nose * 1000) / Math.abs(car.position.y);
 			target = info.homeGoal.multiply(new Vector3(x, y, 1));
 		}else{
-			if(info.teamPossession * info.earliestEnemyIntercept.position.y * car.sign > 0 || info.furthestBack){
+			if(info.teamPossession < 0.2 && info.earliestEnemyIntercept.position.y * car.sign < 0
+					|| info.slowestTeammate){
 				target = target.withX(target.x * 0.6);
+			}else if(packet.ball.position.y * car.sign > 0){
+				target = target.withX(target.x * 1.3);
 			}
 
-//			if(info.furthestBack){
-//				target = target.withX(target.x * 0.6);
-//			}
+//			if(target.y * car.sign > -1000 && !info.slowestTeammate) target = target.withX(target.x * 1.2);
 
-			if(car.boost < 60 && (target.y * car.sign < 0 || !car.correctSide(target))){
+			if(car.boost < 75){
 				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
 						BoostManager.getAllBoosts());
 				Vector2 boostPosition = boost.getLocation();
 
-				if(boostPosition.distance(car.position.flatten()) < 2000){
-					double angle1 = boostPosition.minus(car.position.flatten())
-							.angle(target.minus(car.position).flatten());
-					double angle2 = boostPosition.minus(target.flatten()).angle(car.position.minus(target).flatten());
-					if(Math.max(angle1, angle2) < Math.toRadians(35)){
+				Vector2 carPositionFlat = car.position.flatten();
+				if(boostPosition.distance(carPositionFlat) < 2000){
+					if(boostPosition.minus(carPositionFlat).dot(target.flatten()) > 0
+							&& boostPosition.distance(carPositionFlat) < target.flatten().distance(carPositionFlat)){
 						// target = boostPosition.withZ(Constants.CAR_HEIGHT);
 						return new PushStack(new GrabBoostStep(this.bundle, boost));
 					}
@@ -123,12 +125,27 @@ public class DefenseStep extends Step {
 			}
 
 			target = target.clamp();
+
+//			double targetDistance = target.distance(car.position);
+//			target = target.plus(target.minus(packet.ball.position).flatten()
+//					.scaleToMagnitude(car.sign * Math.min(1000, targetDistance * 0.5)));
+
+			double dirX = (packet.ball.position.y * car.sign < 2500 ? info.earliestEnemyIntercept.getOffset().x
+					: info.earliestEnemyIntercept.car.position.minus(info.earliestEnemyIntercept.position).x);
+			target = target.withX(Math.copySign(target.x, (info.slowestTeammate ? 1 : -1) * dirX));
 		}
+
+		// TODO
+		final double heavy = 0.6;
+		target = target
+				.withY(Math.min(packet.ball.position.y * car.sign * heavy + Constants.PITCH_LENGTH_SOCCAR * (heavy - 1),
+						target.y * car.sign) * car.sign);
 
 		pencil.renderer.drawLine3d(Color.BLACK, car.position, target);
 		pencil.renderer.drawLine3d(pencil.altColour, info.earliestEnemyIntercept.position, target);
 
 		// Drive.
+		this.drive.withTargetTime(car.time + 0.2);
 		this.drive.target = target;
 		return this.drive.getOutput();
 	}

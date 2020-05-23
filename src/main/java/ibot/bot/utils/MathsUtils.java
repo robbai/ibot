@@ -108,4 +108,8 @@ public class MathsUtils extends StaticClass {
 		return start.plus(direction.scale(Math.abs(targetY - start.y) / Math.abs(direction.y)));
 	}
 
+	public static double clampMagnitude(double value, double bound){
+		return clamp(value, -bound, bound);
+	}
+
 }

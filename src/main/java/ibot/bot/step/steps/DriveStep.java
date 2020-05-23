@@ -72,15 +72,15 @@ public class DriveStep extends Step {
 		double velocityTowards = car.velocity.dot(carTarget.minus(car.position).normalised());
 		double velocityStraight = (car.forwardVelocityAbs / car.velocity.magnitude());
 
-		// Turning.
+		// Steering and direction.
 		double radians = Vector2.Y.correctionAngle(local.flatten());
 		boolean reverse;
-		if(Math.abs(car.position.y) > Constants.PITCH_LENGTH_SOCCAR
-				&& Math.signum(car.position.y) * carTarget.y < car.position.y){
-			reverse = (car.orientation.forward.y * car.position.y > 0);
-		}else{
-			reverse = (car.forwardVelocity < (Math.cos(radians) < 0 ? 400 : -200));
-		}
+//		if(Math.abs(car.position.y) > Constants.PITCH_LENGTH_SOCCAR
+//				&& Math.signum(car.position.y) * carTarget.y < car.position.y){
+//			reverse = (car.orientation.forward.y * car.position.y > 0);
+//		}else{
+		reverse = (car.forwardVelocity < (Math.cos(radians) < 0 ? 200 : -100));
+//		}
 		reverse &= this.reverse;
 		double reverseSign = (reverse ? -1 : 1);
 		if(reverse){
@@ -95,7 +95,8 @@ public class DriveStep extends Step {
 
 		// Velocity.
 		double maxSpeedTurn = (this.ignoreRadius ? Constants.MAX_CAR_VELOCITY
-				: DrivePhysics.maxSpeedForTurn(car, carTarget));
+				: (DrivePhysics.maxSpeedForTurn(car, carTarget.setDistanceFrom(car.position,
+						Math.min(car.onFlatGround ? 3000 : Double.MAX_VALUE, carTarget.distance(car.position))))));
 		double desiredVelocity = maxSpeedTurn;
 		if(this.targetTime.isPresent()){
 			double distance = carTarget.distance(car.position);
@@ -130,7 +131,7 @@ public class DriveStep extends Step {
 					&& (!commitKickoff || dodgeDistance > flatDistance - 300)){
 				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(20)){
 					return new HalfFlipStep(this.bundle);
-				}else if(commitKickoff || ((!boost || car.boost < 10 || !this.dontBoost) && velocityStraight > 0.9
+				}else if(commitKickoff || ((!boost || car.boost < 10 || this.dontBoost) && velocityStraight > 0.9
 						&& Math.abs(radians) < Math.toRadians(30)
 						&& car.forwardVelocity + Constants.DODGE_IMPULSE < desiredVelocity)){
 					return new FastDodgeStep(this.bundle, carTarget.minus(car.position));
@@ -156,8 +157,9 @@ public class DriveStep extends Step {
 		boolean handbrake = (velocityStraight < 0.8 && info.getTimeOnGround() < 0.3)
 				|| (car.onFlatGround && (Math.abs(forwardDot) < 0.5 && car.forwardVelocityAbs > 300
 						&& velocityStraight > 0.9 && !this.gentleSteer)
-						|| (maxSpeedTurn < 600 && car.forwardVelocityAbs < 800));
+						|| (maxSpeedTurn < 800 && car.forwardVelocityAbs < 1000));
 		handbrake &= (car.angularVelocity.yaw * radians * reverseSign < 0 && car.forwardVelocity * throttle > 0);
+//		handbrake &= MathsUtils.local(car.orientation, car.velocity).withZ(0).dot(MathsUtils.local(car, target)) > 0;
 
 		return new Controls().withThrottle(throttle).withBoost(boost).withHandbrake(handbrake).withSteer(steer)
 				.withOrient(car.hasWheelContact || wavedashTime

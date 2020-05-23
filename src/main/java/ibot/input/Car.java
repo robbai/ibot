@@ -10,8 +10,9 @@ public class Car {
 	public final Rotator angularVelocity;
 	public final CarOrientation orientation;
 
-	public final boolean hasWheelContact, isSupersonic, hasDoubleJumped, isDemolished, onFlatGround, onSuperFlatGround;
-	public final double time, boost, sign, forwardVelocity, forwardVelocityAbs;
+	public final boolean hasWheelContact, isSupersonic, hasDoubleJumped, isDemolished, onFlatGround, onSuperFlatGround,
+			isSliding;
+	public final double time, boost, sign, forwardVelocity, forwardVelocityAbs, sidewaysVelocity;
 	public final int team, index;
 	public final String name;
 
@@ -24,6 +25,7 @@ public class Car {
 		this.orientation = CarOrientation.fromFlatbuffer(playerInfo);
 		this.forwardVelocity = this.orientation.forward.dot(this.velocity);
 		this.forwardVelocityAbs = Math.abs(forwardVelocity);
+		this.sidewaysVelocity = Math.abs(this.orientation.right.dot(this.velocity));
 
 		// this.angularVelocity = new Vector3(physics.angularVelocity());
 		this.angularVelocity = Rotator.fromAngularVelocity(this.orientation, physics.angularVelocity());
@@ -41,6 +43,8 @@ public class Car {
 
 		this.onFlatGround = (this.hasWheelContact && this.orientation.up.z > 0.75);
 		this.onSuperFlatGround = (this.onFlatGround && this.orientation.up.z > 0.95);
+		double speed = this.velocity.magnitude();
+		this.isSliding = (speed > 300 && this.sidewaysVelocity / speed > 0.3);
 	}
 
 	public static double determineSign(int team){
