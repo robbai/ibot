@@ -1,7 +1,6 @@
 package ibot.bot.step.steps;
 
 import java.awt.Color;
-import java.util.OptionalDouble;
 
 import rlbot.flat.QuickChatSelection;
 import ibot.boost.BoostPad;
@@ -12,10 +11,10 @@ import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
 import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Mode;
 import ibot.input.Car;
 import ibot.input.DataPacket;
+import ibot.output.Controls;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
@@ -44,14 +43,13 @@ public class GrabObliviousStep extends Step {
 		}
 
 		Vector3 target = this.boost.getLocation().withZ(Constants.CAR_HEIGHT);
-		OptionalDouble targetTime = OptionalDouble.empty();
 
 		pencil.renderer.drawLine3d(Color.YELLOW, car.position, target);
-		pencil.renderer
-				.drawString3d(
-						MathsUtils.round(this.boost.getTimer(), 2) + "\n"
-								+ MathsUtils.round(this.boost.getTimeLeft(), 2) + "\n" + this.boost.isActive(),
-						Color.YELLOW, target, 2, 2);
+//		pencil.renderer
+//				.drawString3d(
+//						MathsUtils.round(this.boost.getTimer(), 2) + "\n"
+//								+ MathsUtils.round(this.boost.getTimeLeft(), 2) + "\n" + this.boost.isActive(),
+//						Color.YELLOW, target, 2, 2);
 
 		if(this.boost.isFullBoost() || info.arena.getMode() == Mode.HOOPS){
 			if(this.boost.isFullBoost()){
@@ -66,9 +64,16 @@ public class GrabObliviousStep extends Step {
 			target = target.plus(offset.scale(this.boost.isFullBoost() && !info.isKickoff ? 0.11 : 0.09));
 		}
 
+		// Controls.
 		this.drive.target = target;
-		this.drive.withTargetTime(targetTime);
-		return this.drive.getOutput();
+		this.drive.dodge = (car.boost < 1 || !this.boost.isFullBoost());
+		Output output = this.drive.getOutput();
+		if(this.boost.isFullBoost() && car.hasWheelContact && output instanceof Controls){
+			Controls controls = (Controls)output;
+			controls.withBoost(!car.isSupersonic && !controls.holdHandbrake());
+			return controls;
+		}
+		return output;
 	}
 
 	@Override

@@ -97,7 +97,7 @@ public abstract class ABot implements Bot {
 		this.info.postUpdate(packet, controls);
 
 		// Post-update our pencil.
-		this.bundle.pencil.postRender();
+		this.bundle.pencil.postRender(this.bundle);
 
 		return controls;
 	}

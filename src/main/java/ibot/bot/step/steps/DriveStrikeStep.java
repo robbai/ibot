@@ -27,7 +27,8 @@ public class DriveStrikeStep extends Step {
 	/*
 	 * Constants.
 	 */
-	public static final double MIN_HOLD_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 3);
+	public static final double MIN_HOLD_TIME = (Constants.DT * 2), DODGE_TIME = (Constants.DT * 2);
+	private static final boolean CANCEL_FLIP = true;
 
 	private OptionalDouble jumpStart = OptionalDouble.empty(), radians = OptionalDouble.empty();
 	private boolean go = false, lastGo = go;
@@ -98,7 +99,7 @@ public class DriveStrikeStep extends Step {
 		double jumpTime = JumpPhysics.timeZ(Math.min(this.jumpZ, maxZ), packet.gravity * this.gravityScale,
 				this.holdTime, this.doubleJump);
 		double driveTime = Math.max(0, timeLeft - jumpTime);
-		double targetVelocity = fullDistance / timeLeft;
+		double targetVelocity = fullDistance / Math.max(timeLeft, MathsUtils.EPSILON);
 
 		this.go |= this.curve;
 		if(!this.go){
@@ -118,7 +119,7 @@ public class DriveStrikeStep extends Step {
 		pencil.stackRenderString("Hold: " + MathsUtils.round(this.holdTime, 3) + "s",
 				this.go ? Color.GREEN : Color.RED);
 
-		this.setFinished(timeLeft <= (car.hasDoubleJumped && !this.doubleJump ? -0.6 : 0));
+		this.setFinished(timeLeft <= (car.hasDoubleJumped && !this.doubleJump && !CANCEL_FLIP ? -0.6 : 0));
 
 		if(!this.jumpStart.isPresent() && !this.intercept.plane.differentNormal(carPlane)){
 			pencil.stackRenderString("Jump: " + MathsUtils.round(jumpTime, 3) + "s", Color.WHITE);
@@ -142,6 +143,8 @@ public class DriveStrikeStep extends Step {
 						&& renderTime < AerialStep.DOUBLE_JUMP_TIME + renderDeltaTime)
 					velocity = velocity.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE));
 				velocity = velocity.scale(Math.min(1, Constants.MAX_CAR_VELOCITY / velocity.magnitude()));
+				if(velocity.z < 0)
+					break;
 				Vector3 position = previousPosition.plus(velocity.scale(renderDeltaTime));
 				pencil.renderer.drawLine3d(Color.WHITE, previousPosition, position);
 				previousPosition = position;
@@ -149,11 +152,13 @@ public class DriveStrikeStep extends Step {
 			}
 
 //			boolean nowJump = (localFreefall.minus(localIntercept).flatten().magnitude() < 20);
-//			boolean nowJump = (driveTime <= Constants.DT);
-			double inaccuracy = previousPosition.distance(this.intercept.intersectPosition)
-					- (Constants.BALL_RADIUS - Constants.CAR_HEIGHT);
+//			boolean nowJump = (driveTime < Constants.DT);
+			double inaccuracy = MathsUtils
+					.local(car.orientation, previousPosition.minus(this.intercept.intersectPosition)).flatten()
+					.magnitude();
 			pencil.renderer.drawString3d((int)inaccuracy + "uu", Color.WHITE, this.intercept.intersectPosition, 2, 2);
-			boolean nowJump = (inaccuracy < 15);
+			boolean nowJump = (inaccuracy < 50);
+//			boolean nowJump = (Math.abs(targetVelocity - car.velocity.dot(this.intercept.intersectPosition.minus(car.position).normalised())) < 50);
 			if(nowJump){
 				this.jumpStart = OptionalDouble.of(time);
 			}

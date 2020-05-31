@@ -100,7 +100,7 @@ public class InterceptCalculator extends StaticClass {
 		if(BallPrediction.isEmpty())
 			return null;
 
-		final double RADIUS = (Constants.BALL_RADIUS + (doubleJump ? -40 : 20));
+		final double RADIUS = (Constants.BALL_RADIUS + (doubleJump ? -40 : 5));
 
 		// Freefall collision.
 		if(!car.hasWheelContact){
@@ -232,11 +232,13 @@ public class InterceptCalculator extends StaticClass {
 	}
 
 	private static boolean quickPrune(double distance, double initialVelocity, double deltaTime, boolean aerial){
-		double finalVelocity = (2 * distance) / deltaTime - initialVelocity;
-		if(Math.abs(finalVelocity) > Constants.MAX_CAR_VELOCITY)
+//		double finalVelocity = (2 * distance) / deltaTime - initialVelocity;
+		double velocity = (distance - 300) / deltaTime;
+		if(Math.abs(velocity) > Constants.MAX_CAR_VELOCITY)
 			return true;
 		double acceleration = (2 * (distance - deltaTime * initialVelocity)) / Math.pow(deltaTime, 2);
-		return Math.abs(acceleration) > (aerial ? Constants.BOOST_AIR_ACCELERATION : Constants.BRAKE_ACCELERATION);
+		return Math.abs(acceleration) > 100
+				+ (aerial ? Constants.BOOST_AIR_ACCELERATION : Constants.BRAKE_ACCELERATION);
 	}
 
 	private static Slice guessSlice(Car car){
@@ -279,10 +281,10 @@ public class InterceptCalculator extends StaticClass {
 	}
 
 	private static Vector2 getOffset(Car car, BallSlice slice, Vector2 goal){
-		final double maxAngle = (Math.PI * 0.5);
-		Vector2 offset = slice.position.flatten().minus(goal);
-//		Vector2 offset = optimalIntercept(slice, goal.withZ(MathsUtils.clamp(slice.position.z, Constants.BALL_RADIUS,
-//				Constants.GOAL_HEIGHT - Constants.BALL_RADIUS))).flatten().scale(-1);
+		final double maxAngle = (Math.PI * 0.45);
+//		Vector2 offset = slice.position.flatten().minus(goal);
+		Vector2 offset = optimalIntercept(slice, goal.withZ(MathsUtils.clamp(slice.position.z, Constants.BALL_RADIUS,
+				Constants.GOAL_HEIGHT - Constants.BALL_RADIUS))).flatten().scale(-1);
 		Vector2 carSide = car.position.minus(slice.position).flatten();
 		return carSide.rotate(MathsUtils.clamp(carSide.correctionAngle(offset), -maxAngle, maxAngle)).normalised();
 	}
@@ -307,7 +309,9 @@ public class InterceptCalculator extends StaticClass {
 		if(trace == null)
 			return new Vector2(0, y);
 		double maxX = Constants.GOAL_WIDTH - Constants.BALL_RADIUS * 4;
-		return new Vector2(MathsUtils.clamp(trace.x, -maxX, maxX), y);
+		double yDelta = (y - interceptPosition.y);
+		return new Vector2(MathsUtils.clampMagnitude(trace.x, maxX)
+				* (Math.abs(interceptPosition.x) > Constants.GOAL_WIDTH ? -1 : 1) * Math.max(1 - yDelta / 4000, 0), y);
 	}
 
 }

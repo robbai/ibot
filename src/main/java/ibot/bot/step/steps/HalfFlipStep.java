@@ -14,7 +14,7 @@ import ibot.vectors.Vector3;
 
 public class HalfFlipStep extends Step {
 
-	private static final double[] TIMING = new double[] { 0.1, 0.165, 0.4, 0.55 };
+	private static final double[] TIMING = new double[] { 0.1, 0.15, 0.45, 0.6 };
 
 	private static final double MIN_RADIANS = Math.toRadians(150), MAX_RADIANS = Math.toRadians(160);
 

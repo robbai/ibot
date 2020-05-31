@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import rlbot.manager.BotLoopRenderer;
 import ibot.bot.bots.ABot;
 import ibot.bot.utils.RenderString;
+import ibot.input.Car;
 
 public class Pencil {
 
@@ -36,12 +37,22 @@ public class Pencil {
 		this.altColour = (team == 0 ? Color.CYAN : Color.RED);
 	}
 
-	public void postRender(){
+	public void postRender(Bundle bundle){
 		for(int i = 0; i < this.renderStack.size(); i++){
 			renderer.drawString2d(this.renderStack.get(i).string, this.renderStack.get(i).colour,
 					new Point(20 + 400 * this.bot.index, 30 * (i + 1)), 2, 2);
 		}
 		this.renderStack.clear();
+
+		if(bundle.packet.teammates.length == 0 || bot.index < bundle.packet.teammates[0].index){
+			for(Car c : bundle.packet.cars)
+				if(c.index != bot.index){
+					this.renderer.drawLine3d(Color.BLACK, bundle.info.groundIntercepts[c.index].intersectPosition,
+							bundle.info.groundIntercepts[c.index].position);
+					this.renderer.drawRectangle3d(c.team == bot.team ? this.colour : Color.WHITE,
+							bundle.info.groundIntercepts[c.index].intersectPosition, 8, 8, true);
+				}
+		}
 	}
 
 }

@@ -3,7 +3,7 @@ package ibot.bot.intercept;
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.utils.Constants;
 import ibot.bot.utils.MathsUtils;
-import ibot.bot.utils.Spherical;
+import ibot.bot.utils.Pair;
 import ibot.input.Car;
 import ibot.input.CarOrientation;
 import ibot.prediction.Slice;
@@ -31,36 +31,24 @@ public class AerialCalculator {
 			AerialType type){
 		double time = (globalTime - car.time);
 
-		Vector3 carPosition = car.position.plus(car.velocity.scale(time).plus(gravity.scale(0.5 * Math.pow(time, 2))));
-		Vector3 carVelocity = car.velocity.plus(gravity.scale(time));
-
-		if(car.hasWheelContact){
-			carPosition = carPosition.plus(car.orientation.up.scale(Constants.JUMP_IMPULSE
-					* ((type == AerialType.DOUBLE_JUMP ? 2 : 1) * time - AerialStep.JUMP_TIME)
-					+ Constants.JUMP_ACCELERATION
-							* (time * AerialStep.JUMP_TIME - 0.5 * AerialStep.JUMP_TIME * AerialStep.JUMP_TIME)));
-			carVelocity = carVelocity
-					.plus(car.orientation.up.scale((type == AerialType.DOUBLE_JUMP ? 2 : 1) * Constants.JUMP_IMPULSE
-							+ Constants.JUMP_ACCELERATION * AerialStep.JUMP_TIME));
-		}
+		Pair<Vector3, Vector3> freefall = AerialStep.calculateFreefall(car, time, gravity, type);
+		Vector3 carPosition = freefall.getOne(), carVelocity = freefall.getTwo();
 
 		Vector3 deltaPosition = target.minus(carPosition);
+		Vector3 direction = deltaPosition.normalised();
 
-		Vector3 forward = deltaPosition.normalised();
-
-		double totalTurnTime = estimateTurnTime(car.orientation, forward);
-		Spherical sphericalLocal = new Spherical(MathsUtils.local(car, forward));
-		double phi = Math.abs(sphericalLocal.getElevation()) + Math.abs(sphericalLocal.getPerpendicular());
+		double totalTurnTime = estimateTurnTime(car.orientation, direction);
+		double phi = Math.acos(car.orientation.forward.dot(direction));
 
 		double tau1 = totalTurnTime * MathsUtils.clamp(1 - AerialStep.ANGLE_THRESHOLD / phi, 0, 1);
 
-		double requiredAcceleration = 2 * deltaPosition.magnitude() / ((time - tau1) * (time - tau1));
+		double requiredAcceleration = 2 * deltaPosition.magnitude() / Math.pow(time - tau1, 2);
 
 		double ratio = (requiredAcceleration / Constants.BOOST_AIR_ACCELERATION);
 
 		double tau2 = time - (time - tau1) * Math.sqrt(1 - MathsUtils.clamp(ratio, 0, 1));
 
-		Vector3 velocityEstimate = carVelocity.plus(forward.scale(Constants.BOOST_AIR_ACCELERATION * (tau2 - tau1)));
+		Vector3 velocityEstimate = carVelocity.plus(direction.scale(Constants.BOOST_AIR_ACCELERATION * (tau2 - tau1)));
 
 		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
 
@@ -87,7 +75,9 @@ public class AerialCalculator {
 
 	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
 		double dot = orientation.forward.dot(desiredForward.normalised());
-		return Math.pow((dot - 1) / 0.5, 2);
+//		return Math.pow((dot - 1) / 0.5, 2);
+		double angle = Math.acos(dot);
+		return angle * 0.85;
 	}
 
 }

@@ -144,7 +144,7 @@ public class DriveStep extends Step {
 		// Wavedash.
 		boolean wavedash = (!car.hasWheelContact && !car.hasDoubleJumped && car.orientation.up.z > 0.65
 				&& info.timeToHitGround < 0.275);
-		boolean wavedashTime = (wavedash && info.timeToHitGround < 0.07);
+		boolean wavedashTime = (wavedash && info.timeToHitGround < 0.05);
 		boost &= !wavedash;
 
 		// Boost back to ground.

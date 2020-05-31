@@ -47,15 +47,16 @@ public class Info {
 			earliestEnemyIntercept, earliestTeammateInterceptCorrectSide;
 	public boolean isKickoff, commit, furthestBack, lastMan, goingInHomeGoal, goingInEnemyGoal, slowestTeammate;
 	private boolean lastWheelContact, lastIsKickoff, hasMatchEnded;
-	public double time, lastWheelContactTime, timeToHitGround, possession, teamPossession, teamPossessionCorrectSide,
-			carForwardComponent;
+	public double deltaTime, time, lastWheelContactTime, timeToHitGround, possession, teamPossession,
+			teamPossessionCorrectSide, carForwardComponent;
 	public Intercept[] groundIntercepts;
-	private Mode mode;
+	public Mode mode;
 	public BoostPad nearestBoost;
 	public OptionalDouble goalTime;
 	public Arena arena;
 
 	public void update(DataPacket packet){
+		this.deltaTime = (packet.time - this.time);
 		this.time = packet.time;
 		this.car = packet.car;
 		this.ball = packet.ball;
@@ -212,13 +213,13 @@ public class Info {
 			// }else if(this.mode != Mode.DROPSHOT && (this.car.position.y -
 			// this.groundIntercept.position.y) * this.car.sign > 0){
 			// this.commit = false;
-		}else if(Math.abs(this.groundIntercept.position.x) > Constants.PITCH_WIDTH_SOCCAR - 900){
-			this.commit = this.car.correctSide(this.groundIntercept.position); // TODO
+		}else if(this.earliestEnemyIntercept == null){
+			this.commit = true;
 		}else{
 			boolean lastCommit = this.commit;
 			this.commit = true;
-			double carInterceptValue = interceptValue(this.groundIntercept, this.car,
-					(this.earliestEnemyIntercept == null ? 10 : this.earliestEnemyIntercept.time), this.enemyGoal);
+			double carInterceptValue = interceptValue(this.groundIntercept, this.car, this.earliestEnemyIntercept.time,
+					this.enemyGoal);
 			double ourBonus = 0;
 			ourBonus += (lastCommit ? 0.2 : 0);
 //			if(this.groundIntercept.position.y * this.car.sign < 0
@@ -302,6 +303,11 @@ public class Info {
 				+ MathsUtils.clamp(enemyEarliestIntercept - intercept.time + 0.1, 0, 1) / 1.6
 				+ Math.cos(car.position.minus(goal).flatten().angle(intercept.position.minus(goal).flatten())) * 1.8
 						* Math.max(0.5, Math.abs(intercept.position.y / Constants.PITCH_LENGTH_SOCCAR));
+//		boolean losing = (enemyEarliestIntercept < intercept.time);
+//		double angle = Vector2.Y.angle(intercept.intersectPosition.minus(car.position).flatten());
+//		if(losing)
+//			return enemyEarliestIntercept - intercept.time;
+//		return (Math.cos(angle) + 1) * car.velocity.magnitude();
 	}
 
 	private static double estimateTimeToHitGround(Car car, double gravity){

@@ -112,4 +112,13 @@ public class MathsUtils extends StaticClass {
 		return clamp(value, -bound, bound);
 	}
 
+	public static Vector2 traceToWall(Vector2 start, Vector2 direction, double targetX, double targetY){
+		Vector2 x = traceToX(start, direction, targetX), y = traceToY(start, direction, targetY);
+		if(x == null)
+			return y;
+		if(y == null)
+			return x;
+		return x.distance(start) < y.distance(start) ? x : y;
+	}
+
 }

@@ -3,6 +3,7 @@ package ibot.bot.bots;
 import ibot.bot.abort.BallTouchedAbort;
 import ibot.bot.abort.SliceOffPredictionAbort;
 import ibot.bot.input.Info;
+import ibot.bot.input.Pencil;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.step.Step;
@@ -30,7 +31,7 @@ public class IBot extends ABot {
 	@Override
 	protected Step fallbackStep(){
 		DataPacket packet = this.bundle.packet;
-//		Pencil pencil = this.bundle.pencil;
+		Pencil pencil = this.bundle.pencil;
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
@@ -42,15 +43,14 @@ public class IBot extends ABot {
 			return new FunStep(this.bundle);
 		}
 
-//		if(car.onFlatGround && this.iteration < 5 && info.possession > 0.3
-//				&& this.stepsPriority() < Priority.STRIKE){
+//		if(car.onFlatGround && this.iteration < 2 && info.possession > 0.7 && this.stepsPriority() < Priority.STRIKE){
 //			Vector2 carPosition = this.bundle.packet.car.position.flatten();
 //			Vector2 enemyGoalCentre = new Vector2(0, Constants.PITCH_LENGTH_SOCCAR * car.sign);
 //
 //			ArrayList<BallSlice> bounces = new ArrayList<BallSlice>();
 //			for(int i = 1; i < BallPrediction.SLICE_COUNT; i++){
 //				Slice slice = BallPrediction.get(i);
-//				if(slice.time > info.earliestEnemyIntercept.time - 0.3)
+//				if(slice.time > info.earliestEnemyIntercept.time - 0.7)
 //					break;
 //				if(slice.position.z < 120 && slice.time > info.groundIntercept.time){
 //					bounces.add(BallPrediction.get(i));
@@ -106,7 +106,7 @@ public class IBot extends ABot {
 		if(this.iteration < 7 && info.commit
 				&& (car.correctSide(info.groundIntercept.position) || info.teamPossessionCorrectSide < 0)
 				&& car.boost > 0){
-			boolean doubleJump;
+			boolean doubleJump = false;
 			if(info.isKickoff || !car.hasWheelContact){
 				// We use the double-jump intercept for starting mid-air too.
 				doubleJump = true;
@@ -129,7 +129,7 @@ public class IBot extends ABot {
 				boolean slower = false;
 				boolean driveStriking = (driveStrike != null);
 				if(driveStriking){
-					if(!car.hasWheelContact || driveStrike.intercept.time < aerialIntercept.time + 0.125){
+					if(!car.hasWheelContact || driveStrike.intercept.time <= aerialIntercept.time + 0.1){
 						slower = true;
 					}
 				}
@@ -139,12 +139,13 @@ public class IBot extends ABot {
 				boolean theirSide = (aerialIntercept.position.y * car.sign >= 0);
 				boolean contested = (Math.abs(info.possession) < 0.15);
 				if(!slower
-						&& (Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
+						&& ((Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
 								* (info.goingInHomeGoal || contested ? 1.3 : 1))
-						&& (info.groundIntercept == null
-								|| localIntercept.z > (localIntercept.magnitude() < 700 ? 90 : (theirSide ? 160 : 210))
-								|| (car.position.z > Math.max(500, aerialIntercept.position.z)
-										&& info.arena.getMode() == Mode.DROPSHOT)
+								&& (info.groundIntercept == null
+										|| localIntercept.z > (localIntercept.magnitude() < 700
+												&& info.mode == Mode.DROPSHOT ? 90 : (theirSide ? 160 : 210))
+										|| (car.position.z > Math.max(500, aerialIntercept.position.z)
+												&& info.arena.getMode() == Mode.DROPSHOT))
 								|| driveStriking)){
 					return new AerialStep(this.bundle, aerialIntercept, type).withAbortCondition(
 							new BallTouchedAbort(this.bundle, packet.ball.latestTouch, this.index),
@@ -157,9 +158,7 @@ public class IBot extends ABot {
 			return new SaveStep(this.bundle);
 		}
 
-		boolean side = Math.abs(info.groundIntercept.position.x) > Constants.PITCH_WIDTH_SOCCAR - 900;
-		if(info.commit && info.possession > -0.6
-				&& (info.teamPossessionCorrectSide < 0 || !side || car.correctSide(info.groundIntercept.position))){
+		if(info.commit && (info.teamPossessionCorrectSide < -0.15 || car.correctSide(info.groundIntercept.position))){
 			return new OffenseStep(this.bundle);
 		}
 

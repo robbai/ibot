@@ -13,7 +13,7 @@ public class SaveStep extends OffenseStep {
 	public SaveStep(Bundle bundle){
 		super(bundle);
 		this.canPop = false; // Offense can't pop.
-		this.addOffset = false;
+//		this.addOffset = false;
 	}
 
 	@Override

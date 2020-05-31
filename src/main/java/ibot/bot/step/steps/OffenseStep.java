@@ -92,14 +92,11 @@ public class OffenseStep extends Step {
 //				}
 
 				double distance = MathsUtils.local(car, target).flatten().magnitude();
-				double addedOffset = (this.addOffset && distance > 3000 ? 1 : 0) * distance * 0.1;
+				double addedOffset = (this.addOffset && info.possession > 0.2 ? Math.floor(distance / 2500) * 1500 : 0);
 				if(addedOffset > 0.001){
 					target = target.plus(info.groundIntercept.getOffset().scaleToMagnitude(addedOffset)).clamp();
-				}
-				boolean goodAngle = target.minus(car.position).normalised()
-						.dot(info.enemyGoal.minus(car.position).normalised()) > 0.3;
-				if(addedOffset < 1000 && car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975
-						&& info.getTimeOnGround() > 0.1 && (goodAngle || info.possession < 0.4)){
+				}else if(addedOffset < 1000 && car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975
+						&& info.getTimeOnGround() > 0.1){
 					double height = MathsUtils.local(car, info.groundIntercept.position).z;
 					double doubleHeight = MathsUtils.local(car, info.doubleJumpIntercept.position).z;
 					double radians = Vector2.Y.angle(localInterceptBall.flatten());
@@ -131,7 +128,7 @@ public class OffenseStep extends Step {
 			pencil.renderer.drawRectangle3d(pencil.colour, info.groundIntercept.intersectPosition, 8, 8, true);
 			if(car.hasWheelContact && info.getTimeOnGround() > 0.2 && (info.groundIntercept.time - info.time) < 0.4
 					&& Math.abs(info.lastControls.getSteer()) < (info.goingInHomeGoal || challenge ? 0.8 : 0.4)){
-				if(Math.abs(localInterceptBall.z) > 110 || challenge || !nail
+				if(Math.abs(localInterceptBall.z) > 140 || challenge // || !nail
 						|| car.velocity.magnitude() < (car.onFlatGround ? 1100 : 1550)){
 					if((info.groundIntercept.time - info.time) < 0.255){
 						return new FastDodgeStep(this.bundle, dodgeTarget.minus(car.position));
