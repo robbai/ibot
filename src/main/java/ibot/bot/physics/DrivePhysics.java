@@ -1,8 +1,8 @@
 package ibot.bot.physics;
 
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.StaticClass;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
@@ -26,7 +26,7 @@ public class DrivePhysics extends StaticClass {
 	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc
 	 * #L34-L53
 	 */
-	private static double curvature(double velocity){
+	private static double getCurvature(double velocity){
 		velocity = MathsUtils.clamp(Math.abs(velocity), 0, Constants.MAX_CAR_VELOCITY);
 
 		for(int i = 0; i < SPEED_CURVATURE.length - 1; i++){
@@ -90,40 +90,61 @@ public class DrivePhysics extends StaticClass {
 		return 0;
 	}
 
-	public static double getTurnRadius(double v){
-		if(v == 0)
-			return 0;
-		return 1.0 / curvature(v);
+	public static double getTurnRadius(double velocity){
+		return velocity == 0 ? 0 : 1.0 / getCurvature(velocity);
 	}
 
 	public static double maxSpeedForTurn(Car car, Vector3 target){
 		Vector2 local = MathsUtils.local(car, target).flatten();
 
-		double low = 100;
-		double high = Constants.MAX_CAR_VELOCITY;
+		final double LOW = 100, HIGH = Constants.MAX_CAR_VELOCITY;
 
-		final int STEPS = 20;
-		for(int i = 0; i < STEPS; i++){
-			double vel = (low + high) / 2;
+		if(Math.abs(local.x) <= MathsUtils.EPSILON)
+			return HIGH;
 
-			double turningRadius = getTurnRadius(vel);
-
-			Vector2 left = Vector2.X.scale(turningRadius);
-			Vector2 right = left.scale(-1);
-
-			double distance = Math.min(local.distance(left), local.distance(right));
-			if(distance < turningRadius){
-				high = vel;
-			}else{
-				low = vel;
-			}
-		}
-
-		return high;
+		double radius = (Math.pow(local.x, 2) + Math.pow(local.y, 2)) / Math.abs(2 * local.x);
+		return MathsUtils.clamp(radius, LOW, HIGH);
 	}
 
 	public static double estimateDodgeDistance(Car car){
 		return (car.forwardVelocityAbs + Constants.DODGE_IMPULSE) * 1.45;
+	}
+
+	/*
+	 * https://github.com/samuelpmish/RLUtilities/blob/master/src/mechanics/drive.cc
+	 * #L112-L160
+	 */
+	public static double produceAcceleration(Car car, double acceleration){
+		acceleration = Math.signum(acceleration)
+				* Math.min(Math.abs(acceleration), Constants.BRAKE_ACCELERATION + Constants.BOOST_GROUND_ACCELERATION);
+
+		double velocityForward = car.forwardVelocity;
+		double throttleAcceleration = DrivePhysics.determineAcceleration(velocityForward, 1, false);
+
+		double brakeCoastTransition = -0.45 * Constants.BRAKE_ACCELERATION - 0.55 * Constants.COAST_ACCELERATION;
+		double coastingThrottleTransition = -0.5 * Constants.COAST_ACCELERATION;
+		double throttleBoostTransition = throttleAcceleration + 0.5 * Constants.BOOST_GROUND_ACCELERATION;
+
+		// Sliding down the wall.
+		if(car.orientation.up.z < 0.7){
+			brakeCoastTransition = -0.5 * Constants.BRAKE_ACCELERATION;
+			coastingThrottleTransition = brakeCoastTransition;
+		}
+
+		if(acceleration <= brakeCoastTransition){
+			return -1; // Brake.
+		}else if(brakeCoastTransition < acceleration && acceleration < coastingThrottleTransition){
+			return 0; // Coast.
+		}else if(coastingThrottleTransition <= acceleration && acceleration <= throttleBoostTransition){
+			return MathsUtils.clamp(acceleration / throttleAcceleration, 0.02, 1); // Throttle.
+		}else if(throttleBoostTransition < acceleration){
+			return 10; // Boost.
+		}
+
+		if(Constants.COAST_ACCELERATION > Math.abs(throttleAcceleration)){
+			return Constants.COAST_THRESHOLD + 0.001;
+		}
+		return 0;
 	}
 
 }

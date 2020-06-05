@@ -26,7 +26,7 @@ public class DataPacket {
 		this.hasMatchEnded = rawPacket.gameInfo().isMatchEnded();
 
 		this.ball = new Ball(rawPacket.ball(), this.time);
-		this.isKickoffPause = ball.position.flatten().isZero() && ball.velocity.isZero();
+		this.isKickoffPause = this.ball.position.flatten().isZero() && this.ball.velocity.isZero();
 
 		this.team = rawPacket.players(playerIndex).team();
 

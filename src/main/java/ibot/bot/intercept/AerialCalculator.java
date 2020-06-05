@@ -1,9 +1,9 @@
 package ibot.bot.intercept;
 
 import ibot.bot.step.steps.AerialStep;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Pair;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.input.CarOrientation;
 import ibot.prediction.Slice;
@@ -52,12 +52,11 @@ public class AerialCalculator {
 
 		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
 
-//		final double easy = MathsUtils.lerp(0.75, 0.9, car.boost / 100);
-		final double easy = 0.9;
+		final double easy = 0.95;
 
 		double finalVelocity = velocityEstimate.magnitude();
-		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY)
-				&& (boostEstimate < MathsUtils.lerp(easy, 1, 0.25) * car.boost) && (Math.abs(ratio) < easy);
+		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY) && (boostEstimate < easy * car.boost)
+				&& (Math.abs(ratio) < easy);
 		return new AerialCalculator(finalVelocity, requiredAcceleration, viable);
 	}
 
@@ -76,8 +75,8 @@ public class AerialCalculator {
 	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
 		double dot = orientation.forward.dot(desiredForward.normalised());
 //		return Math.pow((dot - 1) / 0.5, 2);
-		double angle = Math.acos(dot);
-		return angle * 0.85;
+		double angle = MathsUtils.acos(dot);
+		return Math.pow(angle, 2) * 0.25;
 	}
 
 }

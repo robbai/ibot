@@ -1,12 +1,12 @@
 package ibot.bot.abort;
 
 import ibot.bot.input.Bundle;
-import ibot.bot.utils.Constants;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Touch;
 
 public class BallTouchedAbort extends AbortCondition {
 
-	private float initialTouchSeconds;
+	private double initialTouchSeconds;
 	private int[] indexExceptions;
 
 	public BallTouchedAbort(Bundle bundle, Touch latestTouch, int... indexExceptions){
@@ -17,6 +17,10 @@ public class BallTouchedAbort extends AbortCondition {
 
 	public BallTouchedAbort(Bundle bundle, Touch latestTouch){
 		this(bundle, latestTouch, null);
+	}
+
+	public BallTouchedAbort(Bundle bundle){
+		this(bundle, bundle.packet.ball.latestTouch, null);
 	}
 
 	@Override
@@ -36,8 +40,8 @@ public class BallTouchedAbort extends AbortCondition {
 		return getSeconds(latestTouch) > this.initialTouchSeconds + Constants.DT;
 	}
 
-	private float getSeconds(Touch touch){
-		return (touch == null ? 0 : touch.elapsedSeconds);
+	private double getSeconds(Touch touch){
+		return (touch == null ? 0 : touch.time);
 	}
 
 }

@@ -6,32 +6,28 @@ import rlbot.gamestate.CarState;
 import rlbot.gamestate.GameState;
 import rlbot.gamestate.PhysicsState;
 import ibot.bot.input.Info;
-import ibot.bot.intercept.AerialType;
-import ibot.bot.intercept.SeamIntercept;
-import ibot.bot.step.Step;
-import ibot.bot.step.steps.AerialStep;
 import ibot.bot.step.steps.AtbaStep;
 import ibot.bot.step.steps.DemoStep;
 import ibot.bot.step.steps.DriveStrikeStep;
 import ibot.bot.step.steps.IdleStep;
 import ibot.bot.step.steps.OffenseStep;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.DataPacket;
 import ibot.input.Rotator;
+import ibot.output.Output;
 import ibot.vectors.Vector3;
 
 public class TBot extends ABot {
 
 	private double setTime;
-	private boolean wall = false, aerial = true;
 
 	public TBot(int index, int team){
 		super(index, team);
 	}
 
 	@Override
-	protected Step fallbackStep(){
+	protected Output fallback(){
 		DataPacket packet = this.bundle.packet;
 		Info info = this.bundle.info;
 
@@ -41,52 +37,30 @@ public class TBot extends ABot {
 			return new DemoStep(this.bundle);
 		}
 
-		boolean idle = (this.getActiveStep() instanceof IdleStep);
-		if(!idle || (packet.time - this.setTime) % (this.aerial ? 8 : 10) > 5){
-			if(idle || !MathsUtils.between(packet.ball.position.y * this.sign, -2000, 1000)
-					|| packet.ball.position.x > 1000){
-//				this.wall = !this.wall;
-				GameState gameState = new GameState();
-				gameState.withBallState(new BallState().withPhysics(
-						new PhysicsState().withLocation(new Vector3(1000, 0, Constants.BALL_RADIUS).toDesired())
-								.withVelocity(new Vector3(MathsUtils.random(1500, 2500) / (this.wall ? 1 : 100),
-										-MathsUtils.random(100, 500) * this.sign,
-										MathsUtils.random(100, 350) * (this.wall ? 1 : 4) * (this.aerial ? 1.3 : 1))
-												.toDesired())));
-				gameState
-						.withCarState(this.index,
-								new CarState().withBoostAmount(100F)
-										.withPhysics(new PhysicsState()
-												.withLocation(new Vector3(MathsUtils.random(2000, 3500),
-														-MathsUtils.random(2500, 4500) * this.sign
-																* (this.wall ? 1 : 0.5),
-														Constants.CAR_HEIGHT).toDesired())
-												.withVelocity(new Vector3().toDesired())
-												.withRotation(new Rotator(0, 0, Math.PI * (this.wall ? 1 : 3) / 4)
-														.toDesired())));
-				RLBotDll.setGameState(gameState.buildPacket());
-				this.setTime = packet.time;
-			}
+		if((packet.time - this.setTime) > 8 || !packet.car.correctSide(packet.ball.position)){
+			GameState gameState = new GameState();
+			gameState.withBallState(new BallState()
+					.withPhysics(new PhysicsState().withLocation(new Vector3(0, 0, Constants.BALL_RADIUS).toDesired())
+							.withVelocity(new Vector3(0, 0, MathsUtils.random(800, 2000)).toDesired())
+							.withAngularVelocity(new Vector3().toDesired())));
+			gameState.withCarState(this.index, new CarState().withBoostAmount(100F).withPhysics(new PhysicsState()
+					.withLocation(new Vector3(0, MathsUtils.random(2000, 4000) * -this.sign, Constants.CAR_HEIGHT)
+							.toDesired())
+					.withVelocity(new Vector3().toDesired()).withRotation(new Rotator(0, 0, Math.PI / 2).toDesired())));
+			RLBotDll.setGameState(gameState.buildPacket());
+			this.setTime = packet.time;
 		}
 
-		if(packet.time - this.setTime < 0.1){
-			if(idle){
+		if(packet.time - this.setTime < 0.01){
+			if(this.getActiveStep() instanceof IdleStep)
 				return null;
-			}
 			this.clearSteps();
 			AtbaStep atba = new AtbaStep(this.bundle);
-			atba.dontBoost = this.aerial;
 			return atba;
 		}
 
-		if(packet.car.hasWheelContact){
-			if(this.aerial){
-				if(info.aerialDodge != null){
-					return new AerialStep(bundle, info.aerialDodge, AerialType.DODGE_STRIKE);
-				}
-			}else if(info.groundIntercept instanceof SeamIntercept || !this.wall){
-				return new DriveStrikeStep(this.bundle, info.groundIntercept, false);
-			}
+		if(packet.car.hasWheelContact && info.doubleJumpIntercept != null){
+			return new DriveStrikeStep(this.bundle, info.doubleJumpIntercept, true);
 		}
 
 		return new AtbaStep(this.bundle);

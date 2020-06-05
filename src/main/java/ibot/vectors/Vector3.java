@@ -4,8 +4,8 @@ import rlbot.gamestate.DesiredVector3;
 
 import com.google.flatbuffers.FlatBufferBuilder;
 
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.Plane;
+import ibot.bot.utils.maths.Plane;
+import ibot.bot.utils.rl.Constants;
 
 public class Vector3 extends rlbot.vector.Vector3 {
 
@@ -107,17 +107,17 @@ public class Vector3 extends rlbot.vector.Vector3 {
 		return new Vector2(x, y);
 	}
 
-	public double angle(Vector3 v){
+	public double angle(Vector3 other){
 		double mag2 = magnitudeSquared();
-		double vmag2 = v.magnitudeSquared();
-		double dot = dot(v);
+		double vmag2 = other.magnitudeSquared();
+		double dot = dot(other);
 		return Math.acos(dot / Math.sqrt(mag2 * vmag2));
 	}
 
-	public Vector3 cross(Vector3 v){
-		double tx = y * v.z - z * v.y;
-		double ty = z * v.x - x * v.z;
-		double tz = x * v.y - y * v.x;
+	public Vector3 cross(Vector3 other){
+		double tx = y * other.z - z * other.y;
+		double ty = z * other.x - x * other.z;
+		double tz = x * other.y - y * other.x;
 		return new Vector3(tx, ty, tz);
 	}
 
@@ -188,6 +188,24 @@ public class Vector3 extends rlbot.vector.Vector3 {
 
 	public DesiredVector3 toDesired(){
 		return new DesiredVector3((float)this.x, (float)this.y, (float)this.z);
+	}
+
+	@Override
+	public boolean equals(Object obj){
+		if(this == obj)
+			return true;
+		if(obj == null)
+			return false;
+		if(getClass() != obj.getClass())
+			return false;
+		Vector3 other = (Vector3)obj;
+		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x))
+			return false;
+		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y))
+			return false;
+		if(Double.doubleToLongBits(z) != Double.doubleToLongBits(other.z))
+			return false;
+		return true;
 	}
 
 }

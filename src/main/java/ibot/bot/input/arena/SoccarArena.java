@@ -1,8 +1,8 @@
 package ibot.bot.input.arena;
 
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.Mode;
-import ibot.bot.utils.Plane;
+import ibot.bot.utils.maths.Plane;
+import ibot.bot.utils.rl.Constants;
+import ibot.bot.utils.rl.Mode;
 import ibot.vectors.Vector3;
 
 public class SoccarArena extends Arena {

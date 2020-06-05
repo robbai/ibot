@@ -1,4 +1,6 @@
-package ibot.bot.utils;
+package ibot.bot.utils.rl;
+
+import ibot.bot.utils.StaticClass;
 
 public class Constants extends StaticClass {
 
@@ -20,7 +22,9 @@ public class Constants extends StaticClass {
 	public static final double JUMP_IMPULSE = 300;
 	public static final double JUMP_ACCELERATION = 1400;
 	public static final double THROTTLE_AIR_ACCELERATION = (200D / 3);
-	public static final double JUMP_MAX_HOLD = 0.2;
+	public static final double MAX_JUMP_HOLD_TIME = 0.2;
+	public static final double MIN_BOOST_TIME = 0.1;
+	public static final double COAST_THRESHOLD = 0.012; // https://discordapp.com/channels/348658686962696195/535605770436345857/631459919786278923
 
 	public static final double CEILING = 2044;
 	public static final double PITCH_LENGTH_HOOPS = 3586; // Half.

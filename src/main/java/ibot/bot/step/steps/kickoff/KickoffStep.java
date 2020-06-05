@@ -7,7 +7,7 @@ import ibot.bot.stack.PushStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
 import ibot.bot.step.steps.GrabBoostStep;
-import ibot.bot.utils.KickoffSpawn;
+import ibot.bot.utils.rl.KickoffSpawn;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Output;

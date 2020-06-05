@@ -1,14 +1,16 @@
 package ibot.bot.physics;
 
-import ibot.bot.utils.Constants;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
+import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
 public class Car1D {
 
-	private static final double DT = Constants.DT * 2;
+	private static final double DT = Constants.DT * 4;
 
-	private double time, displacement, velocity, boost, maximumSpeed = Constants.MAX_CAR_VELOCITY;
+	private double time, displacement, velocity, boost, maximumSpeed = Constants.MAX_CAR_VELOCITY,
+			lastBoostTime = -1000;
 
 	public Car1D(double time, double displacement, double velocity, double boost){
 		super();
@@ -28,6 +30,10 @@ public class Car1D {
 
 	public Car1D(Car car, Vector3 target){
 		this(car.time, 0, car.velocity.dot(target.minus(car.position).normalised()), car.boost);
+	}
+
+	public Car1D(Car car, Vector2 target){
+		this(car, target.withZ(0));
 	}
 
 	public double getTime(){
@@ -81,6 +87,12 @@ public class Car1D {
 		double acceleration = DrivePhysics.determineAcceleration(this.velocity, throttle, boost);
 		double deltaVelocity = acceleration * DT;
 
+		if(boost){
+			this.lastBoostTime = this.time;
+		}else{
+			boost = (this.time - this.lastBoostTime < Constants.MIN_BOOST_TIME);
+		}
+
 		// Don't exceed the speed limit.
 		if(Math.abs(this.velocity + deltaVelocity) > this.maximumSpeed){
 			deltaVelocity = Math.copySign(this.maximumSpeed, velocity) - velocity;
@@ -90,7 +102,7 @@ public class Car1D {
 		this.velocity += deltaVelocity;
 		this.displacement += this.velocity * DT;
 		if(boost)
-			this.boost -= Constants.BOOST_USAGE * DT;
+			this.boost = Math.max(0, this.boost - Constants.BOOST_USAGE * DT);
 		this.time += DT;
 
 		return this;
@@ -111,10 +123,17 @@ public class Car1D {
 		return this;
 	}
 
+	/*
+	 * Stops upon reach max velocity.
+	 */
 	public Car1D stepVelocity(double throttle, boolean boost, double velocity){
+		double lastVelocity = this.velocity;
 		double sign = (boost || throttle >= 0 ? 1 : -1);
 		while(sign * (velocity - this.velocity) > 0){
 			this.step(throttle, boost);
+			if(Math.abs(this.velocity - lastVelocity) < 1)
+				break;
+			lastVelocity = this.velocity;
 		}
 		return this;
 	}

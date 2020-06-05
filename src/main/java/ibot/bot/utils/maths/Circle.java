@@ -1,5 +1,6 @@
-package ibot.bot.utils;
+package ibot.bot.utils.maths;
 
+import ibot.bot.utils.Pair;
 import ibot.vectors.Vector2;
 
 public class Circle {

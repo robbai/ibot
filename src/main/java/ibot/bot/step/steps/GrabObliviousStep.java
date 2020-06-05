@@ -10,8 +10,8 @@ import ibot.bot.input.Pencil;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.Mode;
+import ibot.bot.utils.rl.Constants;
+import ibot.bot.utils.rl.Mode;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -28,6 +28,7 @@ public class GrabObliviousStep extends Step {
 		super(bundle);
 		bundle.bot.sendQuickChat(QuickChatSelection.Information_NeedBoost, QuickChatSelection.Reactions_Okay);
 		this.drive = new DriveStep(bundle);
+		this.drive.routing = false;
 		this.boost = boost;
 	}
 
@@ -42,7 +43,7 @@ public class GrabObliviousStep extends Step {
 			return new PopStack();
 		}
 
-		Vector3 target = this.boost.getLocation().withZ(Constants.CAR_HEIGHT);
+		Vector3 target = this.boost.getPosition().withZ(Constants.CAR_HEIGHT);
 
 		pencil.renderer.drawLine3d(Color.YELLOW, car.position, target);
 //		pencil.renderer

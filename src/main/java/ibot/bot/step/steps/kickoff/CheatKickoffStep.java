@@ -7,7 +7,7 @@ import ibot.output.Output;
 public class CheatKickoffStep extends DriveStep {
 
 	public CheatKickoffStep(Bundle bundle){
-		super(bundle, bundle.packet.car.position.withX(0).scale(0.4));
+		super(bundle, bundle.packet.car.position.withX(0).scale(0.5));
 		this.dontBoost = true;
 	}
 

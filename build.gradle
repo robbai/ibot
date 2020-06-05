@@ -49,7 +49,7 @@ spotless {
 
 dependencies {
     // Fetch the framework jar file
-    compile 'org.rlbot.commons:framework:1.+'
+    compile 'org.rlbot.commons:framework:2.+'
 
     // This is makes it easy to find the dll when running in intellij, where JVM args don't get passed from gradle.
     runtime files(dllDirectory)

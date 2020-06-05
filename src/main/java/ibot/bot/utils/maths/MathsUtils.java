@@ -1,7 +1,10 @@
-package ibot.bot.utils;
+package ibot.bot.utils.maths;
 
 import java.util.Random;
+import java.util.stream.IntStream;
 
+import ibot.bot.utils.Pair;
+import ibot.bot.utils.StaticClass;
 import ibot.input.Car;
 import ibot.input.CarOrientation;
 import ibot.vectors.Vector2;
@@ -25,6 +28,10 @@ public class MathsUtils extends StaticClass {
 	public static Vector3 local(Car car, Vector3 vector){
 		Vector3 relative = vector.minus(car.position);
 		return local(car.orientation, relative);
+	}
+
+	public static double localAngleBetween(Car car, Vector3 vector1, Vector3 vector2){
+		return local(car, vector1).flatten().angle(local(car, vector2).flatten());
 	}
 
 	public static double lerp(double a, double b, double t){
@@ -64,9 +71,13 @@ public class MathsUtils extends StaticClass {
 		return angle;
 	}
 
+	public static Vector3 global(CarOrientation orientation, Vector3 local){
+		return orientation.right.scale(local.x).plus(orientation.forward.scale(local.y))
+				.plus(orientation.up.scale(local.z));
+	}
+
 	public static Vector3 global(Car car, Vector3 local){
-		return car.position.plus(car.orientation.right.scale(local.x)).plus(car.orientation.forward.scale(local.y))
-				.plus(car.orientation.up.scale(local.z));
+		return car.position.plus(global(car.orientation, local));
 	}
 
 	/**
@@ -113,12 +124,36 @@ public class MathsUtils extends StaticClass {
 	}
 
 	public static Vector2 traceToWall(Vector2 start, Vector2 direction, double targetX, double targetY){
-		Vector2 x = traceToX(start, direction, targetX), y = traceToY(start, direction, targetY);
+		Vector2 x = traceToX(start, direction, Math.copySign(targetX, direction.x)),
+				y = traceToY(start, direction, Math.copySign(targetY, direction.y));
 		if(x == null)
 			return y;
 		if(y == null)
 			return x;
 		return x.distance(start) < y.distance(start) ? x : y;
+	}
+
+	public static Vector2 furthestPointOnLineSegment(Vector2 segment1, Vector2 segment2, Vector2[] items){
+		final int N = 20;
+		Vector2[] sample = IntStream.range(0, N).mapToObj(i -> segment1.lerp(segment2, (double)i / N))
+				.toArray(Vector2[]::new);
+
+		Vector2 furthestPoint = null;
+		double furthestDistance = 0;
+		for(Vector2 point : sample){
+			double distance = Double.MAX_VALUE;
+			for(Vector2 item : items)
+				distance = Math.min(distance, item.distance(point));
+			if(furthestPoint == null || distance > furthestDistance){
+				furthestPoint = point;
+				furthestDistance = distance;
+			}
+		}
+		return furthestPoint;
+	}
+
+	public static double acos(double x){
+		return (-0.69813170079773212 * x * x - 0.87266462599716477) * x + 1.5707963267948966;
 	}
 
 }

@@ -1,4 +1,4 @@
-package ibot.bot.utils;
+package ibot.bot.utils.maths;
 
 import java.util.OptionalDouble;
 

@@ -1,4 +1,4 @@
-package ibot.bot.utils;
+package ibot.bot.utils.rl;
 
 import java.awt.Color;
 

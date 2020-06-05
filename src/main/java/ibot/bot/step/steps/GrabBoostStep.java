@@ -15,10 +15,11 @@ public class GrabBoostStep extends DriveStep {
 	private boolean lastActive;
 
 	public GrabBoostStep(Bundle bundle, BoostPad boost){
-		super(bundle, boost.getLocation());
+		super(bundle, boost.getPosition());
 		this.startedKickoff = bundle.packet.isKickoffPause;
 		this.boost = boost;
 		this.lastActive = boost.isActive();
+		this.routing = false;
 		bundle.bot.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 	}
 

@@ -3,8 +3,8 @@ package ibot.bot.input.arena;
 import java.util.ArrayList;
 import java.util.List;
 
-import ibot.bot.utils.Mode;
-import ibot.bot.utils.Plane;
+import ibot.bot.utils.maths.Plane;
+import ibot.bot.utils.rl.Mode;
 import ibot.input.DataPacket;
 import ibot.vectors.Vector3;
 

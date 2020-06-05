@@ -1,6 +1,6 @@
 package ibot.bot.intercept;
 
-import ibot.bot.utils.Plane;
+import ibot.bot.utils.maths.Plane;
 import ibot.input.Car;
 import ibot.vectors.Vector3;
 

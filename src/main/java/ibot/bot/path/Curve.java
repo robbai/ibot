@@ -3,8 +3,8 @@ package ibot.bot.path;
 import java.awt.Color;
 
 import ibot.bot.input.Pencil;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.vectors.Vector2;
 
 public abstract class Curve {

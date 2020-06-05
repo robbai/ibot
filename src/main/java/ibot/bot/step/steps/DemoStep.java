@@ -8,8 +8,8 @@ import ibot.bot.input.Pencil;
 import ibot.bot.physics.DrivePhysics;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -44,6 +44,7 @@ public class DemoStep extends DriveStep {
 		this.dodge = false;
 		this.ignoreRadius = true;
 		this.reverse = false;
+		this.routing = false;
 		this.withTargetVelocity(MathsUtils.lerp(Constants.MAX_CAR_VELOCITY, Constants.SUPERSONIC_VELOCITY, 0.5));
 	}
 

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import rlbot.Bot;
 import rlbot.cppinterop.RLBotDll;
 import rlbot.flat.GameTickPacket;
+import ibot.Main;
 import ibot.boost.BoostManager;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
@@ -15,7 +16,7 @@ import ibot.bot.stack.PushStack;
 import ibot.bot.stack.StackAction;
 import ibot.bot.stack.SwapStack;
 import ibot.bot.step.Step;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -55,13 +56,15 @@ public abstract class ABot implements Bot {
 
 	@Override
 	public Controls processInput(GameTickPacket rawPacket){
-		if(!rawPacket.gameInfo().isRoundActive()){
-			if(!ranGc){
-				System.gc();
-				ranGc = true;
+		if(Main.isLowestIndex(this.index)){
+			if(!rawPacket.gameInfo().isRoundActive()){
+				if(!ranGc){
+					System.gc();
+					ranGc = true;
+				}
+			}else{
+				ranGc = false;
 			}
-		}else{
-			ranGc = false;
 		}
 
 		// Just return immediately if something looks wrong with the data.
@@ -111,10 +114,17 @@ public abstract class ABot implements Bot {
 		ArrayList<Step> triedSteps = new ArrayList<Step>(maxIterations);
 
 		for(this.iteration = 0; this.iteration < maxIterations; this.iteration++){
-			Step foundStep = this.fallbackStep();
-			if(foundStep != null && foundStep.getPriority() > this.stepsPriority()){
-				this.clearSteps();
-				this.steps.add(foundStep);
+			Output fallback = this.fallback();
+			if(fallback != null){
+				if(fallback instanceof Step){
+					if(((Step)fallback).getPriority() > this.stepsPriority()){
+						this.clearSteps();
+						this.steps.add((Step)fallback);
+					}
+				}else if(fallback instanceof Controls){
+					if(this.getActiveStep() == null)
+						return (Controls)fallback;
+				}
 			}
 
 			Step activeStep = this.getActiveStep();
@@ -155,7 +165,7 @@ public abstract class ABot implements Bot {
 		return new Controls();
 	}
 
-	protected abstract Step fallbackStep();
+	protected abstract Output fallback();
 
 	@Override
 	public void retire(){

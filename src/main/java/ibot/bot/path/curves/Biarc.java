@@ -3,9 +3,9 @@ package ibot.bot.path.curves;
 import java.util.OptionalDouble;
 
 import ibot.bot.path.Curve;
-import ibot.bot.utils.Circle;
-import ibot.bot.utils.MathsUtils;
 import ibot.bot.utils.Pair;
+import ibot.bot.utils.maths.Circle;
+import ibot.bot.utils.maths.MathsUtils;
 import ibot.vectors.Vector2;
 
 /**

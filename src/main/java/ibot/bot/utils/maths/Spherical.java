@@ -1,4 +1,4 @@
-package ibot.bot.utils;
+package ibot.bot.utils.maths;
 
 import ibot.vectors.Vector3;
 
@@ -13,7 +13,7 @@ public class Spherical {
 	}
 
 	public Spherical(Vector3 vector){
-		this.polar = Math.atan2(vector.y, vector.x);
+		this.polar = Atan2.atan2(vector.y, vector.x);
 		this.radial = vector.magnitude();
 		if(this.radial != 0){
 			this.azimuthal = Math.acos(vector.z / this.radial);

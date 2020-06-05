@@ -11,9 +11,9 @@ import ibot.bot.intercept.SeamIntercept;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
-import ibot.bot.utils.Mode;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
+import ibot.bot.utils.rl.Mode;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Output;
@@ -24,7 +24,7 @@ public class OffenseStep extends Step {
 
 	private final DriveStep drive;
 
-	protected boolean canPop = true;
+	public boolean canPop = true;
 	protected boolean addOffset = true;
 
 	public OffenseStep(Bundle bundle){
@@ -39,7 +39,7 @@ public class OffenseStep extends Step {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
-		if(!info.commit && this.canPop){
+		if(!info.commit && this.canPop /* && packet.time - this.getStartTime() > 0.2 */){
 			return new PopStack();
 		}
 
@@ -49,21 +49,46 @@ public class OffenseStep extends Step {
 		Vector3 dodgeTarget = DriveStrikeStep.getDodgeTarget(info.groundIntercept);
 		boolean seam = info.groundIntercept instanceof SeamIntercept;
 
+		this.drive.routing = true;
+
 		if(seam || info.groundIntercept.plane.differentNormal(Vector3.Z)){
 			// Wall intercept.
-//			if(car.hasWheelContact){
-//			if(!info.groundIntercept.plane.differentNormal(car)){
+////			if(car.hasWheelContact){
+////			if(!info.groundIntercept.plane.differentNormal(car)){
 //			if(info.groundIntercept.plane.differentNormal(Vector3.Z)){
 //				return new DriveStrikeStep(this.bundle, info.groundIntercept, false).withAbortCondition(
 //						new BallTouchedAbort(this.bundle, packet.ball.latestTouch, car.index),
 //						new SliceOffPredictionAbort(this.bundle, info.groundIntercept));
 //			}else
 			if(seam){
-				target = ((SeamIntercept)info.groundIntercept).seamPosition.setDistanceFrom(car.position, 800);
+				target = ((SeamIntercept)info.groundIntercept).seamPosition.setDistanceFrom(car.position, 1000);
 			}else{
 				target = info.groundIntercept.intersectPosition;
 			}
-		}else if(localInterceptBall.z > 180 && info.bounce != null && info.possession > 0.4){
+//		}else if(car.onFlatGround && localInterceptBall.z < 120
+//				&& BallPrediction.getTime(info.groundIntercept.time + 0.1).position.z < 120 + Constants.CAR_HEIGHT && info.possession > 0.6){
+//			target = info.groundIntercept.intersectPosition;
+//
+//			Vector2 trace = MathsUtils.traceToWall(info.groundIntercept.intersectPosition.flatten(),
+//					info.groundIntercept.getOffset().scale(-1).flatten(), info.arena.getWidth(), info.arena.getLength());
+//			if(Math.abs(trace.x) > Constants.GOAL_WIDTH - Constants.BALL_RADIUS || trace.y * car.sign < 0){
+//				double distance = target.distance(car.position);
+//
+//				Biarc biarc = new Biarc(car.position.flatten(), car.orientation.forward.flatten(), target.flatten(),
+//						trace.minus(target.flatten()));
+//				double arcDistance = biarc.getLength();
+//				double ratio = (arcDistance / distance);
+//				double index = ((ratio * (info.groundIntercept.time - car.time)) / BallPrediction.DT);
+//				BallSlice slice = BallPrediction.get((int)MathsUtils.clamp(index, 0, BallPrediction.SLICE_COUNT - 1));
+//				target = biarc.S(Math.min(biarc.getLength(), 500)).withZ(Constants.CAR_HEIGHT);
+//				pencil.renderer.drawRectangle3d(Color.RED, target, 8, 8, true);
+//				pencil.renderer.drawRectangle3d(Color.BLUE, slice.position, 8, 8, true);
+//				pencil.renderer.drawRectangle3d(Color.GREEN, info.groundIntercept.position, 8, 8, true);
+//				pencil.stackRenderString(MathsUtils.round(ratio) + "", Color.BLUE);
+//			}
+		}else if(localInterceptBall.z > 180 && info.bounce != null
+//				&& info.possession > Math.max(0.225, info.teamPossessionCorrectSide)
+				&& info.possession > 0.3){
 			target = info.bounce.position;
 			if(Math.abs(car.position.y) < Constants.PITCH_LENGTH_SOCCAR || Math.abs(target.x) < Constants.GOAL_WIDTH){
 				target = target.plus(Vector3.Y.scaleToMagnitude(-car.sign * target.distance(car.position)
@@ -92,8 +117,11 @@ public class OffenseStep extends Step {
 //				}
 
 				double distance = MathsUtils.local(car, target).flatten().magnitude();
-				double addedOffset = (this.addOffset && info.possession > 0.2 ? Math.floor(distance / 2500) * 1500 : 0);
-				if(addedOffset > 0.001){
+//				double addedOffset = (this.addOffset && info.possession > 0.2 ? Math.floor(distance / 2000) * 1250 : 0);
+//				double addedOffset = 0;
+				double addedOffset = (this.addOffset ? Math.min(distance - 1000, 0) * 0.625 : 0);
+				if(addedOffset > MathsUtils.EPSILON){
+					this.drive.routing = false;
 					target = target.plus(info.groundIntercept.getOffset().scaleToMagnitude(addedOffset)).clamp();
 				}else if(addedOffset < 1000 && car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975
 						&& info.getTimeOnGround() > 0.1){
@@ -105,7 +133,7 @@ public class OffenseStep extends Step {
 						if(info.possession < 0.2 && car.onFlatGround
 								&& info.doubleJumpIntercept.time < info.groundIntercept.time && doubleHeight > 300){
 							driveStrike = new DriveStrikeStep(this.bundle, info.doubleJumpIntercept, true);
-						}else if(height > 160){
+						}else if(height > 150 && info.possession > -0.4){
 							driveStrike = new DriveStrikeStep(this.bundle, info.groundIntercept, false);
 						}
 						if(driveStrike != null){
@@ -124,11 +152,11 @@ public class OffenseStep extends Step {
 					info.groundIntercept.position);
 			boolean challenge = (Math.abs(info.possession) < 0.18);
 			boolean nail = (info.groundIntercept.getOffset().normalised()
-					.dot(info.groundIntercept.position.minus(car.position).normalised()) < -0.8);
+					.dot(info.groundIntercept.position.minus(car.position).normalised()) < -0.6);
 			pencil.renderer.drawRectangle3d(pencil.colour, info.groundIntercept.intersectPosition, 8, 8, true);
 			if(car.hasWheelContact && info.getTimeOnGround() > 0.2 && (info.groundIntercept.time - info.time) < 0.4
 					&& Math.abs(info.lastControls.getSteer()) < (info.goingInHomeGoal || challenge ? 0.8 : 0.4)){
-				if(Math.abs(localInterceptBall.z) > 140 || challenge // || !nail
+				if(Math.abs(localInterceptBall.z) > 130 || challenge || !nail
 						|| car.velocity.magnitude() < (car.onFlatGround ? 1100 : 1550)){
 					if((info.groundIntercept.time - info.time) < 0.255){
 						return new FastDodgeStep(this.bundle, dodgeTarget.minus(car.position));

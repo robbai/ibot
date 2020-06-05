@@ -14,7 +14,7 @@ public class Car {
 			isSliding;
 	public final double time, boost, sign, forwardVelocity, forwardVelocityAbs, sidewaysVelocity;
 	public final int team, index;
-	public final String name;
+//	public final String name;
 
 	public Car(rlbot.flat.PlayerInfo playerInfo, double time, int index){
 		Physics physics = playerInfo.physics();
@@ -39,12 +39,12 @@ public class Car {
 		this.index = index;
 		this.hasDoubleJumped = playerInfo.doubleJumped();
 		this.isDemolished = playerInfo.isDemolished();
-		this.name = playerInfo.name();
+//		this.name = playerInfo.name();
 
 		this.onFlatGround = (this.hasWheelContact && this.orientation.up.z > 0.75);
 		this.onSuperFlatGround = (this.onFlatGround && this.orientation.up.z > 0.95);
 		double speed = this.velocity.magnitude();
-		this.isSliding = (speed > 300 && this.sidewaysVelocity / speed > 0.3);
+		this.isSliding = (speed > 400 && this.sidewaysVelocity / speed > 0.4);
 	}
 
 	public static double determineSign(int team){

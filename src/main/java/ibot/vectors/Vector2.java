@@ -1,7 +1,8 @@
 package ibot.vectors;
 
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.Atan2;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 
 public class Vector2 {
 
@@ -98,8 +99,8 @@ public class Vector2 {
 	 * which direction to steer.
 	 */
 	public double correctionAngle(Vector2 ideal){
-		double currentRad = Math.atan2(y, x);
-		double idealRad = Math.atan2(ideal.y, ideal.x);
+		double currentRad = Atan2.atan2(y, x);
+		double idealRad = Atan2.atan2(ideal.y, ideal.x);
 		return MathsUtils.correctAngle(idealRad - currentRad);
 	}
 
@@ -171,6 +172,22 @@ public class Vector2 {
 
 	public Vector2 clamp(){
 		return clamp(Constants.PITCH_WIDTH_SOCCAR - 250, Constants.PITCH_LENGTH_SOCCAR - 250);
+	}
+
+	@Override
+	public boolean equals(Object obj){
+		if(this == obj)
+			return true;
+		if(obj == null)
+			return false;
+		if(getClass() != obj.getClass())
+			return false;
+		Vector2 other = (Vector2)obj;
+		if(Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x))
+			return false;
+		if(Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y))
+			return false;
+		return true;
 	}
 
 }

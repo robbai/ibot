@@ -9,9 +9,10 @@ import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.step.steps.jump.DoubleJumpStep;
 import ibot.bot.utils.Pair;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -21,13 +22,16 @@ import ibot.vectors.Vector3;
 
 public class AerialStep extends Step {
 
-	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + JumpStep.DOUBLE_JUMP_DELAY),
+	public static final double JUMP_TIME = 0.2, DOUBLE_JUMP_TIME = (JUMP_TIME + DoubleJumpStep.DOUBLE_JUMP_DELAY),
 			ANGLE_THRESHOLD = 0.3;
 
 	public final Intercept intercept;
 	public final AerialType type;
 	private Vector3 targetUp = Vector3.Z, offset;
 	private boolean startGrounded;
+
+	private boolean boostedYet, firstFrame;
+	private double firstAngle;
 
 	public AerialStep(Bundle bundle, Intercept intercept, AerialType type){
 		super(bundle);
@@ -40,6 +44,8 @@ public class AerialStep extends Step {
 		}
 
 		this.startGrounded = bundle.packet.car.hasWheelContact;
+		this.boostedYet = false;
+		this.firstFrame = true;
 	}
 
 	@Override
@@ -67,7 +73,7 @@ public class AerialStep extends Step {
 		}
 
 		// Dodge.
-		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrikeStep.DODGE_TIME * 1.5){
+		if(this.type == AerialType.DODGE_STRIKE && timeLeft < DriveStrikeStep.DODGE_TIME * 2){
 			Vector3 local = MathsUtils.local(car, DriveStrikeStep.getDodgeTarget(this.intercept));
 			double radians = Vector2.Y.correctionAngle(local.flatten());
 			return new Controls().withJump(true).withPitch(-Math.cos(radians)).withYaw(-Math.sin(radians));
@@ -76,8 +82,8 @@ public class AerialStep extends Step {
 		// Calculations.
 		Pair<Vector3, Vector3> freefall = calculateFreefall(car, timeLeft, bundle.info.arena.getGravity(), this.type,
 				this.startGrounded, timeElapsed);
-		Vector3 carPosition = freefall.getOne(), carVelocity = freefall.getTwo();
-		drawCrosshair(pencil, Color.GREEN, carPosition, car.position);
+		Vector3 carPosition = freefall.getOne();
+		pencil.renderCrosshair(Color.GREEN, carPosition, car.position);
 		Vector3 deltaPosition = this.intercept.intersectPosition.minus(carPosition);
 		Vector3 direction = deltaPosition.normalised();
 
@@ -87,6 +93,8 @@ public class AerialStep extends Step {
 
 		Vector3 deltaVelocity = deltaPosition.scale(1 / timeLeft);
 		double angle = Math.acos(car.orientation.forward.dot(direction));
+		if(this.firstFrame)
+			this.firstAngle = angle;
 		double minVelocity = (Constants.BOOST_AIR_ACCELERATION * 3 * Constants.DT);
 		if(car.orientation.forward.dot(deltaVelocity) < minVelocity){
 			turnTarget = this.intercept.intersectPosition.minus(car.position);
@@ -107,7 +115,7 @@ public class AerialStep extends Step {
 		pencil.stackRenderString("Boost time direction: " + MathsUtils.round(B, 3) + "s", Color.WHITE);
 
 		// Crosshair.
-		drawCrosshair(pencil, pencil.colour, this.intercept.intersectPosition, car.position);
+		pencil.renderCrosshair(pencil.colour, this.intercept.intersectPosition, car.position);
 
 		// Rendering.
 		pencil.renderer.drawLine3d(Color.RED, car.position, car.position.plus(direction.scale(500)));
@@ -122,6 +130,12 @@ public class AerialStep extends Step {
 			controls.withOrient(AirControl.getRollPitchYaw(car, turnTarget, this.targetUp));
 			// controls.withOrient(AirControl.getRollPitchYaw(car, turnTarget));
 		}
+		if(controls.holdBoost() && !this.boostedYet)
+//			System.out.println("Angle " + MathsUtils.round(this.firstAngle) + " took "
+//					+ MathsUtils.round(car.time - this.getStartTime()) + "s");
+			System.out.println((car.time - this.getStartTime()) / Math.pow(this.firstAngle, 2));
+		this.boostedYet |= controls.holdBoost();
+		this.firstFrame = false;
 		return controls;
 	}
 
@@ -153,15 +167,6 @@ public class AerialStep extends Step {
 
 	public static Pair<Vector3, Vector3> calculateFreefall(Car car, double timeLeft, Vector3 gravity, AerialType type){
 		return calculateFreefall(car, timeLeft, gravity, type, car.hasWheelContact, 0);
-	}
-
-	private static void drawCrosshair(Pencil pencil, Color colour, Vector3 centre, Vector3 facing){
-		final double size = 75;
-		Vector3 line1 = centre.minus(facing).withZ(0);
-		Vector3 line2 = line1.flatten().rotate(Math.PI / 2).withZ(0).scaleToMagnitude(size);
-		pencil.renderer.drawLine3d(colour, centre.plus(line2), centre.minus(line2));
-		line1 = line1.cross(line2).scaleToMagnitude(size);
-		pencil.renderer.drawLine3d(colour, centre.plus(line1), centre.minus(line1));
 	}
 
 	@Override

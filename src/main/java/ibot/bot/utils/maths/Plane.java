@@ -1,4 +1,4 @@
-package ibot.bot.utils;
+package ibot.bot.utils.maths;
 
 import ibot.input.Car;
 import ibot.vectors.Vector3;

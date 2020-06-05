@@ -46,7 +46,7 @@ public class SaveStep extends OffenseStep {
 		Vector2 initialVelocity = packet.ball.velocity.flatten();
 		double time = 1.5;
 		Vector2 deltaVelocity = displacement.scale(1 / time).minus(initialVelocity);
-		return deltaVelocity.magnitude() * Math.signum(deltaVelocity.dot(displacement)) < 1800;
+		return deltaVelocity.magnitude() * Math.signum(deltaVelocity.dot(displacement)) < 1900;
 	}
 
 }

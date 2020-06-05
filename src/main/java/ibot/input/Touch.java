@@ -7,8 +7,7 @@ public class Touch {
 	public final Vector3 location, normal;
 
 	public final int team, playerIndex;
-	public final float elapsedSeconds;
-	public final String playerName;
+	public final double time;
 
 	public Touch(rlbot.flat.Touch rawTouch){
 		this.location = new Vector3(rawTouch.location());
@@ -16,8 +15,7 @@ public class Touch {
 
 		this.team = rawTouch.team();
 		this.playerIndex = rawTouch.playerIndex();
-		this.elapsedSeconds = rawTouch.gameSeconds();
-		this.playerName = rawTouch.playerName();
+		this.time = rawTouch.gameSeconds();
 	}
 
 }

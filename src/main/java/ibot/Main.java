@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -19,6 +20,8 @@ import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 import rlbot.manager.BotManager;
+import ibot.bot.physics.JumpPhysics;
+import ibot.bot.utils.Pair;
 import ibot.utils.PortReader;
 
 public class Main {
@@ -27,12 +30,19 @@ public class Main {
 	private static final String LOGO_FILE = "icon.png";
 
 	private static List<String> arguments;
+	private static BotManager botManager;
 
 	public static void main(String[] args){
 		System.out.println("Args: " + Arrays.toString(args));
 		setArguments(args);
 
-		BotManager botManager = new BotManager();
+		// Initialisation.
+		Pair<Double[][], Double> doubleJump = JumpPhysics.loadFile(Main.class.getClassLoader(), "double_jump.txt");
+		JumpPhysics.doubleTimeZ = Stream.of(doubleJump.getOne())
+				.map(d -> Stream.of(d).mapToDouble(Double::doubleValue).toArray()).toArray(double[][]::new);
+		JumpPhysics.maxDoubleZ = doubleJump.getTwo();
+
+		botManager = new BotManager();
 		botManager.setRefreshRate(120);
 		Integer port = PortReader.readPortFromArgs(args).orElseGet(() -> {
 			System.out.println("Could not read port from args, using default!");
@@ -88,6 +98,14 @@ public class Main {
 
 	public static void setArguments(String[] args){
 		arguments = Arrays.asList(args);
+	}
+
+	public static boolean isLowestIndex(int index){
+		for(int i : botManager.getRunningBotIndices()){
+			if(i < index)
+				return false;
+		}
+		return true;
 	}
 
 }

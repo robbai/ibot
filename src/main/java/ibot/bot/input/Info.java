@@ -14,9 +14,9 @@ import ibot.bot.input.arena.SoccarArena;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
 import ibot.bot.intercept.InterceptCalculator;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
-import ibot.bot.utils.Mode;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
+import ibot.bot.utils.rl.Mode;
 import ibot.input.Ball;
 import ibot.input.Car;
 import ibot.input.DataPacket;
@@ -54,6 +54,7 @@ public class Info {
 	public BoostPad nearestBoost;
 	public OptionalDouble goalTime;
 	public Arena arena;
+	public double[] interceptValues = {};
 
 	public void update(DataPacket packet){
 		this.deltaTime = (packet.time - this.time);
@@ -108,12 +109,13 @@ public class Info {
 				this.isKickoff, false);
 		this.aerialDouble = InterceptCalculator.aerialCalculate(this, this.car, AerialType.DOUBLE_JUMP, this.mode,
 				this.isKickoff, false);
-		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(this, this.car, true);
+		this.doubleJumpIntercept = InterceptCalculator.groundCalculate(packet, this, this.car, true);
 		this.groundIntercepts = new Intercept[packet.cars.length];
 		this.earliestTeammateIntercept = null;
 		this.earliestEnemyIntercept = null;
+		this.earliestTeammateInterceptCorrectSide = null;
 		for(int i = 0; i < packet.cars.length; i++){
-			Intercept intercept = InterceptCalculator.groundCalculate(this, packet.cars[i], false);
+			Intercept intercept = InterceptCalculator.groundCalculate(packet, this, packet.cars[i], false);
 			this.groundIntercepts[i] = intercept;
 
 			if(intercept == null)
@@ -185,10 +187,9 @@ public class Info {
 		for(Car c : packet.teammates){
 			if(c.isDemolished)
 				continue;
-			if(Math.abs(c.position.x - this.ball.position.x) > Constants.PITCH_WIDTH_SOCCAR * 1.2){
+			if(Math.abs(c.position.x - this.ball.position.x) > Constants.PITCH_WIDTH_SOCCAR * 1.2)
 				continue;
-			}
-			if((this.ball.position.y - c.position.y) * this.car.sign > 0){
+			if(c.correctSide(packet.ball.position)){
 				this.lastMan = false;
 				break;
 			}
@@ -220,8 +221,11 @@ public class Info {
 			this.commit = true;
 			double carInterceptValue = interceptValue(this.groundIntercept, this.car, this.earliestEnemyIntercept.time,
 					this.enemyGoal);
+			if(this.interceptValues.length != packet.cars.length)
+				this.interceptValues = new double[packet.cars.length];
+			this.interceptValues[this.car.index] = carInterceptValue;
 			double ourBonus = 0;
-			ourBonus += (lastCommit ? 0.2 : 0);
+			ourBonus += (lastCommit ? 0.2 : -0.1);
 //			if(this.groundIntercept.position.y * this.car.sign < 0
 //					&& (this.groundIntercept.position.y - this.car.position.y) * this.car.sign > 0
 //					&& this.teamPossession < 0.3){
@@ -232,9 +236,12 @@ public class Info {
 			for(Car c : packet.teammates){
 				if(c.isDemolished)
 					continue;
-				if(interceptValue(this.groundIntercepts[c.index], c, this.earliestEnemyIntercept.time,
+				double interceptValue = interceptValue(this.groundIntercepts[c.index], c,
+						this.earliestEnemyIntercept.time,
 						InterceptCalculator.chooseGoal(this.arena, c, this.groundIntercepts[c.index].position)
-								.withZ(Constants.BALL_RADIUS)) > carInterceptValue + ourBonus){
+								.withZ(Constants.BALL_RADIUS));
+				this.interceptValues[c.index] = carInterceptValue;
+				if(interceptValue > carInterceptValue + ourBonus){
 					this.commit = false;
 					break;
 				}
@@ -271,6 +278,7 @@ public class Info {
 	}
 
 	public void postUpdate(DataPacket packet, Controls controls){
+//		this.lastControls = new Controls(controls);
 		this.lastControls = new Controls(controls).withBoost(controls.holdBoost() && packet.car.boost >= 1)
 				.withThrottle(controls.holdBoost() && packet.car.boost >= 1 ? 1 : controls.getThrottle());
 	}
@@ -308,6 +316,9 @@ public class Info {
 //		if(losing)
 //			return enemyEarliestIntercept - intercept.time;
 //		return (Math.cos(angle) + 1) * car.velocity.magnitude();
+//		double possession = (enemyEarliestIntercept - intercept.time);
+//		double angle = car.position.minus(intercept.position).flatten().angle(intercept.getOffset().flatten());
+//		return possession >= 0 ? -angle : -angle - Math.PI;
 	}
 
 	private static double estimateTimeToHitGround(Car car, double gravity){
@@ -372,7 +383,7 @@ public class Info {
 		BoostPad shortestBoost = null;
 		double shortestDistance = 0;
 		for(BoostPad boost : boosts){
-			double distance = boost.getLocation().distance(carPosition);
+			double distance = boost.getPosition().distance(carPosition);
 			if(!isBoostValid(boost, car, distance))
 				continue;
 			if(shortestBoost == null || shortestDistance > distance){
@@ -387,7 +398,7 @@ public class Info {
 		BoostPad shortestBoost = null;
 		double shortestDistance = 0;
 		for(BoostPad boost : boosts){
-			double distance = boost.getLocation().distance(position);
+			double distance = boost.getPosition().distance(position);
 			if(!isBoostValid(boost, null, distance))
 				continue;
 			if(shortestBoost == null || shortestDistance > distance){
@@ -402,7 +413,7 @@ public class Info {
 		if(car != null){
 			return boost != null && boost.getTimeLeft() >= 0
 					&& (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft())
-					&& (!car.correctSide(boost.getLocation()) || distance < 3000);
+					&& (!car.correctSide(boost.getPosition()) || distance < 3000);
 		}
 		return boost != null && (boost.isActive() || distance / Constants.SUPERSONIC_VELOCITY > boost.getTimeLeft());
 	}
@@ -410,7 +421,7 @@ public class Info {
 	public static boolean isBoostValid(BoostPad boost, Car car){
 		if(boost == null)
 			return false;
-		return isBoostValid(boost, car, boost.getLocation().distance(car.position.flatten()));
+		return isBoostValid(boost, car, boost.getPosition().distance(car.position.flatten()));
 	}
 
 	public double getTimeOnGround(){

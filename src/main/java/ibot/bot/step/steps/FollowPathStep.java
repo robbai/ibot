@@ -9,8 +9,8 @@ import ibot.bot.path.Path;
 import ibot.bot.stack.PopStack;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -38,6 +38,7 @@ public class FollowPathStep extends Step {
 		this.drive = new DriveStep(bundle);
 		this.drive.reverse = false;
 		this.drive.dodge = false;
+		this.drive.routing = false;
 //		this.drive.ignoreRadius = true;
 	}
 

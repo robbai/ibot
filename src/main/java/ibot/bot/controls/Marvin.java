@@ -1,6 +1,6 @@
 package ibot.bot.controls;
 
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
 
 public class Marvin {
 

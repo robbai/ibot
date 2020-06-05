@@ -1,4 +1,4 @@
-package ibot.bot.step.steps;
+package ibot.bot.step.steps.jump;
 
 import java.util.OptionalDouble;
 
@@ -6,24 +6,22 @@ import ibot.bot.controls.AirControl;
 import ibot.bot.input.Bundle;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
 import ibot.output.Output;
 
 public class JumpStep extends Step {
 
-	public static final double DOUBLE_JUMP_DELAY = (Constants.DT * 3);
-
 	private static final double ORIENT_DELAY = 0.1;
 
-	private final double holdTime;
-	private OptionalDouble firstOutputTime = OptionalDouble.empty();
+	protected final double holdTime;
+	protected OptionalDouble firstOutputTime = OptionalDouble.empty();
 
 	public JumpStep(Bundle bundle, double holdTime){
 		super(bundle);
-		this.holdTime = MathsUtils.clamp(holdTime, 0, Constants.JUMP_MAX_HOLD);
+		this.holdTime = MathsUtils.clamp(holdTime, 0, Constants.MAX_JUMP_HOLD_TIME);
 	}
 
 	@Override

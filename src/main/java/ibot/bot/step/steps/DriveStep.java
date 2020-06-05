@@ -1,20 +1,24 @@
 package ibot.bot.step.steps;
 
+import java.awt.Color;
 import java.util.OptionalDouble;
 
 import ibot.bot.controls.AirControl;
 import ibot.bot.controls.Marvin;
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
+import ibot.bot.physics.Car1D;
 import ibot.bot.physics.DrivePhysics;
+import ibot.bot.physics.Routing;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.Constants;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
 import ibot.output.Output;
+import ibot.prediction.Slice;
 import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
@@ -25,7 +29,7 @@ public class DriveStep extends Step {
 	public Vector3 target;
 	private OptionalDouble targetTime = OptionalDouble.empty(), targetVelocity = OptionalDouble.empty();
 	public boolean conserveBoost = false, dodge = true, dontBoost = false, reverse = true, gentleSteer = false,
-			ignoreRadius = false;
+			ignoreRadius = false, routing = true;
 
 	public DriveStep(Bundle bundle, Vector3 target){
 		super(bundle);
@@ -46,9 +50,23 @@ public class DriveStep extends Step {
 		DataPacket packet = this.bundle.packet;
 		Car car = packet.car;
 
-		this.setFinished(this.target.distance(car.position) < 60);
+//		this.setFinished(this.target.distance(car.position) < 60);
 
 		Vector3 carTarget = this.target;
+
+		// Routing.
+		boolean route = false;
+		if(!this.targetVelocity.isPresent() && !info.isKickoff && this.routing){
+			double time = this.targetTime.isPresent() ? this.targetTime.getAsDouble()
+					: new Car1D(car, carTarget).stepDisplacement(1, true, carTarget.distance(car.position)).getTime()
+							+ Routing.estimateTurnTime(car, carTarget, false);
+			Vector2 routeTarget = Routing.quickRoute(car, new Slice(carTarget, time));
+			if(!routeTarget.equals(carTarget.flatten())){
+				route = true;
+				carTarget = routeTarget.withZ(Constants.CAR_HEIGHT);
+				this.bundle.pencil.renderer.drawLine3d(Color.MAGENTA, car.position, carTarget);
+			}
+		}
 
 		// Escape goal.
 		if(Math.abs(this.target.y) > Constants.PITCH_LENGTH_SOCCAR != Math
@@ -74,29 +92,20 @@ public class DriveStep extends Step {
 
 		// Steering and direction.
 		double radians = Vector2.Y.correctionAngle(local.flatten());
-		boolean reverse;
-//		if(Math.abs(car.position.y) > Constants.PITCH_LENGTH_SOCCAR
-//				&& Math.signum(car.position.y) * carTarget.y < car.position.y){
-//			reverse = (car.orientation.forward.y * car.position.y > 0);
-//		}else{
-		reverse = (car.forwardVelocity < (Math.cos(radians) < 0 ? 200 : -100));
-//		}
-		reverse &= this.reverse;
+		boolean reverse = (this.reverse && Math.abs(radians) > Math.PI / 2 && !route);
 		double reverseSign = (reverse ? -1 : 1);
-		if(reverse){
+		if(reverse)
 			radians = MathsUtils.invertAngle(radians);
-		}
 		double steer;
 		if(this.gentleSteer){
 			steer = radians * -2;
 		}else{
-			steer = Math.pow(-radians - car.angularVelocity.yaw * Constants.DT * 2, 3) * 10000;
+			steer = Math.pow(-radians - car.angularVelocity.yaw * reverseSign * Constants.DT * 2, 3) * 10000;
 		}
 
 		// Velocity.
 		double maxSpeedTurn = (this.ignoreRadius ? Constants.MAX_CAR_VELOCITY
-				: (DrivePhysics.maxSpeedForTurn(car, carTarget.setDistanceFrom(car.position,
-						Math.min(car.onFlatGround ? 3000 : Double.MAX_VALUE, carTarget.distance(car.position))))));
+				: (DrivePhysics.maxSpeedForTurn(car, carTarget)));
 		double desiredVelocity = maxSpeedTurn;
 		if(this.targetTime.isPresent()){
 			double distance = carTarget.distance(car.position);
@@ -105,15 +114,20 @@ public class DriveStep extends Step {
 			desiredVelocity = Math.copySign(Math.min(desiredVelocity, Math.abs(this.targetVelocity.getAsDouble())),
 					desiredVelocity);
 		}
+		if(forwardDot < 0){
+			// Big turn!
+			desiredVelocity = Routing.findQuickerTurningVelocity(desiredVelocity,
+					car.forwardVelocityAbs < maxSpeedTurn || Math.abs(desiredVelocity) < maxSpeedTurn);
+		}
 		desiredVelocity *= reverseSign;
+//		this.bundle.pencil.stackRenderString((int)car.forwardVelocity + " -> " + (int)desiredVelocity + "uu/s",
+//				Color.BLACK);
 
-		// Throttle.
+		// Throttle and boost.
 		double throttle = Marvin.throttleVelocity(car.forwardVelocity, desiredVelocity,
 				info.lastControls.getThrottle());
-
-		// Boost.
-		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, info.lastControls.holdBoost());
-		boost &= !car.isSupersonic && forwardDot > 0;
+		boolean boost = Marvin.boostVelocity(car.forwardVelocity, desiredVelocity, info.lastControls.holdBoost())
+				&& !car.isSupersonic;
 
 		// Dodge.
 		if(boost || car.forwardVelocity < 0){
@@ -125,15 +139,16 @@ public class DriveStep extends Step {
 			double dodgeDistance = DrivePhysics.estimateDodgeDistance(car);
 			double flatDistance = local.flatten().magnitude();
 			boolean commitKickoff = packet.isKickoffPause && info.commit;
-			if((info.getTimeOnGround() > 0.05 || commitKickoff) && dodge
-					&& (commitKickoff || Math.abs(velocityTowards) > (car.forwardVelocity < 0 ? 800 : 1250))
-					&& (dodgeDistance < flatDistance || car.forwardVelocity < 0)
-					&& (!commitKickoff || dodgeDistance > flatDistance - 300)){
-				if(car.forwardVelocity < 0 && Math.abs(radians) < Math.toRadians(20)){
-					return new HalfFlipStep(this.bundle);
+			if((info.getTimeOnGround() > 0.075 || commitKickoff) && dodge
+					&& (commitKickoff || Math.abs(velocityTowards) > (car.forwardVelocity < 0 ? 700 : 1250))
+					&& (dodgeDistance < flatDistance || car.forwardVelocity < 0
+//							|| (route && MathsUtils.localAngleBetween(car, carTarget, this.target) < 0.35)
+					) && (!commitKickoff || dodgeDistance > flatDistance - 400)){
+				if(car.forwardVelocity < 0 && Math.abs(radians) < 0.25){
+					return new HalfFlipStep(this.bundle, carTarget.minus(car.position));
 				}else if(commitKickoff || ((!boost || car.boost < 10 || this.dontBoost) && velocityStraight > 0.9
-						&& Math.abs(radians) < Math.toRadians(30)
-						&& car.forwardVelocity + Constants.DODGE_IMPULSE < desiredVelocity)){
+						&& Math.abs(radians) < 0.3
+						&& (car.forwardVelocity + Constants.DODGE_IMPULSE < desiredVelocity || car.boost < 1))){
 					return new FastDodgeStep(this.bundle, carTarget.minus(car.position));
 				}
 			}
@@ -144,7 +159,7 @@ public class DriveStep extends Step {
 		// Wavedash.
 		boolean wavedash = (!car.hasWheelContact && !car.hasDoubleJumped && car.orientation.up.z > 0.65
 				&& info.timeToHitGround < 0.275);
-		boolean wavedashTime = (wavedash && info.timeToHitGround < 0.05);
+		boolean wavedashTime = (wavedash && info.timeToHitGround < 0.06);
 		boost &= !wavedash;
 
 		// Boost back to ground.

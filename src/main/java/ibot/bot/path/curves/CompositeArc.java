@@ -3,8 +3,8 @@ package ibot.bot.path.curves;
 import ibot.bot.path.Curve;
 import ibot.bot.physics.Car1D;
 import ibot.bot.physics.DrivePhysics;
-import ibot.bot.utils.Constants;
 import ibot.bot.utils.Pair;
+import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.vectors.Vector2;
 

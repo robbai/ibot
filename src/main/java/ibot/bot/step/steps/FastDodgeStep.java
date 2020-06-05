@@ -4,7 +4,7 @@ import ibot.bot.controls.AirControl;
 import ibot.bot.input.Bundle;
 import ibot.bot.step.Priority;
 import ibot.bot.step.Step;
-import ibot.bot.utils.MathsUtils;
+import ibot.bot.utils.maths.MathsUtils;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Controls;
@@ -39,7 +39,7 @@ public class FastDodgeStep extends Step {
 
 		double dot = car.orientation.forward.dot(this.directionGlobal);
 
-		boolean boost = (dot > 0.75);
+		boolean boost = (dot > 0.85);
 
 		if(timeElapsed < TIMING[0]){
 			return new Controls().withJump(true).withBoost(boost);
