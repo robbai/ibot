@@ -148,8 +148,13 @@ public class DriveStrikeStep extends Step {
 				renderTime += renderDeltaTime;
 			}
 
-			boolean nowJump = (driveTime < Constants.DT);
-//			boolean nowJump = (prophecy != null && prophecy.distance(this.intercept.intersectPosition) < 100);
+			boolean nowJump;
+//			if(this.doubleJump){
+//				nowJump = (driveTime <= (this.doubleJump ? 0.05 : Constants.DT));
+//			}else{
+			nowJump = (prophecy != null && MathsUtils.local(car, prophecy).flatten()
+					.distance(localIntercept.flatten()) < (this.doubleJump ? 100 : 55));
+//			}
 			if(nowJump){
 				this.jumpStart = OptionalDouble.of(time);
 			}

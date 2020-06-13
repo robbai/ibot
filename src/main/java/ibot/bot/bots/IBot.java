@@ -1,26 +1,31 @@
 package ibot.bot.bots;
 
-import ibot.bot.abort.BallTouchedAbort;
-import ibot.bot.abort.SliceOffPredictionAbort;
+import java.util.function.Function;
+
+import ibot.boost.BoostPad;
+import ibot.bot.abort.CommitAbort;
+import ibot.bot.abort.NotMyPredictionAbort;
+import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
 import ibot.bot.intercept.AerialType;
 import ibot.bot.intercept.Intercept;
-import ibot.bot.intercept.SeamIntercept;
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.step.steps.DefenseStep;
-import ibot.bot.step.steps.DriveStrikeStep;
+import ibot.bot.step.steps.DemoStep;
+import ibot.bot.step.steps.DriveStep;
 import ibot.bot.step.steps.FunStep;
+import ibot.bot.step.steps.GrabObliviousStep;
 import ibot.bot.step.steps.OffenseStep;
 import ibot.bot.step.steps.SaveStep;
 import ibot.bot.step.steps.kickoff.KickoffStep;
-import ibot.bot.utils.maths.MathsUtils;
+import ibot.bot.step.steps.meta.ChainStep;
+import ibot.bot.step.steps.meta.ShouldStep;
 import ibot.bot.utils.rl.Constants;
 import ibot.bot.utils.rl.Mode;
 import ibot.input.Car;
 import ibot.input.DataPacket;
 import ibot.output.Output;
 import ibot.vectors.Vector2;
-import ibot.vectors.Vector3;
 
 public class IBot extends ABot {
 
@@ -105,91 +110,111 @@ public class IBot extends ABot {
 //			}
 //		}
 
-		if(this.iteration < 5 && info.commit && car.boost > 0
-				&& (car.correctSide(info.groundIntercept.position) || info.furthestBack)){
+		if(this.iteration < 5 && car.boost > 5 && info.groundIntercept != null && info.commit){
 			for(int i = 0; i < 2; i++){
 				boolean doubleJump = (i == 1);
-				if(!doubleJump){
-					if(info.isKickoff || !car.hasWheelContact){
-						// We use the double-jump intercept for starting mid-air too.
-						doubleJump = true;
-					}else if(info.aerialDouble != null){
-						Vector3 localDouble = MathsUtils.local(car, info.aerialDouble.position);
-						doubleJump = (localDouble.z > 550
-								&& localDouble.normalised().z > MathsUtils.lerp(0.6, 0.3,
-										Math.pow(car.velocity.magnitude() / Constants.MAX_CAR_VELOCITY, 2))
-								|| (info.aerialDouble.position.z > Constants.GOAL_HEIGHT - 50
-										&& Math.abs(info.aerialDouble.position.x) < Constants.GOAL_WIDTH + 200
-										&& Math.abs(info.aerialDouble.position.y) < -Constants.PITCH_LENGTH_SOCCAR
-												+ 1100));
-					}else{
-						doubleJump = (info.aerialDodge == null);
-					}
+				Intercept intercept = (doubleJump ? info.aerialDouble : info.aerialDodge);
+				if(intercept == null)
+					continue;
+				if(!doubleJump && !car.hasWheelContact)
+					continue;
+				if(intercept.time > info.earliestEnemyIntercept.time)
+					continue;
+				if(intercept.time > info.groundIntercept.time - Constants.DT)
+					continue;
+				if(info.lastMan && intercept.position.distance(info.homeGoal.withZ(0)) > 5000)
+					continue;
+
+				Vector2 offset = intercept.getOffset().flatten();
+				double factor = offset.normalised().dot(info.groundIntercept.getOffset().flatten().normalised());
+				if(factor > 0.4){
+					AerialType type = (doubleJump ? AerialType.DOUBLE_JUMP : AerialType.DODGE_STRIKE);
+					return new AerialStep(this.bundle, intercept, type)
+							.withAbortCondition(new NotMyPredictionAbort(this.bundle, intercept));
 				}
-
-				AerialType type = (doubleJump ? AerialType.DOUBLE_JUMP : AerialType.DODGE_STRIKE);
-				Intercept aerialIntercept = (doubleJump ? info.aerialDouble : info.aerialDodge);
-
-				if(aerialIntercept != null){
-					DriveStrikeStep driveStrike = (DriveStrikeStep)this.findStep(DriveStrikeStep.class.getName());
-					boolean slower = false;
-					boolean driveStriking = (driveStrike != null);
-					if(driveStriking){
-						if(driveStrike.intercept.time <= aerialIntercept.time || !car.onFlatGround
-								|| driveStrike.intercept instanceof SeamIntercept){
-							slower = true;
-						}
-					}
-
-					Vector3 localIntercept = MathsUtils.local(car, aerialIntercept.position);
-					double radians = Vector2.Y.correctionAngle(localIntercept.flatten());
-					boolean theirSide = (aerialIntercept.position.y * car.sign >= 0);
-					boolean contested = (Math.abs(info.possession) < 0.15);
-					if(!slower && ((Math.abs(radians) < Math.toRadians(doubleJump ? 35 : 45)
-							* (info.goingInHomeGoal || contested ? 1.3 : 1))
-							&& (info.groundIntercept == null
-									|| localIntercept.z > (localIntercept.magnitude() < 700
-											&& info.mode == Mode.DROPSHOT ? 90 : (theirSide ? 160 : 210))
-											* (doubleJump ? 2 : 1)
-									|| (car.position.z > Math.max(500, aerialIntercept.position.z)
-											&& info.arena.getMode() == Mode.DROPSHOT))
-							|| driveStriking)){
-						return new AerialStep(this.bundle, aerialIntercept, type).withAbortCondition(
-								new BallTouchedAbort(this.bundle, packet.ball.latestTouch, this.index),
-								new SliceOffPredictionAbort(this.bundle, aerialIntercept));
-					}
-				}
-				if(doubleJump)
-					break;
 			}
 		}
 
-		if(SaveStep.mustSave(this.bundle)){
+		if(info.lastMan && SaveStep.mustSave(this.bundle)){
 			return new SaveStep(this.bundle);
 		}
 
-		Vector2 trace = MathsUtils.traceToY(car.position.flatten(),
-				info.groundIntercept.position.minus(car.position).flatten(), info.arena.getLength() * car.sign);
-		boolean canShoot = (trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH - Constants.BALL_RADIUS);
-		trace = MathsUtils.traceToY(info.groundIntercept.car.position.flatten(),
-				info.groundIntercept.position.minus(info.groundIntercept.car.position).flatten(),
-				info.arena.getLength() * -car.sign);
-		boolean opponentShoot = (trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH - Constants.BALL_RADIUS);
+//		Vector2 trace = MathsUtils.traceToY(car.position.flatten(),
+//				info.groundIntercept.position.minus(car.position).flatten(), info.arena.getLength() * car.sign);
+//		boolean canShoot = (trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH - Constants.BALL_RADIUS);
+//		trace = MathsUtils.traceToY(info.groundIntercept.car.position.flatten(),
+//				info.groundIntercept.position.minus(info.groundIntercept.car.position).flatten(),
+//				info.arena.getLength() * -car.sign);
+//		boolean opponentShoot = (trace != null && Math.abs(trace.x) < Constants.GOAL_WIDTH - Constants.BALL_RADIUS);
+//
+//		boolean offense = ((info.commit || (canShoot && info.possession > -0.2))
+//				&& ((info.teamPossessionCorrectSide < -0.3 && opponentShoot)
+//						|| car.correctSide(info.groundIntercept.position))
+//				&& (info.possession > -0.1 || car.boost > 30
+//						|| info.groundIntercept.position.y * car.sign < info.arena.getLength() - 1400));
+//		if(offense){
+//			OffenseStep offenseStep = new OffenseStep(this.bundle);
+//			if(!info.commit){
+//				offenseStep.canPop = false;
+//				offenseStep.withAbortCondition(new BallTouchedAbort(this.bundle));
+//			}
+//			return offenseStep;
+//		}
+//
+//		return new DefenseStep(this.bundle);
 
-		boolean offense = ((info.commit || (canShoot && info.possession > -0.2))
-				&& ((info.teamPossessionCorrectSide < -0.3 && opponentShoot)
-						|| car.correctSide(info.groundIntercept.position))
-				&& (info.possession > -0.1 || car.boost > 30
-						|| info.groundIntercept.position.y * car.sign < info.arena.getLength() - 1400));
-		if(offense){
-			OffenseStep offenseStep = new OffenseStep(this.bundle);
-			if(!info.commit){
-				offenseStep.canPop = false;
-				offenseStep.withAbortCondition(new BallTouchedAbort(this.bundle));
+		if(this.iteration < 7){
+			BoostPad pad = info.nearestBoost;
+			GrabObliviousStep oblivious = ((packet.ball.position.distance(info.homeGoal) > 4000 || !info.furthestBack)
+					&& car.boost < (pad.isFullBoost() ? 60 : 20) ? new GrabObliviousStep(this.bundle, pad) : null);
+
+			if(pad != null && (info.earliestEnemyIntercept.time - packet.time) > 0.7
+					&& !car.correctSide(info.groundIntercept.position) && (pad.isFullBoost() || car.boost > 50)
+					&& car.onFlatGround){
+				DemoStep demo = new DemoStep(this.bundle);
+				if(demo.isValid())
+					return new ChainStep(this.bundle, oblivious, demo);
 			}
-			return offenseStep;
-		}
 
+			Vector2 target;
+//			if(info.furthestBack){
+			target = info.homeGoal.flatten();
+////			if(info.slowestTeammate)
+////				target = target.multiply(new Vector2(1.1, 1).clamp());
+//			}else{
+//				double targetDistance = (info.slowestTeammate ? 8000 : 6500);
+//				Vector2 goal = info.homeGoal.flatten(), ball = packet.ball.position.flatten();
+//				target = goal.setDistanceFrom(ball, Math.min(targetDistance, goal.distance(ball)));
+//			}
+//			Vector2 target = MathsUtils.traceToWall(info.earliestEnemyIntercept.car.position.flatten(),
+//					info.earliestEnemyIntercept.position.minus(info.earliestEnemyIntercept.car.position).flatten(),
+//					info.arena.getWidth(), info.arena.getLength());
+//			target = target.withY(Math.min(target.y * car.sign, 0) * car.sign);
+			DriveStep drive = new DriveStep(this.bundle, target);
+//			drive.conserveBoost = true;
+//			drive.dontBoost = (info.teamPossessionCorrectSide < 0.5);
+			drive.dontBoost = true;
+			drive.canPop = true;
+			drive.popDistance = (info.slowestTeammate ? 1400 : 1100);
+//			drive.withAbortCondition(new CommitAbort(this.bundle, 0));
+//			drive.withAbortCondition(new PossessionAbort(this.bundle, 0.6, 0.85));
+
+			Function<Bundle, Boolean> driveCondition = (b -> !(b.info.possession > 0.5
+//					&& b.info.groundIntercept.position.y * b.packet.car.sign > 0
+					&& b.info.groundIntercept.getAlignment() > 0.85));
+			ShouldStep shouldDrive = new ShouldStep(this.bundle, drive, driveCondition);
+
+			DefenseStep defense = new DefenseStep(this.bundle);
+			defense.withAbortCondition(new CommitAbort(this.bundle, 0));
+//			PossessionAbort possession = new PossessionAbort(this.bundle, -0.1);
+//			possession.inverted = true;
+//			defense.withAbortCondition(possession);
+
+			OffenseStep offense = new OffenseStep(this.bundle);
+			offense.minimumTime = info.groundIntercept.time - packet.time + (car.boost / 100) * 0.45;
+
+			return new ChainStep(this.bundle, oblivious, shouldDrive, defense, offense);
+		}
 		return new DefenseStep(this.bundle);
 	}
 

@@ -1,8 +1,10 @@
 package ibot.bot.intercept;
 
+import ibot.bot.utils.maths.MathsUtils;
 import ibot.bot.utils.maths.Plane;
 import ibot.input.Car;
 import ibot.prediction.Slice;
+import ibot.vectors.Vector2;
 import ibot.vectors.Vector3;
 
 public class Intercept extends Slice {
@@ -27,6 +29,12 @@ public class Intercept extends Slice {
 
 	public Vector3 getOffset(){
 		return this.intersectPosition.minus(this.position);
+	}
+
+	public double getAlignment(){
+		Vector2 offset = MathsUtils.local(this.car.orientation, this.getOffset()).flatten().normalised();
+		Vector2 local = MathsUtils.local(this.car, this.position).flatten().normalised();
+		return -local.dot(offset);
 	}
 
 }

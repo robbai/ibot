@@ -61,4 +61,9 @@ public abstract class Step extends Output {
 	public void manipulateControls(Controls controls){
 	}
 
+	@Override
+	public String toString(){
+		return this.getClass().getSimpleName();
+	}
+
 }

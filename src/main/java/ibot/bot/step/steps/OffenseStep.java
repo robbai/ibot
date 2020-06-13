@@ -27,9 +27,14 @@ public class OffenseStep extends Step {
 	public boolean canPop = true;
 	protected boolean addOffset = true;
 
+	public double minimumTime = 0.3;
+
+	private OptionalDouble actualStartTime;
+
 	public OffenseStep(Bundle bundle){
 		super(bundle);
 		this.drive = new DriveStep(bundle);
+		this.actualStartTime = OptionalDouble.empty();
 	}
 
 	@Override
@@ -39,7 +44,10 @@ public class OffenseStep extends Step {
 		Info info = this.bundle.info;
 		Car car = packet.car;
 
-		if(!info.commit && this.canPop /* && packet.time - this.getStartTime() > 0.2 */){
+		if(!this.actualStartTime.isPresent())
+			this.actualStartTime = OptionalDouble.of(car.time);
+
+		if(!info.commit && this.canPop && packet.time - this.actualStartTime.getAsDouble() > this.minimumTime){
 			return new PopStack();
 		}
 
@@ -49,7 +57,7 @@ public class OffenseStep extends Step {
 		Vector3 dodgeTarget = DriveStrikeStep.getDodgeTarget(info.groundIntercept);
 		boolean seam = info.groundIntercept instanceof SeamIntercept;
 
-		this.drive.routing = true;
+//		this.drive.routing = true;
 
 		if(seam || info.groundIntercept.plane.differentNormal(Vector3.Z)){
 			// Wall intercept.
@@ -121,7 +129,7 @@ public class OffenseStep extends Step {
 //				double addedOffset = 0;
 				double addedOffset = (this.addOffset ? Math.min(distance - 1000, 0) * 0.625 : 0);
 				if(addedOffset > MathsUtils.EPSILON){
-					this.drive.routing = false;
+//					this.drive.routing = false;
 					target = target.plus(info.groundIntercept.getOffset().scaleToMagnitude(addedOffset)).clamp();
 				}else if(addedOffset < 1000 && car.hasWheelContact && Math.abs(info.carForwardComponent) > 0.975
 						&& info.getTimeOnGround() > 0.1){
@@ -151,8 +159,8 @@ public class OffenseStep extends Step {
 			pencil.renderer.drawLine3d(pencil.altColour, info.groundIntercept.intersectPosition,
 					info.groundIntercept.position);
 			boolean challenge = (Math.abs(info.possession) < 0.18);
-			boolean nail = (info.groundIntercept.getOffset().normalised()
-					.dot(info.groundIntercept.position.minus(car.position).normalised()) < -0.6);
+			boolean nail = (MathsUtils.local(car.orientation, info.groundIntercept.getOffset()).withZ(0).normalised()
+					.dot(MathsUtils.local(car, info.groundIntercept.position.minus(car.position)).normalised()) < -0.8);
 			pencil.renderer.drawRectangle3d(pencil.colour, info.groundIntercept.intersectPosition, 8, 8, true);
 			if(car.hasWheelContact && info.getTimeOnGround() > 0.2 && (info.groundIntercept.time - info.time) < 0.4
 					&& Math.abs(info.lastControls.getSteer()) < (info.goingInHomeGoal || challenge ? 0.8 : 0.4)){

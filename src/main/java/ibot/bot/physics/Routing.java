@@ -14,7 +14,7 @@ import ibot.vectors.Vector3;
 
 public class Routing extends StaticClass {
 
-	public static final double[] QUICK_TURN_VELOCITIES = { -2250, -1100, -860, 860, 1100, 2250 };
+	public static final double[] QUICK_TURN_VELOCITIES = { 860, 1100, 2250 };
 
 	public static double estimateTurnTime(Car car, Vector3 target, boolean allowBackwards){
 		double radians = Vector2.Y.angle(MathsUtils.local(car, target).flatten());
@@ -28,8 +28,8 @@ public class Routing extends StaticClass {
 		return estimateTurnTime(car, target.withZ(0), allowBackwards);
 	}
 
-	private static double estimateTurnTimeRadians(double radians){
-		return Math.abs(radians) * 0.35;
+	public static double estimateTurnTimeRadians(double radians){
+		return Math.abs(radians) * 0.6;
 	}
 
 	/**
@@ -80,10 +80,14 @@ public class Routing extends StaticClass {
 			return false;
 		if(!pad.isActive())
 			return false;
-		if(pad.getPosition().equals(destination.position.flatten()))
+//		if(pad.getPosition().equals(destination.position.flatten()))
+//			return false;
+		if(pad.getPosition().distance(destination.position.flatten()) < 80)
 			return false;
-		return destination.position.minus(car.position).flatten()
-				.dot(destination.position.flatten().minus(pad.getPosition())) > 0;
+//		return destination.position.minus(car.position).flatten()
+//				.dot(destination.position.flatten().minus(pad.getPosition())) > 0;
+		return pad.getPosition().minus(destination.position.flatten())
+				.dot(pad.getPosition().minus(car.position.flatten())) < 0;
 	}
 
 	public static double findQuickerTurningVelocity(double velocity, boolean allowAccelerating){
@@ -98,7 +102,7 @@ public class Routing extends StaticClass {
 				bestValue = value;
 			}
 		}
-		return best == -1 ? velocity : QUICK_TURN_VELOCITIES[best];
+		return best == -1 ? velocity : Math.copySign(QUICK_TURN_VELOCITIES[best], velocity);
 	}
 
 }

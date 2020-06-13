@@ -1,7 +1,9 @@
 package ibot.bot.input;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalDouble;
+import java.util.stream.Collectors;
 
 import rlbot.cppinterop.RLBotDll;
 import rlbot.cppinterop.RLBotInterfaceException;
@@ -99,7 +101,8 @@ public class Info {
 		}
 		this.lastIsKickoff = this.isKickoff;
 
-		this.nearestBoost = findNearestBoost(this.car, BoostManager.getFullBoosts());
+		this.nearestBoost = findNearestBoost(this.car, BoostManager.getFullBoosts().stream()
+				.filter(pad -> myPad(packet.teammates, this.car, pad)).collect(Collectors.toList()));
 		if(this.nearestBoost == null){
 			this.nearestBoost = findNearestBoost(this.car, BoostManager.getSmallBoosts());
 		}
@@ -375,7 +378,7 @@ public class Info {
 		return defaultMode;
 	}
 
-	protected static BoostPad findNearestBoost(Car car, ArrayList<BoostPad> boosts){
+	protected static BoostPad findNearestBoost(Car car, List<BoostPad> boosts){
 		Vector2 carPosition = car.position.flatten();
 		// carPosition = carPosition.lerp(new Vector2(0, Constants.PITCH_LENGTH_SOCCAR *
 		// -car.sign), 0.3);
@@ -429,6 +432,22 @@ public class Info {
 			return this.time - this.lastWheelContactTime;
 		}
 		return 0;
+	}
+
+	private static boolean myPad(Car[] cars, Car myCar, BoostPad pad){
+		Vector3 padPosition = pad.getPosition().withZ(Constants.CAR_HEIGHT);
+		double myDistance = myCar.position.distance(padPosition);
+		for(Car car : cars){
+			if(car.index == myCar.index || car.boost > 60)
+				continue;
+			double distance = car.position.distance(padPosition);
+			if(distance < myDistance){
+				boolean towards = (car.velocity.dot(padPosition.minus(car.position)) > 0);
+				if(towards)
+					return false;
+			}
+		}
+		return true;
 	}
 
 }

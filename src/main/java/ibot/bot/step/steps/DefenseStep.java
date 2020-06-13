@@ -2,7 +2,6 @@ package ibot.bot.step.steps;
 
 import java.awt.Color;
 
-import ibot.boost.BoostManager;
 import ibot.boost.BoostPad;
 import ibot.bot.abort.CommitAbort;
 import ibot.bot.input.Bundle;
@@ -30,7 +29,7 @@ public class DefenseStep extends Step {
 		super(bundle);
 		this.drive = new DriveStep(bundle);
 		this.drive.reverse = false;
-		this.drive.routing = false;
+//		this.drive.routing = false;
 	}
 
 	@Override
@@ -53,7 +52,7 @@ public class DefenseStep extends Step {
 		if(nearestBoost != null && nearestBoost.isFullBoost() && this.bundle.bot.iteration < 5){
 			double distance = nearestBoost.getPosition().distance(car.position.flatten());
 			boolean boostCorrectSide = (packet.ball.position.y - nearestBoost.getPosition().y) * car.sign > 0;
-			if(boostCorrectSide && car.boost < 40 && goalDistance > 4500
+			if(boostCorrectSide && car.boost < 60
 					&& new Car1D(car)
 							.stepDisplacement(1, true,
 									distance + nearestBoost.getPosition().distance(info.homeGoal.flatten()))
@@ -64,15 +63,15 @@ public class DefenseStep extends Step {
 			}
 		}
 
-		if(packet.ball.position.distance(info.homeGoal) > 4200 && info.teamPossessionCorrectSide > 0.85
-				&& (info.teamPossessionCorrectSide > info.possession || !car.correctSide(info.groundIntercept.position))
-				&& car.boost > (Constants.MAX_CAR_VELOCITY - car.forwardVelocity) / Constants.BOOST_GROUND_ACCELERATION
-						* Constants.BOOST_USAGE
-				&& info.getTimeOnGround() > 0.1 && !info.furthestBack && car.position.y * car.sign > -2000){
-			DemoStep demo = new DemoStep(this.bundle);
-			if(demo.isValid())
-				return demo;
-		}
+//		if(packet.ball.position.distance(info.homeGoal) > 4200 && info.teamPossessionCorrectSide > 0.85
+//				&& (info.teamPossessionCorrectSide > info.possession || !car.correctSide(info.groundIntercept.position))
+//				&& car.boost > (Constants.MAX_CAR_VELOCITY - car.forwardVelocity) / Constants.BOOST_GROUND_ACCELERATION
+//						* Constants.BOOST_USAGE
+//				&& info.getTimeOnGround() > 0.1 && !info.furthestBack && car.position.y * car.sign > -2000){
+//			DemoStep demo = new DemoStep(this.bundle);
+//			if(demo.isValid())
+//				return demo;
+//		}
 
 		this.drive.dontBoost = true;
 
@@ -129,19 +128,19 @@ public class DefenseStep extends Step {
 
 //			if(target.y * car.sign > -1000 && !info.slowestTeammate) target = target.withX(target.x * 1.2);
 
-			if(car.boost < 60){
-				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
-						BoostManager.getAllBoosts());
-				Vector2 carPositionFlat = car.position.flatten();
-				if(boost.getPosition().distance(carPositionFlat) < 1400
-						&& (packet.ball.position.y - boost.getPosition().y) * car.sign > 2500){
-					if(boost.getPosition().minus(carPositionFlat).dot(target.minus(carPositionFlat).flatten()) > 0
-							&& boost.getPosition().distance(carPositionFlat) < target.flatten()
-									.distance(carPositionFlat)){
-						return new PushStack(new GrabBoostStep(this.bundle, boost));
-					}
-				}
-			}
+//			if(car.boost < 80){
+//				BoostPad boost = Info.findNearestBoost(target.plus(car.velocity.scale(0.5)).flatten(),
+//						BoostManager.getAllBoosts());
+//				Vector2 carPositionFlat = car.position.flatten();
+//				if(boost.getPosition().distance(carPositionFlat) < 1400
+//						&& (packet.ball.position.y - boost.getPosition().y) * car.sign > 2500){
+//					if(boost.getPosition().minus(carPositionFlat).dot(target.minus(carPositionFlat).flatten()) > 0
+//							&& boost.getPosition().distance(carPositionFlat) < target.flatten()
+//									.distance(carPositionFlat)){
+//						return new PushStack(new GrabBoostStep(this.bundle, boost));
+//					}
+//				}
+//			}
 
 			target = target.clamp();
 

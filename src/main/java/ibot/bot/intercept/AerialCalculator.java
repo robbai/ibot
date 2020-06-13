@@ -2,81 +2,73 @@ package ibot.bot.intercept;
 
 import ibot.bot.step.steps.AerialStep;
 import ibot.bot.utils.Pair;
-import ibot.bot.utils.maths.MathsUtils;
 import ibot.bot.utils.rl.Constants;
 import ibot.input.Car;
 import ibot.input.CarOrientation;
-import ibot.prediction.Slice;
 import ibot.vectors.Vector3;
 
 public class AerialCalculator {
 
 	// https://samuelpmish.github.io/notes/RocketLeague/aerial_hit/
 
-	public final double finalVelocity, acceleration;
+	public final double finalSpeed, acceleration;
 	public final boolean viable;
 
 	public AerialCalculator(double finalVelocity, double acceleration, boolean viable){
 		super();
-		this.finalVelocity = finalVelocity;
+		this.finalSpeed = finalVelocity;
 		this.acceleration = acceleration;
 		this.viable = viable;
 	}
 
-	/*
-	 * https://raw.githubusercontent.com/samuelpmish/RLUtilities/master/src/
-	 * mechanics/aerial.cc
-	 */
 	public static AerialCalculator isViable(Car car, Vector3 target, double globalTime, Vector3 gravity,
 			AerialType type){
-		double time = (globalTime - car.time);
+		double timeLeft = (globalTime - car.time);
 
-		Pair<Vector3, Vector3> freefall = AerialStep.calculateFreefall(car, time, gravity, type);
+		Pair<Vector3, Vector3> freefall = AerialStep.calculateFreefall(car, timeLeft, gravity, type);
 		Vector3 carPosition = freefall.getOne(), carVelocity = freefall.getTwo();
 
 		Vector3 deltaPosition = target.minus(carPosition);
 		Vector3 direction = deltaPosition.normalised();
 
-		double totalTurnTime = estimateTurnTime(car.orientation, direction);
-		double phi = Math.acos(car.orientation.forward.dot(direction));
+		double turnTime = estimateTurnTime(car.orientation, direction);
+//		if(type == AerialType.DODGE_STRIKE)
+//			turnTime *= 2;
+		timeLeft -= turnTime;
 
-		double tau1 = totalTurnTime * MathsUtils.clamp(1 - AerialStep.ANGLE_THRESHOLD / phi, 0, 1);
+		Vector3 acceleration = deltaPosition.scale(2 / Math.pow(timeLeft, 2));
+		Vector3 finalVelocity = carVelocity.plus(acceleration.scale(timeLeft));
+		double boostUsed = (acceleration.magnitude() / Constants.BOOST_AIR_ACCELERATION) * timeLeft
+				* Constants.BOOST_USAGE;
 
-		double requiredAcceleration = 2 * deltaPosition.magnitude() / Math.pow(time - tau1, 2);
-
-		double ratio = (requiredAcceleration / Constants.BOOST_AIR_ACCELERATION);
-
-		double tau2 = time - (time - tau1) * Math.sqrt(1 - MathsUtils.clamp(ratio, 0, 1));
-
-		Vector3 velocityEstimate = carVelocity.plus(direction.scale(Constants.BOOST_AIR_ACCELERATION * (tau2 - tau1)));
-
-		double boostEstimate = (tau2 - tau1) * Constants.BOOST_USAGE;
-
-		final double easy = 0.95;
-
-		double finalVelocity = velocityEstimate.magnitude();
-		boolean viable = (finalVelocity < easy * Constants.MAX_CAR_VELOCITY) && (boostEstimate < easy * car.boost)
-				&& (Math.abs(ratio) < easy);
-		return new AerialCalculator(finalVelocity, requiredAcceleration, viable);
+		// Is it viable?
+		final double easy = 1;
+		boolean viable = (finalVelocity.magnitude() < easy * Constants.MAX_CAR_VELOCITY)
+				&& (boostUsed < easy * car.boost) && acceleration.magnitude() < Constants.BOOST_AIR_ACCELERATION * easy;
+		return new AerialCalculator(finalVelocity.magnitude(), acceleration.magnitude(), viable);
 	}
-
-	public static AerialCalculator isViable(Car car, Slice slice, Vector3 gravity, AerialType type){
-		return isViable(car, slice.position, slice.time, gravity, type);
-	}
-
-//	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
-//		Vector3 local = MathsUtils.local(orientation, desiredForward);
-//		Spherical spherical = new Spherical(local);
-//		double phi = Math.abs(spherical.getElevation()) + Math.abs(spherical.getPerpendicular());
-//		double time = 1.8 * Math.sqrt(phi / 9);
-//		return time;
-//	}
 
 	public static double estimateTurnTime(CarOrientation orientation, Vector3 desiredForward){
 		double dot = orientation.forward.dot(desiredForward.normalised());
-//		return Math.pow((dot - 1) / 0.5, 2);
-		double angle = MathsUtils.acos(dot);
-		return Math.pow(angle, 2) * 0.25;
+		return Math.pow(dot - 1, 2) * 0.29;
+	}
+
+	public static double calculateBoostTime(Vector3 deltaPosition, double dot, double timeLeft){
+		double displace = deltaPosition.magnitude() * dot, boostAcc = Constants.BOOST_AIR_ACCELERATION;
+		double boostTime = timeLeft
+				- (Math.sqrt(boostAcc * (boostAcc * Math.pow(timeLeft, 2) - 2 * displace))) / boostAcc;
+//		if(Double.isNaN(boostTime)){
+//			double acceleration = displace * (2 / Math.pow(timeLeft, 2));
+//			boostTime = (acceleration * timeLeft) / Constants.BOOST_AIR_ACCELERATION;
+//		}
+		if(Double.isNaN(boostTime))
+			return timeLeft;
+		return boostTime;
+	}
+
+	public static double calculateBoostTime(Vector3 deltaPosition, CarOrientation orientation, double timeLeft){
+		double dot = deltaPosition.normalised().dot(orientation.forward);
+		return calculateBoostTime(deltaPosition, dot, timeLeft);
 	}
 
 }

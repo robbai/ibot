@@ -1,6 +1,7 @@
 package ibot.bot.step.steps;
 
 import java.awt.Color;
+import java.util.OptionalDouble;
 
 import ibot.bot.input.Bundle;
 import ibot.bot.input.Info;
@@ -23,9 +24,11 @@ public class DemoStep extends DriveStep {
 	private static final double MAX_SIM_TIME = 3, SIM_DELTA_TIME = Constants.DT * 6, HIT_DISTANCE = 175;
 
 	private final int victimIndex;
-	private final double maxRunTime;
+	private double maxRunTime;
 
 	private Vector3 lastVelocity;
+
+	private OptionalDouble actualStartTime;
 
 	public DemoStep(Bundle bundle){
 		super(bundle);
@@ -33,12 +36,7 @@ public class DemoStep extends DriveStep {
 		this.victimIndex = getVictimIndex(packet);
 
 		this.lastVelocity = new Vector3();
-		if(this.isValid()){
-			Car victim = packet.cars[this.victimIndex];
-			this.maxRunTime = packet.time + victim.position.distance(packet.car.position) / 1100;
-		}else{
-			this.maxRunTime = -10;
-		}
+		this.actualStartTime = OptionalDouble.empty();
 
 		// Drive.
 		this.dodge = false;
@@ -59,8 +57,13 @@ public class DemoStep extends DriveStep {
 		Car car = packet.car;
 		Car victim = packet.cars[this.victimIndex];
 
+		if(!this.actualStartTime.isPresent()){
+			this.maxRunTime = (this.isValid() ? victim.position.distance(packet.car.position) / 1100 : -1000000);
+			this.actualStartTime = OptionalDouble.of(car.time);
+		}
+
 		// Pop.
-		if(victim.isDemolished || packet.time > this.maxRunTime)
+		if(victim.isDemolished || packet.time - this.actualStartTime.getAsDouble() > this.maxRunTime)
 			return new PopStack();
 
 		// Gather information on the victim.

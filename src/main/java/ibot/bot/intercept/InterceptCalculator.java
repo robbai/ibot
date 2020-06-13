@@ -34,7 +34,7 @@ public class InterceptCalculator extends StaticClass {
 		Vector3 carPosition = car.position;
 		Vector3 interceptFrom = carPosition;
 
-		final double RADIUS = (Constants.BALL_RADIUS - 45);
+		final double RADIUS = (Constants.BALL_RADIUS + (type == AerialType.DODGE_STRIKE ? -20 : -50));
 
 		AerialCalculator strongest = null;
 		Slice strongestSlice = null;
@@ -84,7 +84,7 @@ public class InterceptCalculator extends StaticClass {
 			AerialCalculator calculation = AerialCalculator.isViable(car, interceptPosition, slice.time,
 					arena.getGravity(), type);
 			if(calculation.viable){
-				if(strongest == null || strongest.finalVelocity < calculation.finalVelocity - i){
+				if(strongest == null || strongest.finalSpeed < calculation.finalSpeed - i){
 					strongest = calculation;
 					strongestSlice = slice;
 					strongestInterceptPosition = interceptPosition;
@@ -174,7 +174,8 @@ public class InterceptCalculator extends StaticClass {
 				Vector2 direction = slice.position.minus(car.position).flatten().normalised();
 				Vector2 xTrace = MathsUtils.traceToX(car.position.flatten(), direction,
 						arena.getWidth() * Math.signum(direction.x));
-				if(slice.position.y * car.sign < 1000 && (xTrace == null || xTrace.y * car.sign > 0)){
+				if((slice.position.y * car.sign < 0 || Math.abs(slice.position.x) > info.arena.getWidth() - 1200)
+						&& (xTrace == null || xTrace.y * car.sign > 0)){
 					Vector2 furthest = MathsUtils.furthestPointOnLineSegment(
 							side.withX(Math.copySign(side.x, slice.position.x)), side.withX(0), enemies);
 					offset = slice.position.minus(furthest.withZ(slice.position.z)).scaleToMagnitude(RADIUS);
@@ -186,7 +187,7 @@ public class InterceptCalculator extends StaticClass {
 						offset = getOffset(car, slice, goal).withZ(0).scale(RADIUS);
 					}else{
 						Vector2 corner = xTrace
-								.withY(Math.max(xTrace.y * car.sign + 900, -arena.getLength()) * car.sign);
+								.withY(Math.max(xTrace.y * car.sign + 1100, -arena.getLength()) * car.sign);
 						Vector2 yTrace = MathsUtils.traceToY(car.position.flatten(), direction,
 								info.arena.getLength() * -car.sign);
 						if(yTrace != null)

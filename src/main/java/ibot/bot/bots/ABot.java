@@ -2,7 +2,7 @@ package ibot.bot.bots;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import rlbot.Bot;
 import rlbot.cppinterop.RLBotDll;
@@ -107,7 +107,7 @@ public abstract class ABot implements Bot {
 
 	private Controls getControls(){
 		for(Step step : this.steps){
-			this.bundle.pencil.stackRenderString(step.getClass().getSimpleName(), Color.WHITE);
+			this.bundle.pencil.stackRenderString(step.toString(), Color.WHITE);
 		}
 
 		final int maxIterations = 10;
@@ -132,6 +132,7 @@ public abstract class ABot implements Bot {
 				continue;
 
 			Output output = activeStep.getOutput();
+//			System.out.println(this.index + ": " + output.getClass().getCanonicalName());
 			if(output instanceof StackAction){
 				if(output instanceof PopStack){
 					this.popStep();
@@ -160,8 +161,7 @@ public abstract class ABot implements Bot {
 
 		Step activeStep = this.getActiveStep();
 		System.err.println(this.printPrefix() + "Couldn't get controls from "
-				+ (activeStep != null ? activeStep.getClass().getSimpleName() : "null") + ", tried "
-				+ stepsString(triedSteps));
+				+ (activeStep != null ? activeStep.toString() : "null") + ", tried " + stepsString(triedSteps));
 		return new Controls();
 	}
 
@@ -222,11 +222,7 @@ public abstract class ABot implements Bot {
 	}
 
 	private static String stepsString(ArrayList<Step> steps){
-		ArrayList<String> strings = new ArrayList<String>(steps.size());
-		for(Step step : steps){
-			strings.add(step.getClass().getSimpleName());
-		}
-		return Arrays.toString(strings.toArray());
+		return steps.stream().map(step -> step.toString()).collect(Collectors.joining(", "));
 	}
 
 	private String stepsString(){

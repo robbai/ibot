@@ -7,10 +7,8 @@ import ibot.vectors.Vector3;
 
 public class Car1D {
 
-	private static final double DT = Constants.DT * 4;
-
-	private double time, displacement, velocity, boost, maximumSpeed = Constants.MAX_CAR_VELOCITY,
-			lastBoostTime = -1000;
+	private double DT = Constants.DT * 4, time, displacement, velocity, boost,
+			maximumSpeed = Constants.MAX_CAR_VELOCITY, lastBoostTime = -1000;
 
 	public Car1D(double time, double displacement, double velocity, double boost){
 		super();
@@ -78,6 +76,15 @@ public class Car1D {
 
 	public Car1D withMaximumSpeed(double maximumSpeed){
 		this.maximumSpeed = Math.abs(maximumSpeed);
+		return this;
+	}
+
+	public double getDT(){
+		return DT;
+	}
+
+	public Car1D withDT(double DT){
+		this.DT = DT;
 		return this;
 	}
 

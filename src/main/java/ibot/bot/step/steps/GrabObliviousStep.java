@@ -30,6 +30,7 @@ public class GrabObliviousStep extends Step {
 		this.drive = new DriveStep(bundle);
 		this.drive.routing = false;
 		this.boost = boost;
+		this.drive.reverse = false;
 	}
 
 	@Override

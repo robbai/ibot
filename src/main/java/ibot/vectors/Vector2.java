@@ -160,9 +160,11 @@ public class Vector2 {
 	public Vector3 withAngleZ(double radians){
 		double magnitude = this.magnitude();
 		double z = (Math.tan(radians) * magnitude);
-		// System.out.println("vec3 with mag=" + (int)magnitude + "uu at incline=" +
-		// (int)Math.toDegrees(radians) + "deg makes z=" + (int)z + "uu");
 		return this.withZ(z);
+	}
+
+	public Vector2 setDistanceFrom(Vector2 other, double distance){
+		return this.minus(other).scaleToMagnitude(distance).plus(other);
 	}
 
 	public Vector2 clamp(double x, double y){

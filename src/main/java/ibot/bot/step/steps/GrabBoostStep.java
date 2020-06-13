@@ -19,7 +19,8 @@ public class GrabBoostStep extends DriveStep {
 		this.startedKickoff = bundle.packet.isKickoffPause;
 		this.boost = boost;
 		this.lastActive = boost.isActive();
-		this.routing = false;
+		this.routing = true;
+		this.reverse = false;
 		bundle.bot.sendQuickChat(QuickChatSelection.Information_NeedBoost);
 	}
 
